@@ -5,250 +5,502 @@ export const STEPS: WizardStep[] = [
     id: 'inventory',
     title: 'Inventarisatie',
     description:
-      'Stel vast welke gevaarlijke stoffen aanwezig zijn, bij welke taken contact optreedt en via welke routes medewerkers worden blootgesteld.',
+      'Breng in kaart welke gevaarlijke stoffen aanwezig zijn, bij welke taken blootstelling optreedt, welke medewerkers betrokken zijn en via welke routes blootstelling plaatsvindt.',
     questions: [
       {
-        id: 'haz-tasks',
-        label: 'Bij welke activiteiten of taken komen medewerkers in contact met gevaarlijke stoffen?',
+        id: 'haz-inv-tasks',
+        label:
+          'Beschrijf bij welke taken of werkprocessen medewerkers in contact kunnen komen met gevaarlijke stoffen, en welke functies of medewerkergroepen daarbij betrokken zijn.',
         type: 'text',
-        tip: 'Vergeet ook schoonmaak, onderhoud en laad-/losactiviteiten. Die worden bij inventarisaties vaak over het hoofd gezien, maar kunnen een hoge blootstelling geven.',
-        placeholder: 'Bijv. mengen van verf, reinigen met oplosmiddelen, verwerken van houtstof, lassen…',
+        tip: 'Denk ook aan schoonmaak, onderhoud, laden en lossen, en incidentele taken. Vergeet zzp\'ers, uitzendkrachten en stagiairs niet.',
+        placeholder:
+          'Bijv. verwerken van verf in de spuitcabine (spuiter), reinigen met oplosmiddelen (onderhoudsmonteur), mengen van additieven (productiemedewerker)…',
       },
       {
-        id: 'haz-categories',
-        label: 'Welke categorieën gevaarlijke stoffen zijn aanwezig op de werkplek? (meerdere mogelijk)',
-        type: 'checkbox',
-        options: [
-          { value: 'cmr', label: 'CMR-stoffen — kankerverwekkend, mutageen of schadelijk voor de voortplanting' },
-          { value: 'corrosive', label: 'Bijtende of sterk irriterende stoffen (zuren, logen)' },
-          { value: 'flammable', label: 'Ontvlambare of explosieve stoffen' },
-          { value: 'sensitizing', label: 'Sensibiliserende stoffen — kunnen allergie of astma veroorzaken' },
-          { value: 'skin-absorbing', label: 'Stoffen die via de huid worden opgenomen (huidresorberend)' },
-        ],
-      },
-      {
-        id: 'haz-routes',
-        label: 'Via welke routes vindt of kan blootstelling plaatsvinden? (meerdere mogelijk)',
-        type: 'checkbox',
-        options: [
-          { value: 'inhalation', label: 'Inhalatie — dampen, gassen, nevels of (fijn)stof' },
-          { value: 'skin', label: 'Huidcontact of dermale opname' },
-          { value: 'eyes', label: 'Oogcontact' },
-          { value: 'ingestion', label: 'Ingestie (eten, drinken, aanraken mond)' },
-        ],
-      },
-      {
-        id: 'haz-sds',
-        label: 'Zijn er actuele veiligheidsinformatiebladen (SDS) beschikbaar voor alle aanwezige stoffen?',
+        id: 'haz-inv-sds',
+        label:
+          'Is er voor elke gevaarlijke stof die gebruikt of bewaard wordt een actueel Veiligheidsinformatieblad (VIB/SDS) beschikbaar, en zijn alle stoffen opgenomen in een stoffenregister?',
         type: 'radio',
+        tip: 'Controleer de uitgiftedatum in VIB-rubriek 1. De grenswaarden en aanbevolen PBM staan in rubriek 8.',
         options: [
-          { value: 'yes-complete', label: 'Ja, volledig en actueel (niet ouder dan 3 jaar)' },
-          { value: 'partial', label: 'Gedeeltelijk — niet voor alle stoffen of verouderd' },
-          { value: 'no', label: 'Nee' },
+          {
+            value: 'yes',
+            label:
+              'Ja — voor alle stoffen, actueel (niet ouder dan 3 jaar of bijgewerkt na CLP-herclassificatie) en volledig stoffenregister aanwezig',
+          },
+          {
+            value: 'partial',
+            label: 'Gedeeltelijk — niet voor alle stoffen, of sommige VIB\'s zijn verouderd',
+          },
+          { value: 'no', label: 'Nee — VIB\'s ontbreken of er is geen stoffenregister bijgehouden' },
+        ],
+      },
+      {
+        id: 'haz-inv-cmr',
+        label:
+          'Zijn er stoffen aanwezig die zijn geclassificeerd als CMR-stof of als sensibiliserend voor huid of luchtwegen? (meerdere mogelijk)',
+        type: 'checkbox',
+        tip: 'Raadpleeg VIB-rubriek 2 voor de H-zinnen. Twijfelt u? Zoek de CLP-classificatie op in de C&L Inventory van ECHA.',
+        options: [
+          { value: 'cmr-1a', label: 'Ja — CMR categorie 1A (H340/H350/H360)' },
+          { value: 'cmr-1b', label: 'Ja — CMR categorie 1B (H341/H351/H361)' },
+          { value: 'cmr-2', label: 'Ja — CMR categorie 2' },
+          {
+            value: 'sensitizing',
+            label: 'Ja — huidsensiliserend (H317) of luchtwegsensibiliserend (H334)',
+          },
+          { value: 'none', label: 'Nee — geen CMR- of sensibiliserende stoffen aanwezig of bekend' },
+        ],
+      },
+      {
+        id: 'haz-inv-routes',
+        label:
+          'Via welke routes kunnen medewerkers worden blootgesteld aan de gevaarlijke stoffen? (meerdere mogelijk)',
+        type: 'checkbox',
+        tip: 'Huidresorptie wordt in beoordelingen vaak onderschat. Als een stof is aangemerkt als huidresorberend (via VIB-rubriek 8), telt huidcontact mee in de totale blootstelling.',
+        options: [
+          { value: 'inhalation', label: 'Inhalatie — inademen van dampen, gassen, nevels of (fijn)stof' },
+          {
+            value: 'skin',
+            label: 'Huidcontact of huidresorptie — opname via de huid, ook zonder zichtbare irritatie',
+          },
+          { value: 'eyes', label: 'Oogcontact — spatten of damp in contact met de ogen' },
+          { value: 'ingestion', label: 'Ingestie — inslikken via besmette handen of oppervlakken' },
         ],
       },
     ],
   },
   {
     id: 'legal-framework',
-    title: 'Juridische kaders',
+    title: 'Juridische kaders en informatie',
     description:
-      'Controleer of de gevaarsindeling, grenswaarden en bijzondere verplichtingen voor de aanwezige stoffen bekend zijn.',
+      'Controleer of de CLP-classificatie, grenswaarden (OELV\'s) en bijzondere verplichtingen voor CMR-stoffen en REACH-blootstellingsscenario\'s in beeld zijn.',
     questions: [
       {
-        id: 'haz-oels-known',
-        label: 'Zijn voor alle relevante stoffen de wettelijke grenswaarden (OEL) opgezocht en vergeleken met de situatie op de werkplek?',
+        id: 'haz-legal-clp',
+        label:
+          'Zijn de CLP-classificatie en gevarenaanduidingen (H-zinnen) van alle relevante stoffen in beeld?',
         type: 'radio',
-        tip: 'Heeft een stof geen wettelijke grenswaarde, gebruik dan een sectorale of door de leverancier aanbevolen waarde (DNEL of OEL uit de SDS, rubriek 8). Documenteer welke waarde u gebruikt en waarom.',
+        tip: 'Let in het bijzonder op H372 en H373 (STOT bij herhaalde blootstelling): die wijzen op chronische schade aan een specifiek orgaan.',
         options: [
-          { value: 'yes', label: 'Ja, voor alle relevante stoffen' },
-          { value: 'partial', label: 'Gedeeltelijk — niet voor alle stoffen' },
-          { value: 'no', label: 'Nee, dit is nog niet gedaan' },
-          { value: 'no-oels', label: 'Er zijn geen wettelijke grenswaarden beschikbaar voor de aanwezige stoffen' },
+          {
+            value: 'yes',
+            label: 'Ja — voor alle stoffen zijn de H-zinnen en GHS-pictogrammen gedocumenteerd',
+          },
+          {
+            value: 'partial',
+            label: 'Gedeeltelijk — niet voor alle stoffen volledig uitgewerkt',
+          },
+          { value: 'no', label: 'Nee — classificatie is nog niet beoordeeld' },
         ],
       },
       {
-        id: 'haz-ghs-known',
-        label: 'Is voor elke stof de gevaarsindeling (GHS/CLP: pictogrammen, gevarenaanduidingen) bekend en opgenomen in de RI&E?',
+        id: 'haz-legal-oelv',
+        label:
+          'Zijn voor alle relevante stoffen de toepasselijke grenswaarden (OELV\'s) bepaald?',
         type: 'radio',
+        tip: 'De DNEL is de door de leverancier berekende veilige blootstellingsdrempel (via REACH). Als er geen wettelijke OELV bestaat, is de DNEL een bruikbaar alternatief — documenteer dan waarom je deze waarde kiest.',
         options: [
-          { value: 'yes', label: 'Ja' },
-          { value: 'partial', label: 'Gedeeltelijk' },
-          { value: 'no', label: 'Nee' },
+          {
+            value: 'szw',
+            label: 'Ja — wettelijke Nederlandse grenswaarden gebruikt (SZW-grenswaardelijst)',
+          },
+          {
+            value: 'eu-oel',
+            label: 'Ja — Europese indicatieve of bindende OEL gebruikt',
+          },
+          {
+            value: 'dnel',
+            label: 'Ja — DNEL of sectorale waarde gebruikt, omdat er geen wettelijke grenswaarde beschikbaar is',
+          },
+          {
+            value: 'partial',
+            label: 'Gedeeltelijk — niet voor alle stoffen is een grenswaarde bepaald',
+          },
+          { value: 'no', label: 'Nee — grenswaarden zijn nog niet opgezocht' },
         ],
       },
       {
-        id: 'haz-cmr-present',
-        label: 'Zijn er CMR-stoffen aanwezig waarvoor een aanvullend registratieplicht of vervangingsplicht geldt?',
+        id: 'haz-legal-cmr-obligations',
+        label:
+          'Als er CMR-stoffen categorie 1A of 1B aanwezig zijn — zijn de extra wettelijke verplichtingen in beeld en ingericht?',
         type: 'radio',
+        tip: 'Voor CMR-stoffen 1A/1B geldt een wettelijke vervangingsplicht. Leg de afweging altijd schriftelijk vast.',
         options: [
-          { value: 'yes-registered', label: 'Ja, en ze zijn geregistreerd en alternatieven zijn onderzocht' },
-          { value: 'yes-not-registered', label: 'Ja, maar ze zijn nog niet formeel geregistreerd' },
-          { value: 'no', label: 'Nee, geen CMR-stoffen aanwezig' },
-          { value: 'unknown', label: 'Onbekend' },
+          {
+            value: 'yes',
+            label:
+              'Ja — alle extra verplichtingen zijn in beeld en worden nageleefd (vervangingsplicht, register, medisch toezicht)',
+          },
+          {
+            value: 'partial',
+            label: 'Gedeeltelijk — sommige verplichtingen zijn nog niet ingericht',
+          },
+          { value: 'no', label: 'Nee — dit is nog niet beoordeeld' },
+          {
+            value: 'not-applicable',
+            label: 'Niet van toepassing — er zijn geen CMR-stoffen categorie 1A/1B aanwezig',
+          },
         ],
       },
       {
-        id: 'haz-skin-sensitizing',
-        label: 'Zijn er stoffen aangemerkt als huidresorberend of sensibiliserend, waarvoor speciale maatregelen nodig zijn?',
+        id: 'haz-legal-reach-scenarios',
+        label:
+          'Zijn de blootstellingsscenario\'s die leveranciers als bijlage bij het VIB meeleveren beoordeeld op toepasselijkheid voor de werkwijze?',
         type: 'radio',
+        tip: 'Als jouw gebruik buiten het beschreven blootstellingsscenario valt, ben je als downstream user verplicht zelf een chemische veiligheidsbeoordeling uit te voeren.',
         options: [
-          { value: 'yes-measures', label: 'Ja, en er zijn specifieke maatregelen getroffen' },
-          { value: 'yes-no-measures', label: 'Ja, maar er zijn nog geen specifieke maatregelen' },
-          { value: 'no', label: 'Nee' },
-          { value: 'unknown', label: 'Onbekend' },
+          {
+            value: 'yes-compliant',
+            label:
+              'Ja — scenario\'s zijn beoordeeld en de werkwijze valt binnen de beschreven gebruiksvoorwaarden',
+          },
+          {
+            value: 'yes-deviant',
+            label:
+              'Ja — beoordeeld, maar de werkwijze wijkt af van het scenario (downstream user rapport nodig)',
+          },
+          { value: 'no', label: 'Nee — dit is nog niet beoordeeld' },
+          {
+            value: 'not-applicable',
+            label: 'Niet van toepassing — het VIB bevat geen blootstellingsscenario\'s',
+          },
         ],
       },
     ],
   },
   {
     id: 'assessment-method',
-    title: 'Beoordelingsmethode',
+    title: 'Beoordelingsmethode en meetstrategie',
     description:
-      'Kies hoe de blootstelling wordt bepaald: meting op de werkplek, rekenmodel of een combinatie.',
+      'Stel vast of een basiskarakterisering is uitgevoerd, of Vergelijkbare Blootstellingsgroepen (VBG\'s) zijn gedefinieerd, welke beoordelingsmethode wordt toegepast en wat de uitkomst is ten opzichte van de OELV.',
     questions: [
       {
-        id: 'haz-assessment-approach',
-        label: 'Welke aanpak is of wordt gebruikt om de blootstelling te beoordelen?',
+        id: 'haz-assess-base',
+        label:
+          'Is er een basiskarakterisering gemaakt — een schriftelijke beschrijving van de stof, de gebruikte hoeveelheid, de werkwijze, de blootstellingsduur en de omgevingsomstandigheden?',
         type: 'radio',
-        tip: 'Gebruik voor een snelle eerste screening een rekentool zoals Stoffenmanager of ECETOC TRA. Is de blootstelling dicht bij de grenswaarde, dan is een persoonlijke meting nodig voor een betrouwbaar oordeel.',
+        tip: 'De basiskarakterisering bevat nog geen meetgegevens — het gaat om een gedocumenteerde situatiebeschrijving: welke stof, welk proces, welke hoeveelheid, hoe lang, hoe vaak, en onder welke omstandigheden.',
         options: [
-          { value: 'measurement', label: 'Persoonlijke blootstellingsmeting conform een meetstrategie' },
-          { value: 'model', label: 'Rekenmodel of schattingstool (bijv. Stoffenmanager, ART, ECETOC TRA)' },
-          { value: 'combined', label: 'Combinatie van meting en modellering' },
-          { value: 'not-yet', label: 'Nog niet bepaald' },
+          {
+            value: 'yes',
+            label:
+              'Ja — volledig gedocumenteerd per stof of stofgroep, als startpunt voor de verdere beoordeling',
+          },
+          {
+            value: 'partial',
+            label: 'Gedeeltelijk — niet voor alle stoffen of werkprocessen uitgewerkt',
+          },
+          { value: 'no', label: 'Nee — dit moet nog worden gedaan' },
         ],
       },
       {
-        id: 'haz-previous-measurements',
-        label: 'Zijn er eerder blootstellingsmetingen uitgevoerd voor de betrokken taken of stoffen?',
+        id: 'haz-assess-seg',
+        label:
+          'Zijn de blootgestelde medewerkers ingedeeld in Vergelijkbare Blootstellingsgroepen (VBG\'s)?',
         type: 'radio',
+        tip: 'Een VBG (NEN-EN 689: SEG) maakt het mogelijk met een beperkt aantal metingen een statistisch onderbouwde uitspraak te doen voor een hele groep medewerkers.',
         options: [
-          { value: 'yes-recent', label: 'Ja, en ze zijn actueel (minder dan 3–5 jaar oud)' },
-          { value: 'yes-old', label: 'Ja, maar ze zijn verouderd of de situatie is gewijzigd' },
-          { value: 'no', label: 'Nee, er zijn geen metingen beschikbaar' },
+          {
+            value: 'yes',
+            label: 'Ja — VBG\'s zijn gedefinieerd, gedocumenteerd en de basis voor de meetstrategie',
+          },
+          {
+            value: 'partial',
+            label: 'Gedeeltelijk — indeling is voor sommige groepen of stoffen nog niet gemaakt',
+          },
+          {
+            value: 'no',
+            label: 'Nee — elke medewerker wordt individueel beoordeeld of het is nog niet bepaald',
+          },
+          {
+            value: 'not-applicable',
+            label: 'Niet van toepassing — er is slechts één blootgestelde medewerker',
+          },
         ],
       },
       {
-        id: 'haz-exceedance-risk',
-        label: 'Zijn er aanwijzingen dat de blootstelling de grenswaarde nadert of overschrijdt?',
+        id: 'haz-assess-method',
+        label:
+          'Welke methode wordt gebruikt om de blootstelling aan gevaarlijke stoffen te beoordelen?',
         type: 'radio',
+        tip: 'Pas altijd de gelaagde aanpak toe. Wijst de kwalitatieve beoordeling op een laag risico (blootstelling ruim onder de OELV), dan is verdere actie niet nodig.',
         options: [
-          { value: 'clearly-below', label: 'Nee, blootstelling ligt duidelijk onder de grenswaarde' },
-          { value: 'uncertain', label: 'Onzeker — verder onderzoek of meting is nodig' },
-          { value: 'near-oel', label: 'Ja, blootstelling nadert de grenswaarde' },
-          { value: 'above-oel', label: 'Ja, blootstelling overschrijdt de grenswaarde' },
+          {
+            value: 'qualitative',
+            label:
+              'Kwalitatieve beoordeling op basis van stofeigenschappen en gebruiksomstandigheden (oriënterende inschatting)',
+          },
+          {
+            value: 'model',
+            label:
+              'Kwantitatieve modellering via een rekentool (bijv. Stoffenmanager, ECETOC TRA of ART)',
+          },
+          {
+            value: 'indicative-measurement',
+            label: 'Oriënterende meting (niet conform volledige NEN-EN 689-meetcampagne)',
+          },
+          {
+            value: 'nen-en-689',
+            label:
+              'Volledige meetcampagne conform NEN-EN 689 met statistische toetsing aan de OELV',
+          },
+          {
+            value: 'biomonitoring',
+            label: 'Biologische monitoring als primaire beoordelingsmethode',
+          },
         ],
       },
       {
-        id: 'haz-biomonitoring',
-        label: 'Is biologische monitoring (meting in bloed of urine) relevant of al toegepast voor de aanwezige stoffen?',
+        id: 'haz-assess-outcome',
+        label:
+          'Wat is de uitkomst van de blootstellingsbeoordeling in verhouding tot de geldende grenswaarde (OELV)?',
         type: 'radio',
+        tip: 'NEN-EN 689 werkt met een statistische toets (overschrijdingskans, Pe). De meetcampagne moet aantonen dat de kans op overschrijding kleiner is dan 5%.',
         options: [
-          { value: 'yes-applied', label: 'Ja, biologische monitoring is al onderdeel van het programma' },
-          { value: 'relevant-not-applied', label: 'Relevant maar nog niet toegepast' },
-          { value: 'not-relevant', label: 'Niet relevant voor de aanwezige stoffen' },
+          {
+            value: 'below-10pct',
+            label: 'Blootstelling is duidelijk lager dan de OELV (< 10%) — verwaarloosbaar risico',
+          },
+          {
+            value: '10-50pct',
+            label:
+              'Blootstelling ligt tussen 10% en 50% van de OELV — laag risico, monitoring aanbevolen',
+          },
+          {
+            value: '50-100pct',
+            label:
+              'Blootstelling ligt tussen 50% en 100% van de OELV — aandacht vereist, verbetermaatregelen overwegen',
+          },
+          {
+            value: 'above-oel',
+            label: 'Blootstelling overschrijdt de OELV — directe maatregelen zijn verplicht',
+          },
+          {
+            value: 'unknown',
+            label: 'Beoordeling is nog niet afgerond of de uitkomst is onbekend',
+          },
         ],
       },
     ],
   },
   {
     id: 'control-measures',
-    title: 'Beheersmaatregelen',
+    title: 'Beheersmaatregelen en restblootstelling',
     description:
-      'Pas de arbeidshygiënische strategie toe: begin bij de bron (vervanging), dan techniek, daarna organisatie, en gebruik PBM als laatste stap.',
+      'Doorloop de Arbeidshygiënische Strategie (AHS) stap voor stap: eliminatie/vervanging → techniek → organisatie → PBM. Documenteer ook de extra maatregelen voor CMR-stoffen.',
     questions: [
       {
-        id: 'haz-substitution',
-        label: 'Zijn mogelijkheden voor vervanging van gevaarlijke stoffen door minder gevaarlijke alternatieven onderzocht?',
-        type: 'radio',
-        tip: 'Leg uw afweging altijd schriftelijk vast, ook als vervanging niet mogelijk is. U moet kunnen aantonen dat u serieus naar alternatieven heeft gezocht — dit kan bij een inspectie gevraagd worden.',
+        id: 'haz-ctrl-ahs',
+        label:
+          'Is de Arbeidshygiënische Strategie (AHS) stap voor stap doorlopen? (meerdere mogelijk)',
+        type: 'checkbox',
+        tip: 'Documenteer ook waarom je een hogere stap niet hebt toegepast. Bij een NLA-inspectie moet je aantonen dat je de AHS serieus hebt doorlopen.',
         options: [
-          { value: 'yes-done', label: 'Ja, en vervanging is doorgevoerd' },
-          { value: 'yes-not-feasible', label: 'Ja, maar vervanging is technisch of economisch niet haalbaar (gedocumenteerd)' },
-          { value: 'not-assessed', label: 'Nee, vervangingsmogelijkheden zijn nog niet onderzocht' },
+          {
+            value: 'step1-substitution',
+            label:
+              'Stap 1 — Eliminatie of vervanging door een minder gevaarlijke stof of werkwijze is onderzocht en gedocumenteerd',
+          },
+          {
+            value: 'step2-technical',
+            label:
+              'Stap 2 — Technische maatregelen zijn getroffen (gesloten systeem, LEV of andere bronbeheersing)',
+          },
+          {
+            value: 'step3-organisational',
+            label:
+              'Stap 3 — Organisatorische maatregelen zijn getroffen (werkinstructies, taakroulatie, toegangsbeperking, opslag)',
+          },
+          {
+            value: 'step4-ppe',
+            label:
+              'Stap 4 — PBM zijn beschikbaar als aanvulling op de bovenstaande maatregelen — niet als enige maatregel',
+          },
         ],
       },
       {
-        id: 'haz-technical-controls',
-        label: 'Welke technische beheersmaatregelen zijn al aanwezig of gepland? (meerdere mogelijk)',
+        id: 'haz-ctrl-technical',
+        label:
+          'Welke technische maatregelen zijn aanwezig op de werkplek? (meerdere mogelijk)',
         type: 'checkbox',
+        tip: 'Laat de LEV minimaal jaarlijks keuren op effectiviteit. Een slecht onderhouden afzuiginstallatie geeft een vals gevoel van veiligheid.',
         options: [
-          { value: 'lev', label: 'Lokale afzuiging (LEV) — afzuigkap, armbuis of bronafzuiging' },
-          { value: 'closed-system', label: 'Gesloten systeem of ingekapseld proces' },
-          { value: 'general-ventilation', label: 'Algemene ventilatie of verdunningsventilatie' },
-          { value: 'wet-methods', label: 'Nat werken of stofbindende middelen om stofvorming te beperken' },
+          {
+            value: 'closed-system',
+            label: 'Gesloten of ingekapseld systeem — de stof komt niet vrij in de werkruimte',
+          },
+          {
+            value: 'lev',
+            label:
+              'Lokale afzuiging (LEV) direct bij de bron — periodiek gekeurd op effectiviteit',
+          },
+          {
+            value: 'general-ventilation',
+            label:
+              'Algemene verdunningsventilatie — alleen als aanvulling, niet als primaire maatregel bij toxische stoffen',
+          },
+          {
+            value: 'wet-methods',
+            label: 'Nat werken of stofbindende middelen om stofvorming te beperken',
+          },
+          {
+            value: 'mechanisation',
+            label: 'Mechanische verwerking in plaats van handmatig',
+          },
         ],
       },
       {
-        id: 'haz-organisational-controls',
-        label: 'Welke organisatorische maatregelen zijn al getroffen? (meerdere mogelijk)',
+        id: 'haz-ctrl-ppe',
+        label:
+          'Zijn de juiste PBM beschikbaar en is geborgd dat ze correct en consequent worden gebruikt? (meerdere mogelijk)',
         type: 'checkbox',
+        tip: 'Controleer bij handschoenen altijd de doorbraaktijd voor de specifieke stof — een nitrilhandschoen biedt geen bescherming tegen alle oplosmiddelen.',
         options: [
-          { value: 'work-instructions', label: 'Schriftelijke werkinstructies voor veilig omgaan met stoffen' },
-          { value: 'rotation', label: 'Taakroulatie om blootstelling per persoon te beperken' },
-          { value: 'access-restriction', label: 'Beperking van toegang tot zones met hoge blootstelling' },
-          { value: 'storage', label: 'Gescheiden en geventileerde opslag van gevaarlijke stoffen' },
+          {
+            value: 'respirator',
+            label:
+              'Ademhalingsbescherming van het juiste type en de juiste filterklasse is beschikbaar, pasvorm is gecontroleerd',
+          },
+          {
+            value: 'gloves',
+            label:
+              'Handschoenen van het juiste materiaal voor de specifieke stoffen zijn beschikbaar (chemische bestendigheid en doorbraaktijd gecontroleerd)',
+          },
+          {
+            value: 'eye-clothing',
+            label: 'Beschermende kleding, veiligheidsbril of spatbril is beschikbaar',
+          },
+          {
+            value: 'usage-monitored',
+            label: 'Gebruik van PBM wordt aantoonbaar gemonitord en geborgd',
+          },
+          {
+            value: 'instruction',
+            label:
+              'Medewerkers zijn geïnstrueerd over correct gebruik, pasvorm en onderhoud van PBM',
+          },
         ],
       },
       {
-        id: 'haz-ppe',
-        label: 'Welke PBM zijn beschikbaar en wordt het gebruik geborgd? (meerdere mogelijk)',
+        id: 'haz-ctrl-cmr-extra',
+        label:
+          'Als er CMR-stoffen categorie 1A of 1B aanwezig zijn — zijn de wettelijk verplichte aanvullende maatregelen getroffen? (meerdere mogelijk)',
         type: 'checkbox',
         options: [
-          { value: 'gloves', label: 'Handschoenen van het juiste materiaal (chemische bestendigheid gecontroleerd)' },
-          { value: 'respirator', label: 'Ademhalingsbescherming van het juiste type (half-, volgelaatsmasker of motorgestuurde kap)' },
-          { value: 'eye-protection', label: 'Veiligheidsbril of spatbril' },
-          { value: 'protective-clothing', label: 'Beschermende kleding of chemicaliënpak' },
+          {
+            value: 'closed-system',
+            label:
+              'Gesloten systeem of maximale insluiting is toegepast (verplicht als technisch haalbaar)',
+          },
+          {
+            value: 'register',
+            label:
+              'Blootstellingsregister is aangelegd en wordt actueel bijgehouden (bewaartermijn: minimaal 40 jaar na laatste blootstelling)',
+          },
+          {
+            value: 'medical-surveillance',
+            label:
+              'Medewerkers worden periodiek medisch onderzocht via de bedrijfsarts (PAGO of PMO)',
+          },
+          {
+            value: 'worker-information',
+            label:
+              'Medewerkers zijn aantoonbaar geïnformeerd over de risico\'s en hun recht op medisch onderzoek',
+          },
+          {
+            value: 'not-applicable',
+            label: 'Niet van toepassing — er zijn geen CMR-stoffen categorie 1A/1B aanwezig',
+          },
         ],
       },
     ],
   },
   {
     id: 'evaluation-documentation',
-    title: 'Evaluatie en documentatie',
+    title: 'Evaluatie, rapportage en borging',
     description:
-      'Leg de bevindingen vast in de RI&E en het plan van aanpak, en zorg voor periodieke evaluatie.',
+      'Leg de risicobeoordeling vast in de RI&E en het plan van aanpak, borg de periodieke herbeoordeling, bewaar documenten conform wettelijke termijnen en zorg voor aantoonbare instructie van medewerkers.',
     questions: [
       {
-        id: 'haz-rie-status',
-        label: 'Is de inventarisatie van gevaarlijke stoffen en de bijbehorende risicobeoordeling opgenomen in de RI&E?',
+        id: 'haz-eval-rie',
+        label:
+          'Is de risicobeoordeling gevaarlijke stoffen volledig opgenomen in de RI&E, en staan de verbetermaatregelen in een plan van aanpak met verantwoordelijke, prioritering en uitvoertermijn?',
         type: 'radio',
-        tip: 'Bewaar meetrapporten en blootstellingsbeoordelingen voor CMR-stoffen minimaal 40 jaar. Bij stoffen met vertraagde gezondheidseffecten kan de registratieplicht veel langer doorlopen dan het dienstverband.',
+        tip: 'De RI&E moet actueel zijn bij relevante wijzigingen en minimaal elke 4 jaar worden getoetst door een gecertificeerd arbodeskundige (voor bedrijven met meer dan 25 medewerkers).',
         options: [
-          { value: 'yes', label: 'Ja, volledig en actueel' },
-          { value: 'partial', label: 'Gedeeltelijk of verouderd' },
-          { value: 'no', label: 'Nee, ontbreekt' },
+          {
+            value: 'yes',
+            label:
+              'Ja — RI&E is volledig en actueel, plan van aanpak is opgesteld en bijgewerkt',
+          },
+          {
+            value: 'partial',
+            label:
+              'Gedeeltelijk — RI&E is aanwezig maar niet volledig, of plan van aanpak ontbreekt of is niet actueel',
+          },
+          { value: 'no', label: 'Nee — RI&E of plan van aanpak ontbreekt' },
         ],
       },
       {
-        id: 'haz-action-plan',
-        label: 'Zijn de beheersmaatregelen vastgelegd in een plan van aanpak, met verantwoordelijke, prioritering en uitvoertermijn?',
+        id: 'haz-eval-review',
+        label:
+          'Is er een afspraak gemaakt over de periodieke herbeoordeling van de blootstellingssituatie conform NEN-EN 689, en is vastgelegd bij welke wijzigingen de beoordeling eerder wordt herhaald?',
         type: 'radio',
+        tip: 'Triggercriteria voor een vervroegde herbeoordeling: introductie van een nieuwe stof, wijziging van het proces, wijziging van de OELV, nieuwe toxicologische inzichten, of signalen van gezondheidsklachten bij medewerkers.',
         options: [
-          { value: 'yes', label: 'Ja' },
-          { value: 'partial', label: 'Gedeeltelijk' },
-          { value: 'no', label: 'Nee' },
+          {
+            value: 'yes',
+            label:
+              'Ja — herbeoordelingstermijn is vastgelegd (maximaal 5 jaar) en triggercriteria zijn beschreven en bekend',
+          },
+          {
+            value: 'partial',
+            label:
+              'Gedeeltelijk — er is een termijn maar geen triggercriteria, of omgekeerd',
+          },
+          { value: 'no', label: 'Nee — er is geen herbeoordeling gepland of vastgelegd' },
         ],
       },
       {
-        id: 'haz-training',
-        label: 'Worden medewerkers periodiek geïnformeerd en opgeleid over de risico\'s van gevaarlijke stoffen en het gebruik van PBM?',
+        id: 'haz-eval-docs',
+        label:
+          'Zijn alle meetrapporten, blootstellingsbeoordelingen, VIB\'s en het blootstellingsregister voor CMR-stoffen gedocumenteerd, toegankelijk en bewaard conform de wettelijke bewaartermijnen?',
         type: 'radio',
+        tip: 'Meetrapporten en blootstellingsbeoordelingen voor CMR-stoffen moeten minimaal 40 jaar na de laatste blootstelling bewaard blijven. Voor overige gevaarlijke stoffen geldt minimaal 5 jaar.',
         options: [
-          { value: 'yes-periodic', label: 'Ja, structureel en periodiek' },
-          { value: 'yes-once', label: 'Eenmalig bij indiensttreding, maar niet periodiek herhaald' },
-          { value: 'no', label: 'Nee' },
+          {
+            value: 'yes',
+            label:
+              'Ja — alles is centraal opgeslagen, toegankelijk voor medewerkers en toezichthouders, en conform bewaartermijnen',
+          },
+          {
+            value: 'partial',
+            label:
+              'Gedeeltelijk — niet alle documenten zijn beschikbaar of de bewaartermijnen zijn niet gewaarborgd',
+          },
+          {
+            value: 'no',
+            label: 'Nee — documentatie is onvolledig of de bewaartermijnen zijn niet geborgd',
+          },
         ],
       },
       {
-        id: 'haz-documentation-access',
-        label: 'Zijn meetrapporten, blootstellingsbeoordelingen en SDS beschikbaar voor medewerkers, de bedrijfsarts en toezichthouders?',
+        id: 'haz-eval-training',
+        label:
+          'Zijn medewerkers aantoonbaar geïnformeerd over de risico\'s van de gevaarlijke stoffen waarmee ze werken, de te volgen werkwijze en het correct gebruik van PBM — en wordt dit periodiek herhaald en geregistreerd?',
         type: 'radio',
+        tip: '"Aantoonbaar" is het sleutelwoord. Bij een inspectie moet je kunnen laten zien dat medewerkers zijn geïnstrueerd — via een handtekeningenlijst, e-learning logboek of opleidingsregistratie.',
         options: [
-          { value: 'yes', label: 'Ja, centraal opgeslagen en toegankelijk' },
-          { value: 'partial', label: 'Gedeeltelijk' },
-          { value: 'no', label: 'Nee' },
+          {
+            value: 'yes-periodic',
+            label: 'Ja — aantoonbaar en periodiek, deelname wordt geregistreerd',
+          },
+          {
+            value: 'yes-once',
+            label: 'Ja — eenmalig bij indiensttreding, maar niet periodiek herhaald',
+          },
+          { value: 'no', label: 'Nee — er is geen aantoonbare instructie of opleiding gegeven' },
         ],
       },
     ],
