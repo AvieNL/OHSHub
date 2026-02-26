@@ -1,4 +1,8 @@
+@import "katex/dist/katex.min.css";
 @import "tailwindcss";
+
+/* Class-based dark mode — toggled by ThemeProvider via document.documentElement.classList */
+@variant dark (&:where(.dark, .dark *));
 
 :root {
   --background: #ffffff;
@@ -12,15 +16,27 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Class-based dark: applied by ThemeProvider + anti-FOUC script */
+.dark {
+  --background: #09090b; /* zinc-950 */
+  --foreground: #f4f4f5; /* zinc-100 */
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ── Dark mode: make placeholder text readable ───────────────────────────── */
+.dark ::placeholder {
+  color: rgb(113 113 122); /* zinc-500 */
+}
+
+/* ── Uniform form field height ──────────────────────────────────────────────── */
+@layer base {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]),
+  select:not([multiple]) {
+    height: 2.5rem; /* h-10 */
+  }
 }

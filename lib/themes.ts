@@ -59,6 +59,16 @@ export const themes = [
     badgeClass: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
     dotClass: 'bg-teal-500',
   },
+  {
+    slug: 'vibration',
+    name: 'Trillingen',
+    description: 'Hand-armtrillingen, hele-lichaamstrillingen en Richtlijn 2002/44/EG.',
+    intro:
+      'Langdurige blootstelling aan hand-armtrillingen of hele-lichaamstrillingen kan leiden tot ernstige en onomkeerbare gezondheidsschade, zoals het Hand-Arm Vibration Syndrome (HAVS), witte vingers of chronische rugklachten. De Europese Trillingenrichtlijn en het Arbobesluit stellen grenswaarden voor de dagelijkse trillingsblootstelling A(8). Dit onderzoeksinstrument begeleidt u van inventarisatie en meting tot beoordeling en beheersmaatregelen.',
+    borderClass: 'border-rose-500',
+    badgeClass: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
+    dotClass: 'bg-rose-500',
+  },
 ] as const;
 
 export type ThemeSlug = (typeof themes)[number]['slug'];

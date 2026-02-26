@@ -1,4 +1,4 @@
-import type { WizardStep } from '@/lib/wizard-types';
+import type { WizardStep, WizardConfig } from '@/lib/wizard-types';
 
 export const STEPS: WizardStep[] = [
   {
@@ -225,3 +225,5 @@ export const STEPS: WizardStep[] = [
     ],
   },
 ];
+
+export const WIZARD_CONFIG: WizardConfig = { steps: STEPS };

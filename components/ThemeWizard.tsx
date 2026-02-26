@@ -1,7 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import type { WizardStep, WizardQuestion, WizardAnswers } from '@/lib/wizard-types';
+import { useState, useEffect } from 'react';
+import type {
+  WizardStep,
+  WizardQuestion,
+  WizardAnswers,
+  RiskAssessmentResult,
+  RiskLevel,
+  RiskFinding,
+  Recommendation,
+} from '@/lib/wizard-types';
+import { getWizardConfig } from '@/lib/wizard-configs';
+import type { ThemeSlug } from '@/lib/themes';
 
 // ─── Module-level helpers ─────────────────────────────────────────────────────
 
@@ -18,7 +28,12 @@ function isAnswered(question: WizardQuestion, answers: WizardAnswers): boolean {
 }
 
 function isStepValid(step: WizardStep, answers: WizardAnswers): boolean {
-  return step.questions.every((q) => isAnswered(q, answers));
+  const visible = visibleQuestionsOf(step, answers);
+  return visible.every((q) => isAnswered(q, answers));
+}
+
+function visibleQuestionsOf(step: WizardStep, answers: WizardAnswers): WizardQuestion[] {
+  return step.questions.filter((q) => !q.visibleWhen || q.visibleWhen(answers));
 }
 
 function resolveAnswerText(question: WizardQuestion, answers: WizardAnswers): string {
@@ -32,10 +47,56 @@ function resolveAnswerText(question: WizardQuestion, answers: WizardAnswers): st
   return question.options?.find((o) => o.value === answer)?.label ?? answer;
 }
 
+// ─── Risk level colors ────────────────────────────────────────────────────────
+
+const RISK_COLORS: Record<RiskLevel, { bg: string; text: string; border: string; dot: string }> = {
+  critical: {
+    bg: 'bg-red-50 dark:bg-red-900/20',
+    text: 'text-red-700 dark:text-red-400',
+    border: 'border-red-200 dark:border-red-800/50',
+    dot: 'bg-red-500',
+  },
+  high: {
+    bg: 'bg-orange-50 dark:bg-orange-900/20',
+    text: 'text-orange-700 dark:text-orange-400',
+    border: 'border-orange-200 dark:border-orange-800/50',
+    dot: 'bg-orange-500',
+  },
+  medium: {
+    bg: 'bg-amber-50 dark:bg-amber-900/20',
+    text: 'text-amber-700 dark:text-amber-400',
+    border: 'border-amber-200 dark:border-amber-800/50',
+    dot: 'bg-amber-500',
+  },
+  low: {
+    bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+    text: 'text-emerald-700 dark:text-emerald-400',
+    border: 'border-emerald-200 dark:border-emerald-800/50',
+    dot: 'bg-emerald-500',
+  },
+  unknown: {
+    bg: 'bg-zinc-50 dark:bg-zinc-800/50',
+    text: 'text-zinc-600 dark:text-zinc-400',
+    border: 'border-zinc-200 dark:border-zinc-700',
+    dot: 'bg-zinc-400',
+  },
+};
+
+const RISK_LABELS: Record<RiskLevel, string> = {
+  critical: 'Kritisch',
+  high: 'Hoog',
+  medium: 'Middel',
+  low: 'Laag',
+  unknown: 'Onbekend',
+};
+
+// ─── Report text generator ────────────────────────────────────────────────────
+
 function generateReportText(
   steps: WizardStep[],
   answers: WizardAnswers,
   themeName: string,
+  result?: RiskAssessmentResult,
 ): string {
   const date = new Date().toLocaleDateString('nl-NL', {
     year: 'numeric',
@@ -46,16 +107,53 @@ function generateReportText(
   const subSep = '─'.repeat(45);
 
   const lines: string[] = [
-    `SAMENVATTING RI&E — ${themeName.toUpperCase()}`,
+    `RISICOBEOORDELING RI&E — ${themeName.toUpperCase()}`,
     `Datum: ${date}`,
     sep,
     '',
   ];
 
-  steps.forEach((step, index) => {
-    lines.push(`Stap ${index + 1} — ${step.title}`);
+  if (result) {
+    lines.push(`ALGEHEEL RISICONIVEAU: ${RISK_LABELS[result.overallLevel].toUpperCase()}`);
+    lines.push('');
+
+    if (result.dataGaps.length > 0) {
+      lines.push('ONTBREKENDE GEGEVENS:');
+      result.dataGaps.forEach((g) => lines.push(`  • ${g}`));
+      lines.push('');
+    }
+
+    lines.push('BEVINDINGEN:');
     lines.push(subSep);
-    step.questions.forEach((q) => {
+    result.findings.forEach((f) => {
+      lines.push(`[${RISK_LABELS[f.level].toUpperCase()}] ${f.topic}`);
+      lines.push(`  ${f.summary}`);
+      if (f.detail) lines.push(`  ${f.detail}`);
+      if (f.legalBasis) lines.push(`  Juridische basis: ${f.legalBasis}`);
+      lines.push('');
+    });
+
+    lines.push('AANBEVELINGEN:');
+    lines.push(subSep);
+    result.recommendations.forEach((r) => {
+      lines.push(`${r.priority}. [${r.ahsStep}] ${r.action}`);
+      lines.push(`   Waarom: ${r.why}`);
+      if (r.deadline) lines.push(`   Termijn: ${r.deadline}`);
+      if (r.legalBasis) lines.push(`   Juridische basis: ${r.legalBasis}`);
+      lines.push('');
+    });
+
+    lines.push(sep);
+    lines.push('');
+  }
+
+  lines.push('ANTWOORDEN:');
+  lines.push(subSep);
+
+  const visibleSteps = steps.filter((s) => !s.visibleWhen || s.visibleWhen(answers));
+  visibleSteps.forEach((step, index) => {
+    lines.push(`Stap ${index + 1} — ${step.title}`);
+    visibleQuestionsOf(step, answers).forEach((q) => {
       lines.push(`• ${q.label}`);
       lines.push(`  → ${resolveAnswerText(q, answers)}`);
       lines.push('');
@@ -72,29 +170,41 @@ function generateReportText(
 // ─── Main component ───────────────────────────────────────────────────────────
 
 interface Props {
-  steps: WizardStep[];
+  slug: ThemeSlug;
   themeName: string;
 }
 
-export default function ThemeWizard({ steps, themeName }: Props) {
+export default function ThemeWizard({ slug, themeName }: Props) {
+  const config = getWizardConfig(slug);
+  const { steps, assessRisk } = config;
+
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<WizardAnswers>({});
   const [showValidation, setShowValidation] = useState(false);
 
-  const isSummary = currentStep === steps.length;
-  const step = steps[currentStep];
-  const progress = isSummary ? 100 : Math.round((currentStep / steps.length) * 100);
+  // Compute visible steps based on current answers
+  const visibleSteps = steps.filter((s) => !s.visibleWhen || s.visibleWhen(answers));
+  const isSummary = currentStep === visibleSteps.length;
+  const step = visibleSteps[currentStep];
+  const progress = isSummary ? 100 : Math.round((currentStep / visibleSteps.length) * 100);
+
+  // Clamp currentStep if visible steps shrink due to answer changes
+  useEffect(() => {
+    if (currentStep > visibleSteps.length) {
+      setCurrentStep(visibleSteps.length);
+    }
+  }, [currentStep, visibleSteps.length]);
 
   function handleRadio(questionId: string, value: string) {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
   }
 
-  function handleCheckbox(questionId: string, value: string, checked: boolean) {
+  function handleCheckbox(questionId: string, value: string, isChecked: boolean) {
     setAnswers((prev) => {
       const current = (prev[questionId] as string[]) ?? [];
       return {
         ...prev,
-        [questionId]: checked ? [...current, value] : current.filter((v) => v !== value),
+        [questionId]: isChecked ? [...current, value] : current.filter((v) => v !== value),
       };
     });
   }
@@ -123,8 +233,8 @@ export default function ThemeWizard({ steps, themeName }: Props) {
     setShowValidation(false);
   }
 
-  function resolveAnswer(step: WizardStep, questionId: string): string {
-    const question = step.questions.find((q) => q.id === questionId);
+  function resolveAnswer(s: WizardStep, questionId: string): string {
+    const question = s.questions.find((q) => q.id === questionId);
     const answer = answers[questionId];
     if (!answer || (Array.isArray(answer) && answer.length === 0)) return 'Niet ingevuld';
     if (Array.isArray(answer)) {
@@ -135,7 +245,8 @@ export default function ThemeWizard({ steps, themeName }: Props) {
     return question?.options?.find((o) => o.value === answer)?.label ?? answer;
   }
 
-  const stepInvalid = !isSummary && showValidation && !isStepValid(step, answers);
+  const stepInvalid = !isSummary && showValidation && step && !isStepValid(step, answers);
+  const riskResult = isSummary && assessRisk ? assessRisk(answers) : undefined;
 
   return (
     <div className="mt-10 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
@@ -143,7 +254,11 @@ export default function ThemeWizard({ steps, themeName }: Props) {
       <div className="border-b border-zinc-100 px-8 py-5 dark:border-zinc-800">
         <div className="mb-3 flex items-center justify-between text-sm">
           <span className="font-medium text-zinc-700 dark:text-zinc-300">
-            {isSummary ? 'Samenvatting' : `Stap ${currentStep + 1} van ${steps.length}`}
+            {isSummary
+              ? assessRisk
+                ? 'Risicobeoordeling'
+                : 'Samenvatting'
+              : `Stap ${currentStep + 1} van ${visibleSteps.length}`}
           </span>
           <span className="text-zinc-400 dark:text-zinc-500">{themeName}</span>
         </div>
@@ -177,21 +292,35 @@ export default function ThemeWizard({ steps, themeName }: Props) {
         )}
 
         {isSummary ? (
-          <Summary
-            steps={steps}
-            answers={answers}
-            themeName={themeName}
-            resolveAnswer={resolveAnswer}
-          />
+          riskResult ? (
+            <RiskReport
+              steps={visibleSteps}
+              answers={answers}
+              themeName={themeName}
+              result={riskResult}
+              resolveAnswer={resolveAnswer}
+              allSteps={steps}
+            />
+          ) : (
+            <Summary
+              steps={visibleSteps}
+              answers={answers}
+              themeName={themeName}
+              resolveAnswer={resolveAnswer}
+              allSteps={steps}
+            />
+          )
         ) : (
-          <StepContent
-            step={step}
-            answers={answers}
-            showValidation={showValidation}
-            onRadio={handleRadio}
-            onCheckbox={handleCheckbox}
-            onText={handleText}
-          />
+          step && (
+            <StepContent
+              step={step}
+              answers={answers}
+              showValidation={showValidation}
+              onRadio={handleRadio}
+              onCheckbox={handleCheckbox}
+              onText={handleText}
+            />
+          )
         )}
       </div>
 
@@ -202,7 +331,7 @@ export default function ThemeWizard({ steps, themeName }: Props) {
             <button
               onClick={() => {
                 setShowValidation(false);
-                setCurrentStep(steps.length - 1);
+                setCurrentStep(visibleSteps.length - 1);
               }}
               className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
             >
@@ -230,7 +359,7 @@ export default function ThemeWizard({ steps, themeName }: Props) {
               onClick={handleNext}
               className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
             >
-              {currentStep === steps.length - 1 ? 'Bekijk samenvatting' : 'Volgende'}
+              {currentStep === visibleSteps.length - 1 ? 'Bekijk rapport' : 'Volgende'}
               <ChevronRight />
             </button>
           </>
@@ -252,6 +381,8 @@ interface StepContentProps {
 }
 
 function StepContent({ step, answers, showValidation, onRadio, onCheckbox, onText }: StepContentProps) {
+  const visibleQuestions = visibleQuestionsOf(step, answers);
+
   return (
     <div>
       <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">{step.title}</h2>
@@ -260,7 +391,7 @@ function StepContent({ step, answers, showValidation, onRadio, onCheckbox, onTex
       </p>
 
       <div className="mt-8 space-y-8">
-        {step.questions.map((question) => {
+        {visibleQuestions.map((question) => {
           const hasError = showValidation && isRequired(question) && !isAnswered(question, answers);
           return (
             <fieldset key={question.id}>
@@ -288,7 +419,7 @@ function StepContent({ step, answers, showValidation, onRadio, onCheckbox, onTex
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.355a9.727 9.727 0 01-3 0M12 3v1.5M6.22 4.72l1.06 1.06M4.5 12H3m1.72 5.78 1.06-1.06M12 21v-1.5m5.78-1.72-1.06-1.06M21 12h-1.5m-1.72-5.78-1.06 1.06"
+                      d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.355a9.727 9.727 0 01-3 0M12 3v1.5M6.22 4.72l1.06 1.06M4.5 12H3m1.72 5.78 1.06-1.06M12 21v-1.5m5.78-1.72-1.06 1.06M21 12h-1.5m-1.72-5.78-1.06 1.06"
                     />
                   </svg>
                   <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">
@@ -329,12 +460,12 @@ function StepContent({ step, answers, showValidation, onRadio, onCheckbox, onTex
               {question.type === 'checkbox' && question.options && (
                 <div className="space-y-2">
                   {question.options.map((opt) => {
-                    const checked = ((answers[question.id] as string[]) ?? []).includes(opt.value);
+                    const isChecked = ((answers[question.id] as string[]) ?? []).includes(opt.value);
                     return (
                       <label
                         key={opt.value}
                         className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm transition ${
-                          checked
+                          isChecked
                             ? 'border-zinc-900 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-800'
                             : hasError
                             ? 'border-red-300 hover:border-red-400 dark:border-red-700 dark:hover:border-red-500'
@@ -344,7 +475,7 @@ function StepContent({ step, answers, showValidation, onRadio, onCheckbox, onTex
                         <input
                           type="checkbox"
                           value={opt.value}
-                          checked={checked}
+                          checked={isChecked}
                           onChange={(e) => onCheckbox(question.id, opt.value, e.target.checked)}
                           className="accent-zinc-900 dark:accent-zinc-100"
                         />
@@ -379,35 +510,300 @@ function StepContent({ step, answers, showValidation, onRadio, onCheckbox, onTex
   );
 }
 
-// ─── Summary ──────────────────────────────────────────────────────────────────
+// ─── Risk UI components ───────────────────────────────────────────────────────
 
-interface SummaryProps {
+function OverallRiskBadge({ level }: { level: RiskLevel }) {
+  const c = RISK_COLORS[level];
+  return (
+    <div
+      className={`inline-flex items-center gap-2 rounded-xl border px-5 py-3 ${c.bg} ${c.border}`}
+    >
+      <span className={`h-3 w-3 rounded-full ${c.dot}`} />
+      <span className={`text-lg font-bold ${c.text}`}>{RISK_LABELS[level]}</span>
+    </div>
+  );
+}
+
+function RiskLevelBadge({ level }: { level: RiskLevel }) {
+  const c = RISK_COLORS[level];
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${c.bg} ${c.text}`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${c.dot}`} />
+      {RISK_LABELS[level]}
+    </span>
+  );
+}
+
+function AhsBadge({ label }: { label: string }) {
+  return (
+    <span className="inline-block rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+      {label}
+    </span>
+  );
+}
+
+function DataGapsWarning({ gaps }: { gaps: string[] }) {
+  return (
+    <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800/50 dark:bg-amber-900/15">
+      <p className="mb-2 text-sm font-semibold text-amber-800 dark:text-amber-300">
+        Ontbrekende gegevens
+      </p>
+      <ul className="space-y-1">
+        {gaps.map((g, i) => (
+          <li key={i} className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400">
+            <span className="mt-1 shrink-0">•</span>
+            {g}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function FindingsTable({ findings }: { findings: RiskFinding[] }) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/50">
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Onderwerp
+            </th>
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Risico
+            </th>
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Bevinding
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          {findings.map((f, i) => (
+            <tr key={i} className="align-top">
+              <td className="px-4 py-3 font-medium text-zinc-800 dark:text-zinc-200 whitespace-nowrap">
+                {f.topic}
+              </td>
+              <td className="px-4 py-3 whitespace-nowrap">
+                <RiskLevelBadge level={f.level} />
+              </td>
+              <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                {f.summary}
+                {f.legalBasis && (
+                  <span className="mt-1 block text-xs text-zinc-400 dark:text-zinc-500">
+                    {f.legalBasis}
+                  </span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function RecommendationCard({ rec }: { rec: Recommendation }) {
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/50">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-xs font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
+          {rec.priority}
+        </span>
+        <AhsBadge label={rec.ahsStep} />
+        {rec.deadline && (
+          <span className="ml-auto text-xs text-zinc-400 dark:text-zinc-500">
+            ⏱ {rec.deadline}
+          </span>
+        )}
+      </div>
+      <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{rec.action}</p>
+      <p className="mt-1.5 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">{rec.why}</p>
+      {rec.legalBasis && (
+        <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">{rec.legalBasis}</p>
+      )}
+    </div>
+  );
+}
+
+// ─── RiskReport ───────────────────────────────────────────────────────────────
+
+interface RiskReportProps {
   steps: WizardStep[];
   answers: WizardAnswers;
   themeName: string;
+  result: RiskAssessmentResult;
   resolveAnswer: (step: WizardStep, questionId: string) => string;
+  allSteps: WizardStep[];
 }
 
-function Summary({ steps, answers, themeName, resolveAnswer }: SummaryProps) {
+function RiskReport({ steps, answers, themeName, result, resolveAnswer, allSteps }: RiskReportProps) {
   const [copied, setCopied] = useState(false);
+  const [answersOpen, setAnswersOpen] = useState(false);
 
   async function handleCopy() {
-    const text = generateReportText(steps, answers, themeName);
+    const text = generateReportText(allSteps, answers, themeName, result);
     try {
       await navigator.clipboard.writeText(text);
     } catch {
-      // Fallback for environments without clipboard API
       const el = document.createElement('textarea');
       el.value = text;
       el.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
       document.body.appendChild(el);
       el.focus();
       el.select();
-      try {
-        document.execCommand('copy');
-      } catch {
-        /* silent */
-      }
+      try { document.execCommand('copy'); } catch { /* silent */ }
+      document.body.removeChild(el);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  }
+
+  const date = new Date().toLocaleDateString('nl-NL', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  return (
+    <div>
+      {/* Header */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+            Risicobeoordeling — {themeName}
+          </h2>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{date}</p>
+        </div>
+        <button
+          onClick={handleCopy}
+          className={`inline-flex shrink-0 items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition ${
+            copied
+              ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700/50 dark:bg-emerald-900/20 dark:text-emerald-400'
+              : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
+          }`}
+        >
+          {copied ? <><CheckIcon /> Gekopieerd!</> : <><ClipboardIcon /> Kopieer rapport</>}
+        </button>
+      </div>
+
+      {/* Overall risk badge */}
+      <div className="mt-6">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+          Algeheel risiconiveau
+        </p>
+        <OverallRiskBadge level={result.overallLevel} />
+      </div>
+
+      {/* Data gaps */}
+      {result.dataGaps.length > 0 && (
+        <div className="mt-6">
+          <DataGapsWarning gaps={result.dataGaps} />
+        </div>
+      )}
+
+      {/* Findings */}
+      {result.findings.length > 0 && (
+        <div className="mt-6">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+            Bevindingen
+          </p>
+          <FindingsTable findings={result.findings} />
+        </div>
+      )}
+
+      {/* Recommendations */}
+      {result.recommendations.length > 0 && (
+        <div className="mt-6">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+            Aanbevelingen — gesorteerd op prioriteit
+          </p>
+          <div className="space-y-3">
+            {result.recommendations.map((r) => (
+              <RecommendationCard key={r.priority} rec={r} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Answers (collapsible) */}
+      <div className="mt-6 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+        <button
+          onClick={() => setAnswersOpen((o) => !o)}
+          className="flex w-full items-center justify-between text-sm font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+        >
+          <span>Ingevulde antwoorden</span>
+          <span className="text-xs">{answersOpen ? '▲ Inklappen' : '▼ Uitklappen'}</span>
+        </button>
+
+        {answersOpen && (
+          <div className="mt-4 space-y-4">
+            {steps.map((s, index) => (
+              <div
+                key={s.id}
+                className="rounded-xl border border-zinc-100 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-800/50"
+              >
+                <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+                  Stap {index + 1}
+                </p>
+                <h3 className="mb-4 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                  {s.title}
+                </h3>
+                <dl className="space-y-3">
+                  {visibleQuestionsOf(s, answers).map((q) => {
+                    const answer = resolveAnswer(s, q.id);
+                    const isEmpty = answer === 'Niet ingevuld';
+                    return (
+                      <div key={q.id} className="text-sm">
+                        <dt className="text-zinc-500 dark:text-zinc-400">{q.label}</dt>
+                        <dd
+                          className={`mt-0.5 font-medium ${
+                            isEmpty
+                              ? 'italic text-zinc-400 dark:text-zinc-600'
+                              : 'text-zinc-800 dark:text-zinc-200'
+                          }`}
+                        >
+                          {answer}
+                        </dd>
+                      </div>
+                    );
+                  })}
+                </dl>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Summary (no assessRisk) ──────────────────────────────────────────────────
+
+interface SummaryProps {
+  steps: WizardStep[];
+  answers: WizardAnswers;
+  themeName: string;
+  resolveAnswer: (step: WizardStep, questionId: string) => string;
+  allSteps: WizardStep[];
+}
+
+function Summary({ steps, answers, themeName, resolveAnswer, allSteps }: SummaryProps) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    const text = generateReportText(allSteps, answers, themeName);
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const el = document.createElement('textarea');
+      el.value = text;
+      el.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+      document.body.appendChild(el);
+      el.focus();
+      el.select();
+      try { document.execCommand('copy'); } catch { /* silent */ }
       document.body.removeChild(el);
     }
     setCopied(true);
@@ -431,35 +827,25 @@ function Summary({ steps, answers, themeName, resolveAnswer }: SummaryProps) {
               : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
           }`}
         >
-          {copied ? (
-            <>
-              <CheckIcon />
-              Gekopieerd!
-            </>
-          ) : (
-            <>
-              <ClipboardIcon />
-              Kopieer tekst voor rapport
-            </>
-          )}
+          {copied ? <><CheckIcon /> Gekopieerd!</> : <><ClipboardIcon /> Kopieer tekst voor rapport</>}
         </button>
       </div>
 
       <div className="mt-8 space-y-4">
-        {steps.map((step, index) => (
+        {steps.map((s, index) => (
           <div
-            key={step.id}
+            key={s.id}
             className="rounded-xl border border-zinc-100 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-800/50"
           >
             <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
               Stap {index + 1}
             </p>
             <h3 className="mb-4 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-              {step.title}
+              {s.title}
             </h3>
             <dl className="space-y-3">
-              {step.questions.map((q) => {
-                const answer = resolveAnswer(step, q.id);
+              {visibleQuestionsOf(s, answers).map((q) => {
+                const answer = resolveAnswer(s, q.id);
                 const isEmpty = answer === 'Niet ingevuld';
                 return (
                   <div key={q.id} className="text-sm">

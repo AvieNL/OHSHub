@@ -5,6 +5,8 @@ export interface QuestionOption {
   label: string;
 }
 
+export type WizardAnswers = Record<string, string | string[]>;
+
 export interface WizardQuestion {
   id: string;
   label: string;
@@ -13,6 +15,7 @@ export interface WizardQuestion {
   tip?: string;
   options?: QuestionOption[];
   placeholder?: string;
+  visibleWhen?: (answers: WizardAnswers) => boolean;
 }
 
 export interface WizardStep {
@@ -20,6 +23,36 @@ export interface WizardStep {
   title: string;
   description: string;
   questions: WizardQuestion[];
+  visibleWhen?: (answers: WizardAnswers) => boolean;
 }
 
-export type WizardAnswers = Record<string, string | string[]>;
+export type RiskLevel = 'critical' | 'high' | 'medium' | 'low' | 'unknown';
+
+export interface RiskFinding {
+  topic: string;
+  level: RiskLevel;
+  summary: string;
+  detail?: string;
+  legalBasis?: string;
+}
+
+export interface Recommendation {
+  priority: number;
+  ahsStep: string;
+  action: string;
+  why: string;
+  deadline?: string;
+  legalBasis?: string;
+}
+
+export interface RiskAssessmentResult {
+  overallLevel: RiskLevel;
+  findings: RiskFinding[];
+  recommendations: Recommendation[];
+  dataGaps: string[];
+}
+
+export interface WizardConfig {
+  steps: WizardStep[];
+  assessRisk?: (answers: WizardAnswers) => RiskAssessmentResult;
+}

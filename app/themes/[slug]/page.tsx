@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { themes } from '@/lib/themes';
-import { wizardConfigs } from '@/lib/wizard-configs';
+import { getWizardConfig } from '@/lib/wizard-configs';
 import ThemeWizard from '@/components/ThemeWizard';
 import type { ThemeSlug } from '@/lib/themes';
 
@@ -11,7 +11,9 @@ type Props = {
 };
 
 export function generateStaticParams() {
-  return themes.map((theme) => ({ slug: theme.slug }));
+  return themes
+    .filter((theme) => theme.slug !== 'hazardous-substances')
+    .map((theme) => ({ slug: theme.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -30,7 +32,8 @@ export default async function ThemePage({ params }: Props) {
 
   if (!theme) notFound();
 
-  const wizardSteps = wizardConfigs[theme.slug as ThemeSlug];
+  const themeSlug = theme.slug as ThemeSlug;
+  const config = getWizardConfig(themeSlug);
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
@@ -68,10 +71,8 @@ export default async function ThemePage({ params }: Props) {
 
       {/* Step count indicator */}
       <div className="mt-8 flex items-center gap-2">
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-semibold ${theme.badgeClass}`}
-        >
-          {wizardSteps.length} stappen
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${theme.badgeClass}`}>
+          tot {config.steps.length} stappen
         </span>
         <span className="text-xs text-zinc-400 dark:text-zinc-500">
           Verplichte vragen zijn gemarkeerd met een *
@@ -79,7 +80,7 @@ export default async function ThemePage({ params }: Props) {
       </div>
 
       {/* Wizard */}
-      <ThemeWizard steps={wizardSteps} themeName={theme.name} />
+      <ThemeWizard slug={themeSlug} themeName={theme.name} />
     </main>
   );
 }
