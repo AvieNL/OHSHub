@@ -1822,7 +1822,263 @@ function buildReport(inv: SoundInvestigation): string {
   return parts.filter(Boolean).join('\n');
 }
 
+// ─── Measurement Plan PDF ──────────────────────────────────────────────────────
+
+const PLAN_CSS = `
+  @page { size: A4; margin: 14mm 14mm 18mm 14mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; line-height: 1.45; color: #111; background: #fff; }
+
+  .plan-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2pt solid #f97316; padding-bottom: 4mm; margin-bottom: 5mm; }
+  .logo { font-size: 15pt; font-weight: 800; }
+  .logo span { color: #f97316; }
+  .doc-right { text-align: right; }
+  .doc-title { font-size: 12.5pt; font-weight: 700; margin-bottom: 1mm; }
+  .doc-sub { font-size: 8pt; color: #666; }
+
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1mm 6mm; border: 0.5pt solid #ddd; border-radius: 1.5mm; padding: 3mm; background: #fafafa; margin-bottom: 5mm; font-size: 8.5pt; }
+  .meta-row { display: flex; gap: 1.5mm; }
+  .meta-label { font-weight: 700; color: #555; white-space: nowrap; min-width: 24mm; }
+
+  h2 { font-size: 10pt; font-weight: 700; background: #f97316; color: #fff; padding: 1.5mm 4mm; margin: 5mm 0 3mm 0; border-radius: 1mm; }
+  h3 { font-size: 9pt; font-weight: 700; border-left: 3pt solid #f97316; padding-left: 2.5mm; margin: 4mm 0 2mm 0; }
+
+  .req-box { border: 0.5pt solid #fb923c; border-radius: 1.5mm; padding: 2mm 3mm; margin: 0 0 3mm 0; font-size: 7.5pt; line-height: 1.5; background: #fff7ed; }
+  .req-box.green { border-color: #86efac; background: #f0fdf4; }
+  .req-box strong { color: #c2410c; }
+  .req-box.green strong { color: #166534; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 7.5pt; margin-bottom: 3mm; }
+  th { background: #f4f4f5; border: 0.5pt solid #aaa; padding: 1.5mm 2mm; font-size: 7pt; font-weight: 700; text-align: left; white-space: nowrap; }
+  th.center { text-align: center; }
+  td { border: 0.5pt solid #bbb; padding: 0.5mm 2mm; height: 9mm; vertical-align: middle; }
+  td.idx { width: 7mm; text-align: center; color: #999; font-size: 7pt; background: #fafafa; }
+
+  .note-lines { margin-top: 3mm; }
+  .note-line { border-bottom: 0.5pt solid #ccc; height: 9mm; margin-bottom: 1.5mm; }
+  .note-label { font-size: 7.5pt; font-weight: 700; color: #555; margin-bottom: 1.5mm; }
+
+  .sign-block { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; margin-top: 8mm; }
+  .sign-box { border-top: 0.5pt solid #555; padding-top: 1.5mm; font-size: 7.5pt; color: #555; }
+
+  .plan-footer { margin-top: 6mm; padding-top: 3mm; border-top: 0.5pt solid #ddd; font-size: 7pt; color: #999; text-align: right; }
+  .page-break { page-break-before: always; }
+`;
+
+function fmtMinutes(m: number): string {
+  if (m <= 0) return '—';
+  if (m < 60) return `${Math.round(m)} min`;
+  const h = Math.floor(m / 60);
+  const rem = Math.round(m % 60);
+  return rem > 0 ? `${h} h ${rem} min` : `${h} h`;
+}
+
+function buildMeasurementPlan(inv: SoundInvestigation): string {
+  const { scope, hegs, tasks, instruments, investigators } = inv;
+  const measurementSeries = inv.measurementSeries ?? [];
+  const today = new Date().toLocaleDateString('nl-NL', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const strategyLabel: Record<string, string> = {
+    'task-based': 'Taakgericht (Strategie 1, §9)',
+    'job-based':  'Functiegericht (Strategie 2, §10)',
+    'full-day':   'Volledige dag (Strategie 3, §11)',
+  };
+
+  const instrLine = (id: string): string => {
+    const instr = instruments.find((i) => i.id === id);
+    if (!instr) return '—';
+    return esc([instr.manufacturer, instr.model, instr.serialNumber].filter(Boolean).join(' ') || instr.type);
+  };
+
+  const instrList = instruments.length > 0
+    ? instruments.map((i, n) =>
+        `${n + 1}. ${esc([i.manufacturer, i.model, i.serialNumber].filter(Boolean).join(' ') || i.type)}`
+      ).join(' &nbsp;|&nbsp; ')
+    : '—';
+
+  const header = `
+    <div class="plan-header">
+      <div><div class="logo">OHS<span>Hub</span></div><div class="doc-sub">ohs-hub.vercel.app</div></div>
+      <div class="doc-right">
+        <div class="doc-title">Meetplan — Geluidblootstelling</div>
+        <div class="doc-sub">NEN-EN-ISO 9612:2025 — Veldregistratieformulier</div>
+        <div class="doc-sub">Aangemaakt: ${today}</div>
+      </div>
+    </div>`;
+
+  const investigatorNames = investigators.map((p) => esc(p.name || '—')).join(', ') || '—';
+  const meta = `
+    <div class="meta-grid">
+      <div class="meta-row"><div class="meta-label">Onderzoek:</div><div>${esc(inv.name)}</div></div>
+      <div class="meta-row"><div class="meta-label">Bedrijf:</div><div>${esc(scope.companyName)}</div></div>
+      <div class="meta-row"><div class="meta-label">Locatie:</div><div>${esc(scope.workplaceName)}</div></div>
+      <div class="meta-row"><div class="meta-label">Onderzoeker(s):</div><div>${investigatorNames}</div></div>
+      <div class="meta-row" style="grid-column:span 2"><div class="meta-label">Instrument(en):</div><div>${instrList}</div></div>
+    </div>`;
+
+  const measRow = (i: number) => `
+    <tr>
+      <td class="idx">${i}</td>
+      <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+    </tr>`;
+
+  const measHead = (includeTask: boolean) => `
+    <tr>
+      <th class="center" style="width:7mm">#</th>
+      <th style="width:20mm">Datum</th>
+      <th style="width:28mm">Medewerker</th>
+      <th style="width:12mm">Reeks nr.</th>
+      ${includeTask ? '' : ''}
+      <th style="width:14mm">Start</th>
+      <th style="width:14mm">Einde</th>
+      <th style="width:16mm">Duur (min)</th>
+      <th style="width:22mm">L<sub>p,A,eqT</sub> (dB)</th>
+      <th style="width:22mm">L<sub>p,Cpeak</sub> (dB)</th>
+      <th>Opmerkingen / OB</th>
+    </tr>`;
+
+  const calibHead = `
+    <tr>
+      <th class="center" style="width:9mm">Reeks</th>
+      <th style="width:46mm">Instrument (fabr. / model / nr.)</th>
+      <th style="width:20mm">Voorkal. tijd</th>
+      <th style="width:20mm">Voorkal. (dB)</th>
+      <th style="width:20mm">Nakal. tijd</th>
+      <th style="width:20mm">Nakal. (dB)</th>
+      <th style="width:18mm">Drift (dB)</th>
+      <th>Voldoet? (&lt;&nbsp;0,5&nbsp;dB)</th>
+    </tr>`;
+
+  let hegSections = '';
+
+  hegs.forEach((heg, hegIdx) => {
+    const hegTasks  = tasks.filter((t) => t.hegId === heg.id);
+    const hegSeries = measurementSeries.filter((s) => s.hegId === heg.id);
+    const calibCount = Math.max(hegSeries.length, 3);
+
+    const hegMeta = `
+      <h2>${hegIdx + 1}. HEG: ${esc(heg.name)}</h2>
+      <div class="meta-grid">
+        <div class="meta-row"><div class="meta-label">Strategie:</div><div>${esc(strategyLabel[heg.strategy] ?? heg.strategy)}</div></div>
+        <div class="meta-row"><div class="meta-label">Medewerkers:</div><div>${heg.workerCount} personen</div></div>
+        <div class="meta-row"><div class="meta-label">T<sub>e</sub> (werkdag):</div><div>${fmtMinutes(heg.effectiveDayHours * 60)}</div></div>
+        <div class="meta-row"><div class="meta-label">Functiomschrijving:</div><div>${esc(heg.jobTitle)}</div></div>
+      </div>`;
+
+    let tables = '';
+
+    if (heg.strategy === 'task-based') {
+      const totalMin = hegTasks.reduce((s, t) => s + 3 * Math.max(t.durationHours * 60, 5), 0);
+      tables += `
+        <div class="req-box">
+          <strong>NEN-EN-ISO 9612 §9.3.2 / Arbobesluit art. 6.9</strong> &nbsp;—&nbsp;
+          Per taak: ≥&nbsp;<strong>3 metingen</strong>, elk ≥&nbsp;max(T<sub>m</sub>,&nbsp;5&nbsp;min).
+          Minimale totale meettijd voor deze HEG: ≥&nbsp;<strong>${fmtMinutes(totalMin)}</strong>.
+          Kalibreer vóór en ná elke meetserie (§12.2). Drift &gt; 0,5&nbsp;dB: reeks uitsluiten.
+        </div>`;
+
+      if (hegTasks.length === 0) {
+        tables += `<p style="color:#888;font-size:8pt;margin:2mm 0;">Geen taken gedefinieerd in stap 5.</p>`;
+      } else {
+        for (const task of hegTasks) {
+          const tmMin      = task.durationHours * 60;
+          const minPerMeas = Math.max(tmMin, 5);
+          const normNote   = tmMin < 5 ? ' <em>(norm-min; taak &lt; 5 min)</em>' : '';
+          tables += `
+            <h3>Taak: ${esc(task.name || '(naamloos)')}</h3>
+            <div class="req-box green">
+              T<sub>m</sub> = <strong>${fmtMinutes(tmMin)}</strong> &nbsp;·&nbsp;
+              Min. meetduur / meting: ≥&nbsp;<strong>${fmtMinutes(minPerMeas)}</strong>${normNote} &nbsp;·&nbsp;
+              Min. aantal: ≥&nbsp;<strong>3</strong> &nbsp;·&nbsp;
+              Min. totaal: ≥&nbsp;<strong>${fmtMinutes(3 * minPerMeas)}</strong>
+            </div>
+            <table><thead>${measHead(false)}</thead><tbody>
+              ${[1,2,3,4,5].map(measRow).join('')}
+            </tbody></table>`;
+        }
+      }
+    } else {
+      const teMin    = heg.effectiveDayHours * 60;
+      const secRef   = heg.strategy === 'job-based' ? '§10.4' : '§11.4';
+      tables += `
+        <div class="req-box">
+          <strong>NEN-EN-ISO 9612 ${secRef} / Arbobesluit art. 6.9</strong> &nbsp;—&nbsp;
+          ≥&nbsp;<strong>3 steekproeven</strong>, elk de volledige werkdag
+          (T<sub>e</sub> = <strong>${fmtMinutes(teMin)}</strong>).
+          Minimale totale meettijd: ≥&nbsp;<strong>${fmtMinutes(3 * teMin)}</strong>.
+          Kalibreer vóór en ná elke meetserie (§12.2).
+        </div>
+        <table><thead>${measHead(false)}</thead><tbody>
+          ${[1,2,3,4,5].map(measRow).join('')}
+        </tbody></table>`;
+    }
+
+    // Calibration table
+    const calibRows = Array.from({ length: calibCount }, (_, i) => {
+      const series = hegSeries[i];
+      const instrLabel = series ? instrLine(series.instrumentId) : '';
+      return `<tr>
+        <td class="idx">${i + 1}</td>
+        <td>${instrLabel}</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td>
+      </tr>`;
+    }).join('');
+
+    const calibSection = `
+      <h3>Kalibratie meetreeksen (§12.2 NEN-EN-ISO 9612)</h3>
+      <div class="req-box">
+        Vóór en ná elke meetserie een veldkalibratie met gekalibreerde geluidkalibrateur. Drift &gt; 0,5&nbsp;dB → reeks <strong>uitsluiten</strong>.
+      </div>
+      <table><thead>${calibHead}</thead><tbody>${calibRows}</tbody></table>`;
+
+    const notes = `
+      <div class="note-lines">
+        <div class="note-label">Opmerkingen / afwijkingen van representatieve omstandigheden (§15.d.4):</div>
+        <div class="note-line"></div>
+        <div class="note-line"></div>
+      </div>`;
+
+    hegSections += `${hegIdx > 0 ? '<div class="page-break"></div>' : ''}${hegMeta}${tables}${calibSection}${notes}`;
+  });
+
+  const signatures = `
+    <div class="sign-block">
+      <div class="sign-box">Handtekening onderzoeker &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Datum: _______________</div>
+      <div class="sign-box">Handtekening leidinggevende &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Datum: _______________</div>
+    </div>`;
+
+  const footer = `<div class="plan-footer">OHSHub — NEN-EN-ISO 9612:2025 / Arbobesluit art. 6.6–6.9 — Gegenereerd op ${today}</div>`;
+
+  return [header, meta, hegSections, signatures, footer].join('\n');
+}
+
 // ─── Export ────────────────────────────────────────────────────────────────────
+
+export function downloadMeasurementPlanPDF(inv: SoundInvestigation): void {
+  const html = `<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>${esc(inv.name)} — Meetplan</title>
+<style>${PLAN_CSS}</style>
+</head>
+<body>
+${buildMeasurementPlan(inv)}
+<script>setTimeout(function() { window.print(); }, 300);</script>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const win  = window.open(url, '_blank');
+  if (!win) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${inv.name.replace(/\s+/g, '-').toLowerCase().slice(0, 50)}-meetplan.html`;
+    a.click();
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
 
 export function downloadSoundPDF(inv: SoundInvestigation): void {
   const html = `<!DOCTYPE html>

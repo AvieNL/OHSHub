@@ -10,6 +10,7 @@ import type {
 } from '@/lib/sound-investigation-types';
 import { OCTAVE_BANDS } from '@/lib/sound-ppe';
 import { newSoundId } from '@/lib/sound-investigation-storage';
+import { downloadMeasurementPlanPDF } from '@/lib/sound-pdf-html';
 import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
 import { SectionRef } from '@/components/SectionRef';
@@ -926,15 +927,27 @@ export default function SoundStep6_Measurements({ investigation, onUpdate }: Pro
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 8 — Meetresultaten
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Leg per <Abbr id="HEG">HEG</Abbr> de meetreeksen vast (instrument + kalibratie) en voer de gemeten{' '}
-          <Formula math="L_{p,A,eqT}" />-waarden in. Voor taakgerichte meting per taak; voor functie- en volledigedagmeting per{' '}
-          <Abbr id="HEG">HEG</Abbr>. <Formula math="L_{p,Cpeak}" /> is optioneel.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            Stap 8 — Meetresultaten
+          </h2>
+          <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+            Leg per <Abbr id="HEG">HEG</Abbr> de meetreeksen vast (instrument + kalibratie) en voer de gemeten{' '}
+            <Formula math="L_{p,A,eqT}" />-waarden in. Voor taakgerichte meting per taak; voor functie- en volledigedagmeting per{' '}
+            <Abbr id="HEG">HEG</Abbr>. <Formula math="L_{p,Cpeak}" /> is optioneel.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => downloadMeasurementPlanPDF(investigation)}
+          className="shrink-0 flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+          Meetplan PDF
+        </button>
       </div>
 
       <InfoBox title="§9.2 / §9.3 / §12.2 / §15.d — Meetprocedure & eisen (NEN-EN-ISO 9612)">

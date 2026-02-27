@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Versiehistorie en informatie over OHSHub.',
 };
 
-const CURRENT_VERSION = '0.9.2';
+const CURRENT_VERSION = '0.9.3';
 
 const CHANGELOG: {
   version: string;
@@ -15,6 +15,19 @@ const CHANGELOG: {
   title: string;
   changes: string[];
 }[] = [
+  {
+    version: '0.9.3',
+    date: '2026-02-27',
+    type: 'patch',
+    title: 'Meetplan PDF — afdrukbaar veldregistratieformulier',
+    changes: [
+      'Knop "Meetplan PDF" toegevoegd aan stap 7 (Meetresultaten) van het geluidsonderzoek.',
+      'Genereert een afdrukbaar A4-formulier per HEG met lege invulrijen voor L_p,A,eqT, L_p,Cpeak, duur, medewerker en opmerkingen.',
+      'Per taak (strategie 1) of per HEG (strategie 2/3) staan de NEN-EN-ISO 9612-minimumeisen vermeld (§9.3.2 / §10.4 / §11.4).',
+      'Kalibratiestabel per meetreeks met kolommen voor voor- en nakalibratie, drift en voldoet-check (< 0,5 dB).',
+      'Ondertekeningsblok en opmerkingenregels voor afwijkingen van representatieve omstandigheden (§15.d.4).',
+    ],
+  },
   {
     version: '0.9.2',
     date: '2026-02-27',
