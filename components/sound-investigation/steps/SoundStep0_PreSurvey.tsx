@@ -255,23 +255,43 @@ function QuestionRow({
       </div>
 
       {q.isDuration && onDurationChange && (
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
-          {DURATION_OPTIONS.map((opt) => (
-            <label key={opt.value} className="flex cursor-pointer items-center gap-1.5 text-sm">
-              <input
-                type="radio"
-                name="exposureDuration"
-                checked={duration === opt.value}
-                onChange={() => onDurationChange(opt.value)}
-                className="accent-orange-500"
-              />
-              <span className="text-zinc-700 dark:text-zinc-300">{opt.label}</span>
-            </label>
-          ))}
+        <div className="mt-2">
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+            {DURATION_OPTIONS.map((opt) => (
+              <label key={opt.value} className="flex cursor-pointer items-center gap-1.5 text-sm">
+                <input
+                  type="radio"
+                  name="exposureDuration"
+                  checked={duration === opt.value}
+                  onChange={() => onDurationChange(opt.value)}
+                  className="accent-orange-500"
+                />
+                <span className="text-zinc-700 dark:text-zinc-300">{opt.label}</span>
+              </label>
+            ))}
+          </div>
+          <div className="mt-1.5 flex justify-end">
+            <button
+              type="button"
+              title="Toelichting toevoegen"
+              onClick={() => setShowNotes((v) => !v)}
+              className={`rounded p-1 text-xs transition ${
+                showNotes || response?.notes
+                  ? 'text-orange-500 dark:text-orange-400'
+                  : 'text-zinc-300 hover:text-zinc-500 dark:text-zinc-600 dark:hover:text-zinc-400'
+              }`}
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round"
+                  d="M7 8h10M7 12h6m-6 4h4M5 20l2.586-2.586A2 2 0 019 17H19a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
       )}
 
-      {(showNotes || response?.notes) && !q.isDuration && (
+      {(showNotes || response?.notes) && (
         <input
           type="text"
           value={response?.notes ?? ''}
