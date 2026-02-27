@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Versiehistorie en informatie over OHSHub.',
 };
 
-const CURRENT_VERSION = '0.9.3';
+const CURRENT_VERSION = '0.9.4';
 
 const CHANGELOG: {
   version: string;
@@ -15,6 +15,17 @@ const CHANGELOG: {
   title: string;
   changes: string[];
 }[] = [
+  {
+    version: '0.9.4',
+    date: '2026-02-27',
+    type: 'patch',
+    title: 'Meetduur-vereistentabel in stap 8 (Meetresultaten)',
+    changes: [
+      'Tabel "Meetduur-vereisten per HEG" toegevoegd aan stap 8 (Meetresultaten), boven de HEG-accordeons.',
+      'Toont per taak (strategie 1) of per HEG (strategie 2/3) de minimale meetduur per meting en het vereiste minimum aantal metingen.',
+      'Werkelijk ingevoerd aantal metingen wordt live bijgehouden met groen ✓ zodra aan het minimum is voldaan.',
+    ],
+  },
   {
     version: '0.9.3',
     date: '2026-02-27',

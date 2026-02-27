@@ -1008,6 +1008,112 @@ export default function SoundStep6_Measurements({ investigation, onUpdate }: Pro
         </div>
       </InfoBox>
 
+      {/* ── Meetduur-vereisten per HEG / taak ──────────────────────────────── */}
+      <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+        <div className="border-b border-zinc-100 px-4 py-2.5 dark:border-zinc-800">
+          <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+            Meetduur-vereisten per HEG — <SectionRef id="§9.3.2">§9.3.2</SectionRef> / <SectionRef id="§10.4">§10.4</SectionRef> / <SectionRef id="§11.4">§11.4</SectionRef> NEN-EN-ISO 9612
+          </p>
+        </div>
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="bg-zinc-50 dark:bg-zinc-800/50">
+              <th className="px-3 py-2 text-left font-medium text-zinc-500"><Abbr id="HEG">HEG</Abbr> / Taak</th>
+              <th className="px-3 py-2 text-right font-medium text-zinc-500">Duur</th>
+              <th className="px-3 py-2 text-right font-medium text-zinc-500">Min. duur / meting</th>
+              <th className="px-3 py-2 text-right font-medium text-zinc-500">Min. n</th>
+              <th className="px-3 py-2 text-right font-medium text-zinc-500">Min. totaal</th>
+              <th className="px-3 py-2 text-right font-medium text-zinc-500">Huidig n</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            {hegs.map((heg) => {
+              const hegTasks    = tasks.filter((t) => t.hegId === heg.id);
+              const hegMeas     = measurements.filter((m) => m.hegId === heg.id && !m.excluded);
+              const fmtM = (m: number) => m < 60 ? `${Math.round(m)} min` : `${Math.floor(m/60)} h${Math.round(m%60) > 0 ? ` ${Math.round(m%60)} min` : ''}`;
+
+              if (heg.strategy === 'task-based') {
+                const totalMin = hegTasks.reduce((s, t) => s + 3 * Math.max(t.durationHours * 60, 5), 0);
+                return (
+                  <>
+                    {/* HEG header row */}
+                    <tr key={heg.id} className="bg-zinc-50/60 dark:bg-zinc-800/20">
+                      <td colSpan={4} className="px-3 py-1.5 font-semibold text-zinc-700 dark:text-zinc-200">
+                        {heg.name} <span className="ml-1 font-normal text-zinc-400">(taakgericht)</span>
+                      </td>
+                      <td className="px-3 py-1.5 text-right font-mono font-semibold text-zinc-700 dark:text-zinc-200">
+                        ≥&nbsp;{fmtM(totalMin)}
+                      </td>
+                      <td className="px-3 py-1.5 text-right font-mono text-zinc-400">
+                        {hegMeas.length}
+                      </td>
+                    </tr>
+                    {/* Per-task rows */}
+                    {hegTasks.map((task) => {
+                      const tmMin      = task.durationHours * 60;
+                      const minPerMeas = Math.max(tmMin, 5);
+                      const taskMeas   = hegMeas.filter((m) => m.taskId === task.id);
+                      const ok         = taskMeas.length >= 3;
+                      return (
+                        <tr key={task.id}>
+                          <td className="px-3 py-1.5 pl-7 text-zinc-600 dark:text-zinc-300">
+                            {task.name || <span className="italic text-zinc-400">(naamloos)</span>}
+                          </td>
+                          <td className="px-3 py-1.5 text-right font-mono text-zinc-400">{fmtM(tmMin)}</td>
+                          <td className="px-3 py-1.5 text-right font-mono text-zinc-600 dark:text-zinc-300">
+                            ≥&nbsp;{fmtM(minPerMeas)}{tmMin < 5 && <span className="text-zinc-400">*</span>}
+                          </td>
+                          <td className="px-3 py-1.5 text-right font-mono text-zinc-500">≥&nbsp;3</td>
+                          <td className="px-3 py-1.5 text-right font-mono font-semibold text-zinc-700 dark:text-zinc-200">
+                            ≥&nbsp;{fmtM(3 * minPerMeas)}
+                          </td>
+                          <td className={`px-3 py-1.5 text-right font-mono font-semibold ${ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-500'}`}>
+                            {taskMeas.length}{ok ? ' ✓' : ''}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {hegTasks.length === 0 && (
+                      <tr key={`${heg.id}-empty`}>
+                        <td colSpan={6} className="px-3 py-1.5 pl-7 italic text-zinc-400">
+                          Geen taken — definieer taken in stap 5
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                );
+              } else {
+                const teMin   = heg.effectiveDayHours * 60;
+                const ok      = hegMeas.length >= 3;
+                const sRef    = heg.strategy === 'job-based' ? '§10.4' : '§11.4';
+                const sLabel  = heg.strategy === 'job-based' ? 'functiegericht' : 'volledige dag';
+                return (
+                  <tr key={heg.id}>
+                    <td className="px-3 py-1.5 font-semibold text-zinc-700 dark:text-zinc-200">
+                      {heg.name} <span className="ml-1 font-normal text-zinc-400">({sLabel}, <SectionRef id={sRef}>{sRef}</SectionRef>)</span>
+                    </td>
+                    <td className="px-3 py-1.5 text-right font-mono text-zinc-400">{fmtM(teMin)}</td>
+                    <td className="px-3 py-1.5 text-right font-mono text-zinc-600 dark:text-zinc-300">≥&nbsp;{fmtM(teMin)}</td>
+                    <td className="px-3 py-1.5 text-right font-mono text-zinc-500">≥&nbsp;3</td>
+                    <td className="px-3 py-1.5 text-right font-mono font-semibold text-zinc-700 dark:text-zinc-200">
+                      ≥&nbsp;{fmtM(3 * teMin)}
+                    </td>
+                    <td className={`px-3 py-1.5 text-right font-mono font-semibold ${ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-500'}`}>
+                      {hegMeas.length}{ok ? ' ✓' : ''}
+                    </td>
+                  </tr>
+                );
+              }
+            })}
+          </tbody>
+        </table>
+        {hegs.some((h) => h.strategy === 'task-based' && tasks.some((t) => t.hegId === h.id && t.durationHours * 60 < 5)) && (
+          <p className="border-t border-zinc-100 px-4 py-1.5 text-xs text-zinc-400 dark:border-zinc-800">
+            * Taakduur &lt; 5 min: norm-minimum van 5 min is van toepassing (§9.3.2).
+          </p>
+        )}
+      </div>
+
       <div className="space-y-4">
         {hegs.map((heg) => {
           const isOpen = openHEG === heg.id;
