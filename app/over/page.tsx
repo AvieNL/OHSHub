@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Versiehistorie en informatie over OHSHub.',
 };
 
-const CURRENT_VERSION = '0.9.5';
+const CURRENT_VERSION = '0.9.6';
 
 const CHANGELOG: {
   version: string;
@@ -15,6 +15,18 @@ const CHANGELOG: {
   title: string;
   changes: string[];
 }[] = [
+  {
+    version: '0.9.6',
+    date: '2026-02-27',
+    type: 'patch',
+    title: 'Meetplan PDF — rijenaantal per taak op basis van HEG-grootte',
+    changes: [
+      'HEG met 1 medewerker: 3 genummerde invulrijen per taak (norm-minimum §9.3.2).',
+      'HEG met meerdere medewerkers: 5 genummerde invulrijen per taak (aanbevolen aantal).',
+      'Altijd 2 extra lege rijen zonder nummer (gestippeld) voor eventuele aanvullende metingen.',
+      'Vereistenvak per taak toont nu ook het aanbevolen aantal bij meerdere medewerkers.',
+    ],
+  },
   {
     version: '0.9.5',
     date: '2026-02-27',
