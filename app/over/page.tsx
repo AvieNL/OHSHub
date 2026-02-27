@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Versiehistorie en informatie over OHSHub.',
 };
 
-const CURRENT_VERSION = '0.9.0';
+const CURRENT_VERSION = '0.9.1';
 
 const CHANGELOG: {
   version: string;
@@ -15,6 +15,16 @@ const CHANGELOG: {
   title: string;
   changes: string[];
 }[] = [
+  {
+    version: '0.9.1',
+    date: '2026-02-27',
+    type: 'patch',
+    title: 'Meetprocedure-handreiking in geluidsonderzoek',
+    changes: [
+      'Informatievak (§9.2 / §9.3 / §12.2 / §15.d NEN-EN-ISO 9612) toegevoegd aan stap 7 (Meetreeksen) en stap 8 (Statistieken) van het geluidsonderzoek.',
+      'Handreiking omvat: minimale meetduur (≥ 5 min), stabiliteitcriterium (0,2 dB / 30 s), microfoonpositie, representatieve meetomstandigheden en kalibratie-eisen.',
+    ],
+  },
   {
     version: '0.9.0',
     date: '2026-02-26',

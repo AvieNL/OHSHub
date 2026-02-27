@@ -937,21 +937,61 @@ export default function SoundStep6_Measurements({ investigation, onUpdate }: Pro
         </p>
       </div>
 
-      <InfoBox title="§12.2 / §15.d.5 / §9.3 — Meetprocedure & eisen">
-        <div className="space-y-1.5">
-          <p>
-            <SectionRef id="§12.2">§12.2</SectionRef> — <strong className="font-medium">Kalibratie per meetserie:</strong>{' '}
-            vóór en ná elke meetserie een veldkalibratie uitvoeren. Afwijking &gt; 0,5 dB → serie automatisch uitgesloten.
-            Bij tussentijdse aanpassing van het instrument: tussencalibratie vastleggen met reden.
-          </p>
-          <p>
-            <SectionRef id="§15.d.5">§15.d.5</SectionRef> — <strong className="font-medium">Afwijkingen:</strong>{' '}
-            noteer afwijkingen van normale werkomstandigheden bij elke meting via de OB-knop.
-          </p>
-          <p>
-            <SectionRef id="§9.3">§9.3</SectionRef> — <strong className="font-medium">Minimumaantal:</strong>{' '}
-            per taak ≥ 3 geldige metingen vereist; ≥ 5 aanbevolen bij meerdere medewerkers.
-          </p>
+      <InfoBox title="§9.2 / §9.3 / §12.2 / §15.d — Meetprocedure & eisen (NEN-EN-ISO 9612)">
+        <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+          {/* Meetduur */}
+          <div>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              Meetduur <SectionRef id="§9.3.2">§9.3.2</SectionRef>
+            </p>
+            <ul className="space-y-0.5 text-xs">
+              <li>→ Minimaal <strong>5 minuten</strong> per meting</li>
+              <li>→ Taak korter dan 5 min? Meet de <strong>volledige taak</strong></li>
+              <li>→ <strong>Stabiliteitcriterium:</strong> meting mag eerder stoppen als{' '}
+                <abbr title="Equivalent geluidniveau A-gewogen over meetduur" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">
+                  L<sub>p,A,eq</sub>
+                </abbr>{' '}
+                gedurende <strong>30 s niet meer dan 0,2 dB</strong> varieert (alleen bij stationaire bronnen)</li>
+              <li>→ Start <strong>ná aanlooptijd</strong> — wacht tot bron stabiel draait</li>
+            </ul>
+          </div>
+
+          {/* Meetpositie */}
+          <div>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              Meetpositie <SectionRef id="§9.2">§9.2</SectionRef>
+            </p>
+            <ul className="space-y-0.5 text-xs">
+              <li>→ Microfoon op <strong>oorhoogte medewerker</strong>, op ± 0,1–0,2 m van het oor</li>
+              <li>→ Medewerker in <strong>normale werkhouding</strong></li>
+              <li>→ Microfoon niet beschaduwd door hoofd of schouder</li>
+              <li>→ Windkap gebruiken bij luchtbeweging &gt; 1 m/s</li>
+            </ul>
+          </div>
+
+          {/* Omstandigheden */}
+          <div>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              Omstandigheden <SectionRef id="§9.3.1">§9.3.1</SectionRef> / <SectionRef id="§15.d.4">§15.d.4</SectionRef>
+            </p>
+            <ul className="space-y-0.5 text-xs">
+              <li>→ Meten tijdens <strong>representatieve, normale werkzaamheden</strong></li>
+              <li>→ Alle geluidbronnen actief die normaal aanwezig zijn</li>
+              <li>→ Afwijkingen vastleggen per meting via de <strong>OB-knop</strong> <SectionRef id="§15.d.5">§15.d.5</SectionRef></li>
+            </ul>
+          </div>
+
+          {/* Kalibratie & aantallen */}
+          <div>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              Kalibratie & aantallen <SectionRef id="§12.2">§12.2</SectionRef> / <SectionRef id="§9.3">§9.3</SectionRef>
+            </p>
+            <ul className="space-y-0.5 text-xs">
+              <li>→ <strong>Vóór en ná</strong> elke meetserie een veldkalibratie uitvoeren</li>
+              <li>→ Kalibratiefout &gt; 0,5 dB → serie <strong>automatisch uitgesloten</strong></li>
+              <li>→ Per taak: ≥ <strong>3 metingen</strong> verplicht; ≥ <strong>5 aanbevolen</strong> bij meerdere medewerkers</li>
+            </ul>
+          </div>
         </div>
       </InfoBox>
 
