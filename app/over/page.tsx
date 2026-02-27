@@ -13,6 +13,7 @@ const CHANGELOG: {
   date: string;
   type: 'major' | 'minor' | 'patch';
   title: string;
+  modules: string[];
   changes: string[];
 }[] = [
   {
@@ -20,6 +21,7 @@ const CHANGELOG: {
     date: '2026-02-27',
     type: 'patch',
     title: 'Meetplan PDF — rijenaantal per taak op basis van HEG-grootte',
+    modules: ['Geluid'],
     changes: [
       'HEG met 1 medewerker: 3 genummerde invulrijen per taak (norm-minimum §9.3.2).',
       'HEG met meerdere medewerkers: 5 genummerde invulrijen per taak (aanbevolen aantal).',
@@ -32,6 +34,7 @@ const CHANGELOG: {
     date: '2026-02-27',
     type: 'patch',
     title: 'Correctie meetduur-berekening (§9.3.2) + inklapbare tabel',
+    modules: ['Geluid'],
     changes: [
       'Bugfix: minimale meetduur per meting was omgekeerd berekend. Correct conform §9.3.2 NEN-EN-ISO 9612: T_m ≥ 5 min → min. 5 min per meting; T_m < 5 min → volledige taak meten.',
       'Gecorrigeerd in stap 8 (tabel), stap 9 (HEG-kaarten) en de Meetplan PDF.',
@@ -44,6 +47,7 @@ const CHANGELOG: {
     date: '2026-02-27',
     type: 'patch',
     title: 'Meetduur-vereistentabel in stap 8 (Meetresultaten)',
+    modules: ['Geluid'],
     changes: [
       'Tabel "Meetduur-vereisten per HEG" toegevoegd aan stap 8 (Meetresultaten), boven de HEG-accordeons.',
       'Toont per taak (strategie 1) of per HEG (strategie 2/3) de minimale meetduur per meting en het vereiste minimum aantal metingen.',
@@ -55,6 +59,7 @@ const CHANGELOG: {
     date: '2026-02-27',
     type: 'patch',
     title: 'Meetplan PDF — afdrukbaar veldregistratieformulier',
+    modules: ['Geluid'],
     changes: [
       'Knop "Meetplan PDF" toegevoegd aan stap 7 (Meetresultaten) van het geluidsonderzoek.',
       'Genereert een afdrukbaar A4-formulier per HEG met lege invulrijen voor L_p,A,eqT, L_p,Cpeak, duur, medewerker en opmerkingen.',
@@ -68,6 +73,7 @@ const CHANGELOG: {
     date: '2026-02-27',
     type: 'patch',
     title: 'Meetduur-overzicht per HEG en meetreeks in geluidsonderzoek',
+    modules: ['Geluid'],
     changes: [
       'Stap 8 (Statistieken) toont nu per HEG een meetduur-overzicht conform NEN-EN-ISO 9612 §9.3.2 / §10.4 / §11.4.',
       'Strategie 1 (taakgericht): vereiste minimum meetduur en aantal per taak (≥ max(T_m, 5 min) × ≥ 3), met werkelijk n en totaal per taak.',
@@ -81,6 +87,7 @@ const CHANGELOG: {
     date: '2026-02-27',
     type: 'patch',
     title: 'Meetprocedure-handreiking in geluidsonderzoek',
+    modules: ['Geluid'],
     changes: [
       'Informatievak (§9.2 / §9.3 / §12.2 / §15.d NEN-EN-ISO 9612) toegevoegd aan stap 7 (Meetreeksen) en stap 8 (Statistieken) van het geluidsonderzoek.',
       'Handreiking omvat: minimale meetduur (≥ 5 min), stabiliteitcriterium (0,2 dB / 30 s), microfoonpositie, representatieve meetomstandigheden en kalibratie-eisen.',
@@ -91,6 +98,7 @@ const CHANGELOG: {
     date: '2026-02-26',
     type: 'minor',
     title: 'Authenticatie, rollen en server-side opslag',
+    modules: ['Platform'],
     changes: [
       'Inloggen en registreren via e-mail en wachtwoord (Supabase Auth).',
       'Drie gebruikersrollen: admin, test-gebruiker en gebruiker — rol automatisch toegewezen bij registratie.',
@@ -108,6 +116,7 @@ const CHANGELOG: {
     date: '2026-02-26',
     type: 'minor',
     title: 'Placeholders: Trillingen, Biologische agentia, Verlichting',
+    modules: ['Trillingen', 'Biologische agentia', 'Verlichting'],
     changes: [
       'Nieuw thema "Trillingen" toegevoegd met volledige risico-inventarisatie wizard (HAV/WBV, Richtlijn 2002/44/EG, Arbobesluit art. 6.11a–6.11g).',
       'Placeholder-pagina voor Trillingen-onderzoeksinstrument: grenswaarden HAV/WBV, geplande 11 stappen (ISO 5349-1/2, ISO 2631-1).',
@@ -120,6 +129,7 @@ const CHANGELOG: {
     date: '2026-02-26',
     type: 'minor',
     title: 'Fysieke belasting onderzoek (11 stappen)',
+    modules: ['Fysieke belasting'],
     changes: [
       '11-stappen workflow voor fysieke belastingonderzoek conform ISO 11228-1/2/3, EN 1005-3/4 en Arbobesluit art. 5.1–5.6.',
       'Vooronderzoek (18 gewogen vragen) met automatische meetaanbeveling per belastingtype.',
@@ -138,6 +148,7 @@ const CHANGELOG: {
     date: '2026-02-26',
     type: 'minor',
     title: 'Klimaatonderzoek (13 stappen)',
+    modules: ['Klimaat'],
     changes: [
       '13-stappen workflow voor klimaatonderzoek conform NEN-EN-27243, ISO 7933 (PHS), ISO 7730 (PMV/PPD) en Arbobesluit art. 3.1g/6.1.',
       'Vooronderzoek met WBGT-schatting en geautomatiseerde meetaanbeveling.',
@@ -156,6 +167,7 @@ const CHANGELOG: {
     date: '2026-02-25',
     type: 'minor',
     title: 'Dark mode & app-menu',
+    modules: ['Platform', 'Geluid'],
     changes: [
       'Schakelaar in de header voor dag- en nachtmodus (voorkeur wordt opgeslagen).',
       'App-menu met "Over de app" en placeholder voor Instellingen.',
@@ -169,6 +181,7 @@ const CHANGELOG: {
     date: '2026-02-20',
     type: 'minor',
     title: 'Arbeidsmiddelen, meetreeksen & respondenten',
+    modules: ['Geluid'],
     changes: [
       'Nieuwe Stap 5 — Arbeidsmiddelen: registreer voertuigen, machines en gereedschap met keurings- en onderhoudsstatus (Arbobesluit art. 7.18 / Machinerichtlijn 2006/42/EG).',
       'Taken kunnen nu worden gekoppeld aan een of meer arbeidsmiddelen.',
@@ -184,6 +197,7 @@ const CHANGELOG: {
     date: '2026-01-15',
     type: 'minor',
     title: 'Volledig geluidsonderzoek (10 stappen)',
+    modules: ['Geluid'],
     changes: [
       '10-stappen workflow voor geluidsonderzoek conform NEN-EN-ISO 9612:2025.',
       'Taakgebaseerde en functiegerichte meetstrategie.',
@@ -197,6 +211,7 @@ const CHANGELOG: {
     date: '2025-12-10',
     type: 'minor',
     title: 'Thema-wizards',
+    modules: ['Geluid', 'Bio-agentia', 'Gevaarlijke stoffen', 'Verlichting', 'Fysieke belasting', 'Klimaat'],
     changes: [
       '6 risico-inventarisatie wizards: Geluid, Bio-agentia, Gevaarlijke stoffen, Verlichting, Fysieke belasting, Klimaat.',
       'Wizard-engine met conditionele vragen, vertakking en risicobeoordeling.',
@@ -208,6 +223,7 @@ const CHANGELOG: {
     date: '2025-11-28',
     type: 'minor',
     title: 'Initiële release',
+    modules: ['Platform'],
     changes: [
       'Next.js 16 (App Router, Turbopack) projectstructuur.',
       'Basis navigatie, themaselectie en statische paginastructuur.',
@@ -215,6 +231,18 @@ const CHANGELOG: {
     ],
   },
 ];
+
+const MODULE_BADGE: Record<string, string> = {
+  'Geluid':              'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400',
+  'Klimaat':             'bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-400',
+  'Fysieke belasting':   'bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400',
+  'Gevaarlijke stoffen': 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400',
+  'Trillingen':          'bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-400',
+  'Biologische agentia': 'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-400',
+  'Verlichting':         'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/50 dark:text-yellow-400',
+  'Bio-agentia':         'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-400',
+  'Platform':            'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
+};
 
 const TYPE_BADGE: Record<'major' | 'minor' | 'patch', string> = {
   major: 'bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-400',
@@ -300,6 +328,14 @@ export default function OverPage() {
                   {release.type}
                 </span>
                 <span className="text-xs text-zinc-400">{release.date}</span>
+                {release.modules.map((mod) => (
+                  <span
+                    key={mod}
+                    className={`rounded px-2 py-0.5 text-xs font-medium ${MODULE_BADGE[mod] ?? 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}
+                  >
+                    {mod}
+                  </span>
+                ))}
               </div>
 
               <p className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
