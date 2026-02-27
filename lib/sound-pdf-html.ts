@@ -1922,6 +1922,12 @@ function buildMeasurementPlan(inv: SoundInvestigation): string {
       <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
     </tr>`;
 
+  const blankRow = `
+    <tr style="border-top:0.5pt dashed #ccc">
+      <td class="idx" style="color:#ccc">+</td>
+      <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+    </tr>`;
+
   const measHead = (includeTask: boolean) => `
     <tr>
       <th class="center" style="width:7mm">#</th>
@@ -1980,20 +1986,23 @@ function buildMeasurementPlan(inv: SoundInvestigation): string {
       if (hegTasks.length === 0) {
         tables += `<p style="color:#888;font-size:8pt;margin:2mm 0;">Geen taken gedefinieerd in stap 5.</p>`;
       } else {
+        const nRows = heg.workerCount === 1 ? 3 : 5;
         for (const task of hegTasks) {
           const tmMin      = task.durationHours * 60;
           const minPerMeas = tmMin >= 5 ? 5 : tmMin;
           const normNote   = tmMin < 5 ? ' <em>(volledige taak; T<sub>m</sub> &lt; 5 min)</em>' : '';
+          const recNote    = heg.workerCount === 1 ? '≥&nbsp;<strong>3</strong>' : '≥&nbsp;<strong>3</strong> (aanbevolen: <strong>5</strong>)';
           tables += `
             <h3>Taak: ${esc(task.name || '(naamloos)')}</h3>
             <div class="req-box green">
               T<sub>m</sub> = <strong>${fmtMinutes(tmMin)}</strong> &nbsp;·&nbsp;
               Min. meetduur / meting: ≥&nbsp;<strong>${fmtMinutes(minPerMeas)}</strong>${normNote} &nbsp;·&nbsp;
-              Min. aantal: ≥&nbsp;<strong>3</strong> &nbsp;·&nbsp;
-              Min. totaal: ≥&nbsp;<strong>${fmtMinutes(3 * minPerMeas)}</strong>
+              Aantal: ${recNote} &nbsp;·&nbsp;
+              Min. totaal: ≥&nbsp;<strong>${fmtMinutes(nRows * minPerMeas)}</strong>
             </div>
             <table><thead>${measHead(false)}</thead><tbody>
-              ${[1,2,3,4,5,6,7].map(measRow).join('')}
+              ${Array.from({ length: nRows }, (_, i) => measRow(i + 1)).join('')}
+              ${blankRow}${blankRow}
             </tbody></table>`;
         }
       }
