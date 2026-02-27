@@ -1993,7 +1993,7 @@ function buildMeasurementPlan(inv: SoundInvestigation): string {
               Min. totaal: ≥&nbsp;<strong>${fmtMinutes(3 * minPerMeas)}</strong>
             </div>
             <table><thead>${measHead(false)}</thead><tbody>
-              ${[1,2,3,4,5].map(measRow).join('')}
+              ${[1,2,3,4,5,6,7].map(measRow).join('')}
             </tbody></table>`;
         }
       }
