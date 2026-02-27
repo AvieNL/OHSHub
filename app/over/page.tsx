@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Versiehistorie en informatie over OHSHub.',
 };
 
-const CURRENT_VERSION = '0.9.4';
+const CURRENT_VERSION = '0.9.5';
 
 const CHANGELOG: {
   version: string;
@@ -15,6 +15,18 @@ const CHANGELOG: {
   title: string;
   changes: string[];
 }[] = [
+  {
+    version: '0.9.5',
+    date: '2026-02-27',
+    type: 'patch',
+    title: 'Correctie meetduur-berekening (§9.3.2) + inklapbare tabel',
+    changes: [
+      'Bugfix: minimale meetduur per meting was omgekeerd berekend. Correct conform §9.3.2 NEN-EN-ISO 9612: T_m ≥ 5 min → min. 5 min per meting; T_m < 5 min → volledige taak meten.',
+      'Gecorrigeerd in stap 8 (tabel), stap 9 (HEG-kaarten) en de Meetplan PDF.',
+      'Voetnoot aangepast: "* Taakduur < 5 min: meet de volledige taak".',
+      'Meetduur-vereistentabel in stap 8 is nu inklapbaar.',
+    ],
+  },
   {
     version: '0.9.4',
     date: '2026-02-27',

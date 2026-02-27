@@ -1968,11 +1968,11 @@ function buildMeasurementPlan(inv: SoundInvestigation): string {
     let tables = '';
 
     if (heg.strategy === 'task-based') {
-      const totalMin = hegTasks.reduce((s, t) => s + 3 * Math.max(t.durationHours * 60, 5), 0);
+      const totalMin = hegTasks.reduce((s, t) => { const tm = t.durationHours * 60; return s + 3 * (tm >= 5 ? 5 : tm); }, 0);
       tables += `
         <div class="req-box">
           <strong>NEN-EN-ISO 9612 §9.3.2 / Arbobesluit art. 6.9</strong> &nbsp;—&nbsp;
-          Per taak: ≥&nbsp;<strong>3 metingen</strong>, elk ≥&nbsp;max(T<sub>m</sub>,&nbsp;5&nbsp;min).
+          Per taak: ≥&nbsp;<strong>3 metingen</strong>, elk ≥&nbsp;<strong>5 min</strong> (of volledige taak als T<sub>m</sub> &lt; 5 min).
           Minimale totale meettijd voor deze HEG: ≥&nbsp;<strong>${fmtMinutes(totalMin)}</strong>.
           Kalibreer vóór en ná elke meetserie (§12.2). Drift &gt; 0,5&nbsp;dB: reeks uitsluiten.
         </div>`;
@@ -1982,8 +1982,8 @@ function buildMeasurementPlan(inv: SoundInvestigation): string {
       } else {
         for (const task of hegTasks) {
           const tmMin      = task.durationHours * 60;
-          const minPerMeas = Math.max(tmMin, 5);
-          const normNote   = tmMin < 5 ? ' <em>(norm-min; taak &lt; 5 min)</em>' : '';
+          const minPerMeas = tmMin >= 5 ? 5 : tmMin;
+          const normNote   = tmMin < 5 ? ' <em>(volledige taak; T<sub>m</sub> &lt; 5 min)</em>' : '';
           tables += `
             <h3>Taak: ${esc(task.name || '(naamloos)')}</h3>
             <div class="req-box green">

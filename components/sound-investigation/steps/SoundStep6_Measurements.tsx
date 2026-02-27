@@ -896,6 +896,7 @@ export default function SoundStep6_Measurements({ investigation, onUpdate }: Pro
   const { hegs, tasks, measurements, instruments } = investigation;
   const measurementSeries = investigation.measurementSeries ?? [];
   const [openHEG, setOpenHEG] = useState<string | null>(hegs[0]?.id ?? null);
+  const [durOpen, setDurOpen] = useState(false);
 
   const instrumentOptions = instruments.map((i) => ({
     id: i.id,
@@ -1009,13 +1010,20 @@ export default function SoundStep6_Measurements({ investigation, onUpdate }: Pro
       </InfoBox>
 
       {/* ── Meetduur-vereisten per HEG / taak ──────────────────────────────── */}
-      <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
-        <div className="border-b border-zinc-100 px-4 py-2.5 dark:border-zinc-800">
-          <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+      <div className="rounded-lg border border-zinc-200 dark:border-zinc-700">
+        <button
+          type="button"
+          onClick={() => setDurOpen((o) => !o)}
+          className="flex w-full items-center justify-between px-4 py-2.5 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+        >
+          <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
             Meetduur-vereisten per HEG — <SectionRef id="§9.3.2">§9.3.2</SectionRef> / <SectionRef id="§10.4">§10.4</SectionRef> / <SectionRef id="§11.4">§11.4</SectionRef> NEN-EN-ISO 9612
-          </p>
-        </div>
-        <table className="w-full text-xs">
+          </span>
+          <svg className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform ${durOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {durOpen && <table className="w-full text-xs border-t border-zinc-100 dark:border-zinc-800">
           <thead>
             <tr className="bg-zinc-50 dark:bg-zinc-800/50">
               <th className="px-3 py-2 text-left font-medium text-zinc-500"><Abbr id="HEG">HEG</Abbr> / Taak</th>
@@ -1033,7 +1041,7 @@ export default function SoundStep6_Measurements({ investigation, onUpdate }: Pro
               const fmtM = (m: number) => m < 60 ? `${Math.round(m)} min` : `${Math.floor(m/60)} h${Math.round(m%60) > 0 ? ` ${Math.round(m%60)} min` : ''}`;
 
               if (heg.strategy === 'task-based') {
-                const totalMin = hegTasks.reduce((s, t) => s + 3 * Math.max(t.durationHours * 60, 5), 0);
+                const totalMin = hegTasks.reduce((s, t) => { const tm = t.durationHours * 60; return s + 3 * (tm >= 5 ? 5 : tm); }, 0);
                 return (
                   <>
                     {/* HEG header row */}
@@ -1051,7 +1059,7 @@ export default function SoundStep6_Measurements({ investigation, onUpdate }: Pro
                     {/* Per-task rows */}
                     {hegTasks.map((task) => {
                       const tmMin      = task.durationHours * 60;
-                      const minPerMeas = Math.max(tmMin, 5);
+                      const minPerMeas = tmMin >= 5 ? 5 : tmMin;
                       const taskMeas   = hegMeas.filter((m) => m.taskId === task.id);
                       const ok         = taskMeas.length >= 3;
                       return (
@@ -1106,10 +1114,10 @@ export default function SoundStep6_Measurements({ investigation, onUpdate }: Pro
               }
             })}
           </tbody>
-        </table>
-        {hegs.some((h) => h.strategy === 'task-based' && tasks.some((t) => t.hegId === h.id && t.durationHours * 60 < 5)) && (
+        </table>}
+        {durOpen && hegs.some((h) => h.strategy === 'task-based' && tasks.some((t) => t.hegId === h.id && t.durationHours * 60 < 5)) && (
           <p className="border-t border-zinc-100 px-4 py-1.5 text-xs text-zinc-400 dark:border-zinc-800">
-            * Taakduur &lt; 5 min: norm-minimum van 5 min is van toepassing (§9.3.2).
+            * Taakduur &lt; 5 min: meet de volledige taak (§9.3.2).
           </p>
         )}
       </div>

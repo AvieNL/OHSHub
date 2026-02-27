@@ -80,7 +80,7 @@ function MeasurementDurationPlan({
     const actualTotal = seriesMeas.reduce((sum, m) => sum + (m.durationMin ?? 0), 0);
     const expectedPerMeas =
       heg.strategy === 'task-based'
-        ? task ? Math.max(task.durationHours * 60, 5) : 5
+        ? task ? (task.durationHours * 60 >= 5 ? 5 : task.durationHours * 60) : 5
         : heg.effectiveDayHours * 60;
     return {
       label: `Reeks ${idx + 1}`,
@@ -97,7 +97,7 @@ function MeasurementDurationPlan({
     if (hegTasks.length === 0) return null;
 
     const totalMinRequired = hegTasks.reduce(
-      (sum, t) => sum + 3 * Math.max(t.durationHours * 60, 5),
+      (sum, t) => { const tm = t.durationHours * 60; return sum + 3 * (tm >= 5 ? 5 : tm); },
       0,
     );
     const hasNormMin = hegTasks.some((t) => t.durationHours * 60 < 5);
@@ -124,7 +124,7 @@ function MeasurementDurationPlan({
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {hegTasks.map((task) => {
                 const tmMin      = task.durationHours * 60;
-                const minPerMeas = Math.max(tmMin, 5);
+                const minPerMeas = tmMin >= 5 ? 5 : tmMin;
                 const minTotal   = 3 * minPerMeas;
                 const taskMeas   = hegMeas.filter((m) => m.taskId === task.id);
                 const actualN    = taskMeas.length;
@@ -201,7 +201,7 @@ function MeasurementDurationPlan({
 
         {hasNormMin && (
           <p className="text-xs text-zinc-400">
-            * Taakduur &lt; 5 min: norm-minimum van 5 min is van toepassing (§9.3.2).
+            * Taakduur &lt; 5 min: meet de volledige taak (§9.3.2).
           </p>
         )}
       </div>
