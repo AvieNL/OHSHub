@@ -1,7 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { SoundInvestigation, SoundStatistics } from '@/lib/sound-investigation-types';
+import type {
+  SoundInvestigation,
+  SoundStatistics,
+  SoundHEG,
+  SoundTask,
+  SoundMeasurement,
+  MeasurementSeries,
+} from '@/lib/sound-investigation-types';
 import { computeAllStatistics } from '@/lib/sound-stats';
 import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
@@ -39,6 +46,247 @@ const VERDICT_COLORS = {
   },
 };
 
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
+function formatMin(m: number): string {
+  if (m <= 0) return '—';
+  if (m < 60) return `${Math.round(m)} min`;
+  const h = Math.floor(m / 60);
+  const rem = Math.round(m % 60);
+  return rem > 0 ? `${h} h ${rem} min` : `${h} h`;
+}
+
+// ─── MeasurementDurationPlan ───────────────────────────────────────────────────
+
+function MeasurementDurationPlan({
+  heg,
+  tasks,
+  measurements,
+  measurementSeries,
+}: {
+  heg: SoundHEG;
+  tasks: SoundTask[];
+  measurements: SoundMeasurement[];
+  measurementSeries: MeasurementSeries[];
+}) {
+  const hegSeries = measurementSeries.filter((s) => s.hegId === heg.id);
+  const hegMeas   = measurements.filter((m) => m.hegId === heg.id && !m.excluded);
+
+  // Per-series rows — one row per MeasurementSeries
+  const seriesRows = hegSeries.map((series, idx) => {
+    const task = tasks.find((t) => t.id === series.taskId);
+    const seriesMeas = hegMeas.filter((m) => m.seriesId === series.id);
+    const hasActual  = seriesMeas.some((m) => m.durationMin != null);
+    const actualTotal = seriesMeas.reduce((sum, m) => sum + (m.durationMin ?? 0), 0);
+    const expectedPerMeas =
+      heg.strategy === 'task-based'
+        ? task ? Math.max(task.durationHours * 60, 5) : 5
+        : heg.effectiveDayHours * 60;
+    return {
+      label: `Reeks ${idx + 1}`,
+      taskName: heg.strategy === 'task-based' ? (task?.name ?? '(onbekende taak)') : null,
+      n: seriesMeas.length,
+      expectedPerMeas,
+      actualTotal: hasActual ? actualTotal : null,
+    };
+  });
+
+  // ── Strategy 1 — task-based ──────────────────────────────────────────────────
+  if (heg.strategy === 'task-based') {
+    const hegTasks = tasks.filter((t) => t.hegId === heg.id);
+    if (hegTasks.length === 0) return null;
+
+    const totalMinRequired = hegTasks.reduce(
+      (sum, t) => sum + 3 * Math.max(t.durationHours * 60, 5),
+      0,
+    );
+    const hasNormMin = hegTasks.some((t) => t.durationHours * 60 < 5);
+
+    return (
+      <div className="space-y-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+          Meetduur per taak — <SectionRef id="§9.3.2">§9.3.2</SectionRef> / Tabel 2 (NEN-EN-ISO 9612)
+        </p>
+
+        {/* Per-task minimum requirements */}
+        <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-zinc-50 dark:bg-zinc-800/50">
+                <th className="px-3 py-2 text-left font-medium text-zinc-500">Taak</th>
+                <th className="px-3 py-2 text-right font-medium text-zinc-500"><Formula math="T_m" /></th>
+                <th className="px-3 py-2 text-right font-medium text-zinc-500">Min. duur / meting</th>
+                <th className="px-3 py-2 text-right font-medium text-zinc-500">Min. n</th>
+                <th className="px-3 py-2 text-right font-medium text-zinc-500">Min. totaal</th>
+                <th className="px-3 py-2 text-right font-medium text-zinc-500">Werkelijk n</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              {hegTasks.map((task) => {
+                const tmMin      = task.durationHours * 60;
+                const minPerMeas = Math.max(tmMin, 5);
+                const minTotal   = 3 * minPerMeas;
+                const taskMeas   = hegMeas.filter((m) => m.taskId === task.id);
+                const actualN    = taskMeas.length;
+                const ok         = actualN >= 3;
+                return (
+                  <tr key={task.id}>
+                    <td className="px-3 py-2 text-zinc-800 dark:text-zinc-200">
+                      {task.name || <span className="italic text-zinc-400">(naamloos)</span>}
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono text-zinc-500">{formatMin(tmMin)}</td>
+                    <td className="px-3 py-2 text-right font-mono text-zinc-700 dark:text-zinc-300">
+                      ≥&nbsp;{formatMin(minPerMeas)}
+                      {tmMin < 5 && <span className="ml-0.5 text-zinc-400">*</span>}
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono text-zinc-500">≥&nbsp;3</td>
+                    <td className="px-3 py-2 text-right font-mono font-semibold text-zinc-900 dark:text-zinc-50">
+                      ≥&nbsp;{formatMin(minTotal)}
+                    </td>
+                    <td className={`px-3 py-2 text-right font-mono font-semibold ${
+                      ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'
+                    }`}>
+                      {actualN}&nbsp;{ok ? '✓' : '⚠'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr className="border-t border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-800/40">
+                <td colSpan={4} className="px-3 py-2 font-semibold text-zinc-600 dark:text-zinc-300">
+                  HEG-minimum totaal
+                </td>
+                <td className="px-3 py-2 text-right font-mono font-bold text-zinc-900 dark:text-zinc-50">
+                  ≥&nbsp;{formatMin(totalMinRequired)}
+                </td>
+                <td />
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        {/* Per meetreeks */}
+        {seriesRows.length > 0 && (
+          <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+            <p className="border-b border-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+              Per meetreeks
+            </p>
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-zinc-50/50 dark:bg-zinc-800/20">
+                  <th className="px-3 py-2 text-left font-medium text-zinc-500">Reeks</th>
+                  <th className="px-3 py-2 text-left font-medium text-zinc-500">Taak</th>
+                  <th className="px-3 py-2 text-right font-medium text-zinc-500">n</th>
+                  <th className="px-3 py-2 text-right font-medium text-zinc-500">Min. duur / meting</th>
+                  <th className="px-3 py-2 text-right font-medium text-zinc-500">Werkelijke totaalduur</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                {seriesRows.map((row) => (
+                  <tr key={row.label}>
+                    <td className="px-3 py-2 font-mono text-zinc-700 dark:text-zinc-300">{row.label}</td>
+                    <td className="px-3 py-2 text-zinc-500">{row.taskName ?? '—'}</td>
+                    <td className="px-3 py-2 text-right font-mono text-zinc-700 dark:text-zinc-300">{row.n}</td>
+                    <td className="px-3 py-2 text-right font-mono text-zinc-500">≥&nbsp;{formatMin(row.expectedPerMeas)}</td>
+                    <td className="px-3 py-2 text-right font-mono text-zinc-500">
+                      {row.actualTotal != null ? formatMin(row.actualTotal) : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {hasNormMin && (
+          <p className="text-xs text-zinc-400">
+            * Taakduur &lt; 5 min: norm-minimum van 5 min is van toepassing (§9.3.2).
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // ── Strategy 2 / 3 — job-based or full-day ───────────────────────────────────
+  const teMin     = heg.effectiveDayHours * 60;
+  const minTotal  = 3 * teMin;
+  const actualN   = hegMeas.length;
+  const ok        = actualN >= 3;
+  const sectionId = heg.strategy === 'job-based' ? '§10.4' : '§11.4';
+  const stratLabel = heg.strategy === 'job-based' ? 'Functiegericht' : 'Volledige dag';
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+        Meetduur steekproeven — <SectionRef id={sectionId}>{sectionId}</SectionRef> / Tabel 2 (NEN-EN-ISO 9612)
+      </p>
+
+      <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="bg-zinc-50 dark:bg-zinc-800/50">
+              <th className="px-3 py-2 text-left font-medium text-zinc-500">Strategie</th>
+              <th className="px-3 py-2 text-right font-medium text-zinc-500"><Formula math="T_e" /> (werkdag)</th>
+              <th className="px-3 py-2 text-right font-medium text-zinc-500">Min. duur / meting</th>
+              <th className="px-3 py-2 text-right font-medium text-zinc-500">Min. n</th>
+              <th className="px-3 py-2 text-right font-medium text-zinc-500">Min. totaal</th>
+              <th className="px-3 py-2 text-right font-medium text-zinc-500">Werkelijk n</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{stratLabel}</td>
+              <td className="px-3 py-2 text-right font-mono text-zinc-500">{formatMin(teMin)}</td>
+              <td className="px-3 py-2 text-right font-mono text-zinc-700 dark:text-zinc-300">≥&nbsp;{formatMin(teMin)}</td>
+              <td className="px-3 py-2 text-right font-mono text-zinc-500">≥&nbsp;3</td>
+              <td className="px-3 py-2 text-right font-mono font-semibold text-zinc-900 dark:text-zinc-50">
+                ≥&nbsp;{formatMin(minTotal)}
+              </td>
+              <td className={`px-3 py-2 text-right font-mono font-semibold ${
+                ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'
+              }`}>
+                {actualN}&nbsp;{ok ? '✓' : '⚠'}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Per meetreeks */}
+      {seriesRows.length > 0 && (
+        <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+          <p className="border-b border-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+            Per meetreeks
+          </p>
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-zinc-50/50 dark:bg-zinc-800/20">
+                <th className="px-3 py-2 text-left font-medium text-zinc-500">Reeks</th>
+                <th className="px-3 py-2 text-right font-medium text-zinc-500">n</th>
+                <th className="px-3 py-2 text-right font-medium text-zinc-500">Min. duur / meting</th>
+                <th className="px-3 py-2 text-right font-medium text-zinc-500">Werkelijke totaalduur</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              {seriesRows.map((row) => (
+                <tr key={row.label}>
+                  <td className="px-3 py-2 font-mono text-zinc-700 dark:text-zinc-300">{row.label}</td>
+                  <td className="px-3 py-2 text-right font-mono text-zinc-700 dark:text-zinc-300">{row.n}</td>
+                  <td className="px-3 py-2 text-right font-mono text-zinc-500">≥&nbsp;{formatMin(row.expectedPerMeas)}</td>
+                  <td className="px-3 py-2 text-right font-mono text-zinc-500">
+                    {row.actualTotal != null ? formatMin(row.actualTotal) : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── StatTable — accepts React.ReactNode as row key so formulas can appear ─────
 
 function StatTable({ label, rows }: { label: string; rows: [React.ReactNode, string, string?][] }) {
@@ -68,7 +316,21 @@ function StatTable({ label, rows }: { label: string; rows: [React.ReactNode, str
 
 // ─── HEGResult ─────────────────────────────────────────────────────────────────
 
-function HEGResult({ stat, hegName }: { stat: SoundStatistics; hegName: string }) {
+function HEGResult({
+  stat,
+  hegName,
+  heg,
+  tasks,
+  measurements,
+  measurementSeries,
+}: {
+  stat: SoundStatistics;
+  hegName: string;
+  heg: SoundHEG;
+  tasks: SoundTask[];
+  measurements: SoundMeasurement[];
+  measurementSeries: MeasurementSeries[];
+}) {
   const c = VERDICT_COLORS[stat.verdictColor];
 
   return (
@@ -90,6 +352,14 @@ function HEGResult({ stat, hegName }: { stat: SoundStatistics; hegName: string }
       </div>
 
       <div className="space-y-5 p-5">
+
+        {/* Measurement duration plan */}
+        <MeasurementDurationPlan
+          heg={heg}
+          tasks={tasks}
+          measurements={measurements}
+          measurementSeries={measurementSeries}
+        />
 
         {/* Task contributions (strategy 1 only) */}
         {stat.taskResults && stat.taskResults.length > 0 && (
@@ -237,7 +507,7 @@ function HEGResult({ stat, hegName }: { stat: SoundStatistics; hegName: string }
 // ─── Main component ────────────────────────────────────────────────────────────
 
 export default function SoundStep7_Calculation({ investigation, onUpdate }: Props) {
-  const { hegs, statistics } = investigation;
+  const { hegs, statistics, tasks, measurements, measurementSeries } = investigation;
   const [formulasOpen, setFormulasOpen] = useState(false);
 
   useEffect(() => {
@@ -503,13 +773,20 @@ export default function SoundStep7_Calculation({ investigation, onUpdate }: Prop
         </div>
       ) : (
         <div className="space-y-6">
-          {statistics.map((stat) => (
+          {statistics.map((stat) => {
+            const heg = hegs.find((h) => h.id === stat.hegId)!;
+            return (
             <HEGResult
               key={stat.hegId}
               stat={stat}
               hegName={hegMap[stat.hegId] ?? stat.hegId}
+              heg={heg}
+              tasks={tasks}
+              measurements={measurements}
+              measurementSeries={measurementSeries}
             />
-          ))}
+          );
+          })}
         </div>
       )}
 

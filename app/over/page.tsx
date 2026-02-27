@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Versiehistorie en informatie over OHSHub.',
 };
 
-const CURRENT_VERSION = '0.9.1';
+const CURRENT_VERSION = '0.9.2';
 
 const CHANGELOG: {
   version: string;
@@ -15,6 +15,19 @@ const CHANGELOG: {
   title: string;
   changes: string[];
 }[] = [
+  {
+    version: '0.9.2',
+    date: '2026-02-27',
+    type: 'patch',
+    title: 'Meetduur-overzicht per HEG en meetreeks in geluidsonderzoek',
+    changes: [
+      'Stap 8 (Statistieken) toont nu per HEG een meetduur-overzicht conform NEN-EN-ISO 9612 §9.3.2 / §10.4 / §11.4.',
+      'Strategie 1 (taakgericht): vereiste minimum meetduur en aantal per taak (≥ max(T_m, 5 min) × ≥ 3), met werkelijk n en totaal per taak.',
+      'Strategie 2/3 (functiegericht / volledige dag): vereiste minimum steekproeven (≥ 3 × T_e) met werkelijk n.',
+      'Per meetreeks: verwachte meetduur per meting en werkelijke totaalduur (indien meetduur ingevoerd in stap 7).',
+      'Norm-minimum-markering (*) wanneer taakduur < 5 min.',
+    ],
+  },
   {
     version: '0.9.1',
     date: '2026-02-27',
