@@ -12,6 +12,7 @@ import { InfoBox } from '@/components/InfoBox';
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
+  onGoToStep: (step: number) => void;
 }
 
 const INSTRUMENT_TYPES: { value: InstrumentType; label: string; u2: number; norm: string }[] = [

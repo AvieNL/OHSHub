@@ -18,6 +18,7 @@ import { SectionRef } from '@/components/SectionRef';
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
+  onGoToStep: (step: number) => void;
 }
 
 function fmt1(n: number): string { return isFinite(n) ? n.toFixed(1) : '—'; }
@@ -506,7 +507,7 @@ function HEGResult({
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export default function SoundStep7_Calculation({ investigation, onUpdate }: Props) {
+export default function SoundStep7_Calculation({ investigation, onUpdate, onGoToStep }: Props) {
   const { hegs, statistics, tasks, measurements, measurementSeries } = investigation;
   const [formulasOpen, setFormulasOpen] = useState(false);
 
@@ -534,7 +535,8 @@ export default function SoundStep7_Calculation({ investigation, onUpdate }: Prop
           Stap 9 — <Formula math="L_{EX,8h}" /> &amp; onzekerheid
         </h2>
         <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
-          Voer eerst meetwaarden in bij stap 7.
+          Voer eerst meetwaarden in bij{' '}
+          <button type="button" onClick={() => onGoToStep(7)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 8</button>.
         </div>
       </div>
     );
@@ -633,7 +635,9 @@ export default function SoundStep7_Calculation({ investigation, onUpdate }: Prop
           </p>
           <p className="mt-1 text-xs text-blue-700 dark:text-blue-400">
             Voor de volgende <Abbr id="HEG">HEG</Abbr>{hegsWithoutPPE.length > 1 ? '&apos;s' : ''} is de actiewaarde overschreden maar is nog geen gehoorbescherming ingevoerd.
-            Voer de gebruikte <Abbr id="PBM">PBM</Abbr> in via <strong>Stap 6 — Arbeidsmiddelen</strong> om de grenswaarde-toetsing (<Formula math="L_{EX,8h,oor}" />) te completeren:
+            Voer de gebruikte <Abbr id="PBM">PBM</Abbr> in via{' '}
+            <button type="button" onClick={() => onGoToStep(5)} className="cursor-pointer font-medium underline decoration-dotted underline-offset-2 hover:no-underline">stap 6 — Arbeidsmiddelen</button>{' '}
+            om de grenswaarde-toetsing (<Formula math="L_{EX,8h,oor}" />) te completeren:
           </p>
           <ul className="mt-1.5 space-y-0.5 text-xs text-blue-700 dark:text-blue-400">
             {hegsWithoutPPE.map((h) => (
@@ -769,7 +773,8 @@ export default function SoundStep7_Calculation({ investigation, onUpdate }: Prop
 
       {noResults ? (
         <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
-          Geen berekeningen mogelijk. Zorg dat voor elke <Abbr id="HEG">HEG</Abbr> minimaal 3 geldige meetwaarden zijn ingevoerd in stap 6.
+          Geen berekeningen mogelijk. Zorg dat voor elke <Abbr id="HEG">HEG</Abbr> minimaal 3 geldige meetwaarden zijn ingevoerd in{' '}
+          <button type="button" onClick={() => onGoToStep(7)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 8</button>.
         </div>
       ) : (
         <div className="space-y-6">
@@ -793,7 +798,8 @@ export default function SoundStep7_Calculation({ investigation, onUpdate }: Prop
       {hegs.length > statistics.length && (
         <div className="rounded-lg bg-amber-50 px-4 py-3 text-xs text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
           {hegs.length - statistics.length} <Abbr id="HEG">HEG</Abbr>{hegs.length - statistics.length !== 1 ? '\'s' : ''} heeft onvoldoende meetwaarden (minimaal 3 nodig).
-          Voer meer metingen in bij stap 6.
+          Voer meer metingen in bij{' '}
+          <button type="button" onClick={() => onGoToStep(7)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 8</button>.
         </div>
       )}
     </div>

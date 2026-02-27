@@ -15,6 +15,7 @@ import { Abbr } from '@/components/Abbr';
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
+  onGoToStep: (step: number) => void;
 }
 
 const TYPE_META: Record<SoundMeasureType, { label: string; prio: string }> = {
@@ -349,7 +350,7 @@ function MeasureForm({
   );
 }
 
-export default function SoundStep9_Measures({ investigation, onUpdate }: Props) {
+export default function SoundStep9_Measures({ investigation, onUpdate, onGoToStep }: Props) {
   const { measures, hegs } = investigation;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
@@ -521,7 +522,10 @@ export default function SoundStep9_Measures({ investigation, onUpdate }: Props) 
       {measures.length === 0 && !showNew && (
         noStatsWarning ? (
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/20 dark:text-amber-300">
-            Geen meetresultaten beschikbaar. Voer eerst metingen in (stap 8) en doorloop stap 9 (berekeningen) voordat maatregelen kunnen worden gegenereerd.
+            Geen meetresultaten beschikbaar. Voer eerst metingen in ({' '}
+            <button type="button" onClick={() => onGoToStep(7)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 8</button>) en doorloop{' '}
+            <button type="button" onClick={() => onGoToStep(8)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 9 (berekeningen)</button>{' '}
+            voordat maatregelen kunnen worden gegenereerd.
           </div>
         ) : (
           <p className="text-center text-xs text-zinc-400">

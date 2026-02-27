@@ -120,7 +120,7 @@ export default function SoundInvestigationShell({ investigation, onUpdate, onClo
     if (e.key === 'Escape') { setEditingTitle(false); }
   }
 
-  const stepProps = { investigation: inv, onUpdate: handleStepUpdate };
+  const stepProps = { investigation: inv, onUpdate: handleStepUpdate, onGoToStep: goToStep };
 
   const StepComponents = [
     SoundStep0_PreSurvey,
@@ -222,11 +222,7 @@ export default function SoundInvestigationShell({ investigation, onUpdate, onClo
                           : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400'
                     }`}
                   >
-                    {isComplete ? (
-                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                    ) : s.number}
+                    {s.number}
                   </span>
                   <span className="truncate">{s.title}</span>
                 </button>

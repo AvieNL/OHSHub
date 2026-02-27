@@ -9,6 +9,7 @@ import { InfoBox } from '@/components/InfoBox';
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
+  onGoToStep: (step: number) => void;
 }
 
 // Annex B Table B.1 — recommended strategies per work pattern
@@ -35,7 +36,7 @@ const STRATEGY_GUIDANCE: Record<WorkPattern, { rec: SoundStrategy[]; note: strin
   },
   'unspecified': {
     rec: ['task-based', 'job-based', 'full-day'],
-    note: 'Bepaal het werkpatroon in stap 2 voor een gerichte stratiegieadvies (Bijlage B Tabel B.1).',
+    note: 'Bepaal het werkpatroon in stap 3 voor een gerichte strategieadvies (Bijlage B Tabel B.1).',
   },
 };
 
@@ -155,7 +156,7 @@ function StrategyCard({
   );
 }
 
-export default function SoundStep3_Strategy({ investigation, onUpdate }: Props) {
+export default function SoundStep3_Strategy({ investigation, onUpdate, onGoToStep }: Props) {
   const { hegs } = investigation;
 
   function updateHEG(updated: SoundHEG) {
@@ -169,7 +170,9 @@ export default function SoundStep3_Strategy({ investigation, onUpdate }: Props) 
           Stap 4 — Meetstrategie (<SectionRef id="§8">§8</SectionRef>)
         </h2>
         <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
-          Definieer eerst <Abbr id="HEG">HEG</Abbr>&apos;s in stap 2, dan kunt u hier per <Abbr id="HEG">HEG</Abbr> de meetstrategie kiezen.
+          Definieer eerst <Abbr id="HEG">HEG</Abbr>&apos;s in{' '}
+          <button type="button" onClick={() => onGoToStep(2)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 3</button>,
+          dan kunt u hier per <Abbr id="HEG">HEG</Abbr> de meetstrategie kiezen.
         </div>
       </div>
     );

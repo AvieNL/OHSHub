@@ -19,6 +19,7 @@ import { InfoBox } from '@/components/InfoBox';
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
+  onGoToStep: (step: number) => void;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -108,11 +109,13 @@ function SeriesForm({
   instrumentOptions,
   onSave,
   onCancel,
+  onGoToStep,
 }: {
   initial: MeasurementSeries;
   instrumentOptions: { id: string; label: string }[];
   onSave: (updated: MeasurementSeries) => void;
   onCancel: () => void;
+  onGoToStep: (step: number) => void;
 }) {
   const [state, setState] = useState<SeriesFormState>(() => stateFromSeries(initial));
 
@@ -150,7 +153,8 @@ function SeriesForm({
         </label>
         {instrumentOptions.length === 0 ? (
           <p className="text-xs text-amber-600 dark:text-amber-400">
-            Voeg eerst meetapparatuur toe in Stap 5.
+            Voeg eerst meetapparatuur toe in{' '}
+            <button type="button" onClick={() => onGoToStep(4)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 5</button>.
           </p>
         ) : (
           <select
@@ -428,6 +432,7 @@ function SeriesPanel({
   instrumentOptions,
   onUpdateSeries,
   onUpdateMeasurements,
+  onGoToStep,
 }: {
   hegId: string;
   taskId?: string;
@@ -436,6 +441,7 @@ function SeriesPanel({
   instrumentOptions: { id: string; label: string }[];
   onUpdateSeries: (series: MeasurementSeries[]) => void;
   onUpdateMeasurements: (measurements: SoundMeasurement[]) => void;
+  onGoToStep: (step: number) => void;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
@@ -521,6 +527,7 @@ function SeriesPanel({
               instrumentOptions={instrumentOptions}
               onSave={saveSeries}
               onCancel={() => setEditingId(null)}
+              onGoToStep={onGoToStep}
             />
           ) : (
             <SeriesCard
@@ -541,6 +548,7 @@ function SeriesPanel({
           instrumentOptions={instrumentOptions}
           onSave={saveSeries}
           onCancel={() => setShowNew(false)}
+          onGoToStep={onGoToStep}
         />
       ) : (
         <button
@@ -566,6 +574,7 @@ function TaskMeasurements({
   allSeries,
   instrumentOptions,
   onSave,
+  onGoToStep,
 }: {
   task: SoundTask;
   measurements: SoundMeasurement[];
@@ -573,6 +582,7 @@ function TaskMeasurements({
   allSeries: MeasurementSeries[];
   instrumentOptions: { id: string; label: string }[];
   onSave: (updated: SoundMeasurement[]) => void;
+  onGoToStep: (step: number) => void;
 }) {
   const [bulkText, setBulkText] = useState(() =>
     measurements.map((m) => m.lpa_eqT).join(', '),
@@ -872,7 +882,8 @@ function TaskMeasurements({
 
         {validMeas.length >= 3 && (
           <p className="text-xs text-emerald-600 dark:text-emerald-400">
-            ✓ {validMeas.length} geldige metingen — <Formula math="L_{EX,8h}" /> berekend in stap 8.
+            ✓ {validMeas.length} geldige metingen — <Formula math="L_{EX,8h}" /> berekend in{' '}
+            <button type="button" onClick={() => onGoToStep(8)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 9</button>.
             {validMeas.length < 5 && (
               <span className="ml-1 text-amber-600 dark:text-amber-400">
                 (<SectionRef id="§9.3.2">§9.3.2</SectionRef>: ≥ 5 aanbevolen bij meerdere medewerkers)
@@ -892,7 +903,7 @@ function TaskMeasurements({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function SoundStep6_Measurements({ investigation, onUpdate }: Props) {
+export default function SoundStep6_Measurements({ investigation, onUpdate, onGoToStep }: Props) {
   const { hegs, tasks, measurements, instruments } = investigation;
   const measurementSeries = investigation.measurementSeries ?? [];
   const [openHEG, setOpenHEG] = useState<string | null>(hegs[0]?.id ?? null);
@@ -920,7 +931,8 @@ export default function SoundStep6_Measurements({ investigation, onUpdate }: Pro
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 8 — Meetresultaten</h2>
         <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
-          Definieer eerst <Abbr id="HEG">HEG</Abbr>&apos;s in stap 2.
+          Definieer eerst <Abbr id="HEG">HEG</Abbr>&apos;s in{' '}
+          <button type="button" onClick={() => onGoToStep(2)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 3</button>.
         </div>
       </div>
     );
@@ -1084,7 +1096,8 @@ export default function SoundStep6_Measurements({ investigation, onUpdate }: Pro
                     {hegTasks.length === 0 && (
                       <tr key={`${heg.id}-empty`}>
                         <td colSpan={6} className="px-3 py-1.5 pl-7 italic text-zinc-400">
-                          Geen taken — definieer taken in stap 5
+                          Geen taken — definieer taken in{' '}
+                          <button type="button" onClick={() => onGoToStep(6)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 7</button>
                         </td>
                       </tr>
                     )}
@@ -1159,7 +1172,8 @@ export default function SoundStep6_Measurements({ investigation, onUpdate }: Pro
                     <div className="space-y-6">
                       {hegTasks.length === 0 ? (
                         <p className="text-sm text-amber-600 dark:text-amber-400">
-                          Definieer eerst taken in stap 6.
+                          Definieer eerst taken in{' '}
+                          <button type="button" onClick={() => onGoToStep(6)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 7</button>.
                         </p>
                       ) : (
                         hegTasks.map((task) => (
@@ -1177,6 +1191,7 @@ export default function SoundStep6_Measurements({ investigation, onUpdate }: Pro
                                 instrumentOptions={instrumentOptions}
                                 onUpdateSeries={handleSeriesUpdate}
                                 onUpdateMeasurements={(meas) => handleSeriesAndMeasUpdate(measurementSeries, meas)}
+                                onGoToStep={onGoToStep}
                               />
                             </div>
                             {/* Measurement table */}
@@ -1187,6 +1202,7 @@ export default function SoundStep6_Measurements({ investigation, onUpdate }: Pro
                               allSeries={measurementSeries}
                               instrumentOptions={instrumentOptions}
                               onSave={handleMeasUpdate}
+                              onGoToStep={onGoToStep}
                             />
                           </div>
                         ))
@@ -1207,6 +1223,7 @@ export default function SoundStep6_Measurements({ investigation, onUpdate }: Pro
                           instrumentOptions={instrumentOptions}
                           onUpdateSeries={handleSeriesUpdate}
                           onUpdateMeasurements={(meas) => handleSeriesAndMeasUpdate(measurementSeries, meas)}
+                          onGoToStep={onGoToStep}
                         />
                       </div>
 
@@ -1347,7 +1364,8 @@ export default function SoundStep6_Measurements({ investigation, onUpdate }: Pro
                               </button>
                               {hegFlatMeas.filter((m) => !m.excluded && m.lpa_eqT > 0).length >= 3 && (
                                 <p className="text-xs text-emerald-600 dark:text-emerald-400">
-                                  ✓ {hegFlatMeas.filter((m) => !m.excluded && m.lpa_eqT > 0).length} geldige metingen — <Formula math="L_{EX,8h}" /> berekend in stap 8.
+                                  ✓ {hegFlatMeas.filter((m) => !m.excluded && m.lpa_eqT > 0).length} geldige metingen — <Formula math="L_{EX,8h}" /> berekend in{' '}
+                                  <button type="button" onClick={() => onGoToStep(8)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 9</button>.
                                 </p>
                               )}
                             </div>

@@ -11,6 +11,7 @@ import { InfoBox } from '@/components/InfoBox';
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
+  onGoToStep: (step: number) => void;
 }
 
 function fmt1(n: number): string {
@@ -261,9 +262,11 @@ function PeakExposureBar({ lCpeak, lCpeak_oor }: { lCpeak: number; lCpeak_oor?: 
 function PPEReadOnlySummary({
   heg,
   stat,
+  onGoToStep,
 }: {
   heg: SoundHEG;
   stat: SoundStatistics;
+  onGoToStep: (step: number) => void;
 }) {
   const hasPPE = heg.ppeMethod != null || heg.ppeSNRUnknown || (heg.ppeAttenuation ?? 0) > 0;
   const combinedAPF = stat.lEx8h_95pct_oor != null
@@ -306,7 +309,9 @@ function PPEReadOnlySummary({
           <Abbr id="PBM">PBM</Abbr> — gehoorbescherming
         </p>
         <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">
-          Invoer/wijzigen → Stap 6 (Arbeidsmiddelen)
+          <button type="button" onClick={() => onGoToStep(5)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">
+            Invoer/wijzigen → Stap 6 (Arbeidsmiddelen)
+          </button>
         </span>
       </div>
 
@@ -315,7 +320,9 @@ function PPEReadOnlySummary({
           <p className="text-xs text-blue-700 dark:text-blue-400">
             Nog geen gehoorbescherming ingevoerd voor deze <Abbr id="HEG">HEG</Abbr>.
             De grenswaarde-toetsing met <Abbr id="PBM">PBM</Abbr> (<Formula math="L_{EX,8h,oor}" />) kan daardoor niet worden uitgevoerd.{' '}
-            <strong>Voer gehoorbescherming in via Stap 6 — Arbeidsmiddelen.</strong>
+            <button type="button" onClick={() => onGoToStep(5)} className="cursor-pointer font-semibold underline decoration-dotted underline-offset-2 hover:no-underline">
+              Voer gehoorbescherming in via Stap 6 — Arbeidsmiddelen.
+            </button>
           </p>
         </div>
       ) : (
@@ -447,10 +454,12 @@ function AudiometrySection({
   heg,
   verdict,
   onUpdateHEG,
+  onGoToStep,
 }: {
   heg: SoundHEG;
   verdict: SoundActionLevel;
   onUpdateHEG: (updated: SoundHEG) => void;
+  onGoToStep: (step: number) => void;
 }) {
   if (verdict === 'below-lav') return null;
 
@@ -520,7 +529,8 @@ function AudiometrySection({
               {isUAVOrAbove
                 ? <><strong>Actie vereist:</strong> Gehooronderzoek is nog niet uitgevoerd. Bij de bovenste actiewaarde is periodiek preventief gehooronderzoek verplicht (art. 6.10 lid 1).</>
                 : <><strong>Aanbevolen:</strong> Gehooronderzoek is nog niet uitgevoerd. Overweeg om gehooronderzoek aan te bieden (art. 6.10).</>}
-              {' '}Voeg dit toe als maatregel in stap 10.
+              {' '}Voeg dit toe als maatregel in{' '}
+              <button type="button" onClick={() => onGoToStep(10)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 11</button>.
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
@@ -627,6 +637,7 @@ function HEGAssessment({
   heg,
   measurements,
   onUpdateHEG,
+  onGoToStep,
   index,
   total,
 }: {
@@ -634,6 +645,7 @@ function HEGAssessment({
   heg: SoundHEG;
   measurements: SoundMeasurement[];
   onUpdateHEG: (updated: SoundHEG) => void;
+  onGoToStep: (step: number) => void;
   index: number;
   total: number;
 }) {
@@ -775,14 +787,14 @@ function HEGAssessment({
 
         {/* PPE summary (input is in Step 6 — Arbeidsmiddelen) */}
         <div className="py-4">
-          <PPEReadOnlySummary heg={heg} stat={stat} />
+          <PPEReadOnlySummary heg={heg} stat={stat} onGoToStep={onGoToStep} />
         </div>
 
         {/* Tinnitus / hearing complaints */}
         <TinnitusSection heg={heg} />
 
         {/* H-5: Audiometry documentation */}
-        <AudiometrySection heg={heg} verdict={stat.verdict} onUpdateHEG={onUpdateHEG} />
+        <AudiometrySection heg={heg} verdict={stat.verdict} onUpdateHEG={onUpdateHEG} onGoToStep={onGoToStep} />
 
         {/* NPR 3438 — concentratie en communicatie (Tabel 4) */}
         <div className="px-5 py-4">
@@ -919,7 +931,7 @@ function HEGAssessment({
   );
 }
 
-export default function SoundStep8_Assessment({ investigation, onUpdate }: Props) {
+export default function SoundStep8_Assessment({ investigation, onUpdate, onGoToStep }: Props) {
   const { hegs, statistics, measurements: allMeasurements } = investigation;
 
   function updateHEG(updated: SoundHEG) {
@@ -939,7 +951,8 @@ export default function SoundStep8_Assessment({ investigation, onUpdate }: Props
           Stap 10 — Beoordeling actiewaarden
         </h2>
         <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
-          Definieer eerst <Abbr id="HEG">HEG</Abbr>&apos;s in stap 2.
+          Definieer eerst <Abbr id="HEG">HEG</Abbr>&apos;s in{' '}
+          <button type="button" onClick={() => onGoToStep(2)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 3</button>.
         </div>
       </div>
     );
@@ -953,7 +966,8 @@ export default function SoundStep8_Assessment({ investigation, onUpdate }: Props
         </h2>
         <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
           Toetsing van <Formula math="L_{EX,8h,95\%}" /> aan de actiewaarden en grenswaarde conform het Arbobesluit.
-          De invloed van gehoorbescherming (<Abbr id="PBM">PBM</Abbr>) wordt weergegeven op basis van de gegevens uit Stap 6 (Arbeidsmiddelen).
+          De invloed van gehoorbescherming (<Abbr id="PBM">PBM</Abbr>) wordt weergegeven op basis van de gegevens uit{' '}
+          <button type="button" onClick={() => onGoToStep(5)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 6 (Arbeidsmiddelen)</button>.
         </p>
       </div>
 
@@ -1010,7 +1024,10 @@ export default function SoundStep8_Assessment({ investigation, onUpdate }: Props
 
       {statistics.length === 0 ? (
         <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
-          Voer eerst meetwaarden in bij stap 6 en bereken de blootstelling bij stap 7.
+          Voer eerst meetwaarden in bij{' '}
+          <button type="button" onClick={() => onGoToStep(7)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 8</button>{' '}
+          en bereken de blootstelling bij{' '}
+          <button type="button" onClick={() => onGoToStep(8)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 9</button>.
         </div>
       ) : (
         <section className="space-y-4">
@@ -1049,6 +1066,7 @@ export default function SoundStep8_Assessment({ investigation, onUpdate }: Props
                   heg={heg}
                   measurements={hegMeasurements}
                   onUpdateHEG={updateHEG}
+                  onGoToStep={onGoToStep}
                   index={idx + 1}
                   total={statistics.length}
                 />

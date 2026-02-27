@@ -11,6 +11,7 @@ import { InfoBox } from '@/components/InfoBox';
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
+  onGoToStep: (step: number) => void;
 }
 
 // Table 1 (§9.3.2): minimum workers to measure per task
@@ -70,11 +71,13 @@ function TaskRow({
   allEquipment,
   onUpdate,
   onRemove,
+  onGoToStep,
 }: {
   task: SoundTask;
   allEquipment: SoundEquipment[];
   onUpdate: (t: SoundTask) => void;
   onRemove: () => void;
+  onGoToStep: (step: number) => void;
 }) {
   // u_1b in minutes: 0.5 × (T_max − T_min)
   const u1b_min = task.durationMin != null && task.durationMax != null
@@ -166,7 +169,8 @@ function TaskRow({
       <td className="px-3 py-2 align-top">
         {allEquipment.length === 0 ? (
           <p className="text-[10px] italic text-zinc-300 dark:text-zinc-600">
-            Voeg arbeidsmiddelen toe in Stap 6
+            Voeg arbeidsmiddelen toe in{' '}
+            <button type="button" onClick={() => onGoToStep(5)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 6</button>
           </p>
         ) : (
           <div className="space-y-0.5">
@@ -253,7 +257,7 @@ function CopyTasksBar({
   );
 }
 
-export default function SoundStep5_Tasks({ investigation, onUpdate }: Props) {
+export default function SoundStep5_Tasks({ investigation, onUpdate, onGoToStep }: Props) {
   const { hegs, tasks } = investigation;
   const equipment = investigation.equipment ?? [];
   const [openHEG, setOpenHEG] = useState<string | null>(hegs[0]?.id ?? null);
@@ -265,7 +269,8 @@ export default function SoundStep5_Tasks({ investigation, onUpdate }: Props) {
           Stap 7 — Meetplan & taken
         </h2>
         <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
-          Definieer eerst <Abbr id="HEG">HEG</Abbr>&apos;s in stap 2.
+          Definieer eerst <Abbr id="HEG">HEG</Abbr>&apos;s in{' '}
+          <button type="button" onClick={() => onGoToStep(2)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 3</button>.
         </div>
       </div>
     );
@@ -389,6 +394,7 @@ export default function SoundStep5_Tasks({ investigation, onUpdate }: Props) {
                                   allEquipment={equipment ?? []}
                                   onUpdate={updateTask}
                                   onRemove={() => removeTask(t.id)}
+                                  onGoToStep={onGoToStep}
                                 />
                               ))}
                             </tbody>
@@ -406,7 +412,8 @@ export default function SoundStep5_Tasks({ investigation, onUpdate }: Props) {
                           <Formula math="\Sigma T_m" /> = {Math.round(totalDuration * 60)} min · <Formula math="T_e" /> = {Math.round(heg.effectiveDayHours * 60)} min
                           {Math.abs(totalDuration - heg.effectiveDayHours) < 0.1
                             ? ' ✓ Totaal klopt'
-                            : <> — verschil {Math.round(Math.abs(totalDuration - heg.effectiveDayHours) * 60)} min. Pas taken aan of <Formula math="T_e" /> in stap 2.</>}
+                            : <> — verschil {Math.round(Math.abs(totalDuration - heg.effectiveDayHours) * 60)} min. Pas taken aan of <Formula math="T_e" /> in{' '}
+                            <button type="button" onClick={() => onGoToStep(2)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 3</button>.</>}
                         </div>
                       )}
 
@@ -451,7 +458,8 @@ export default function SoundStep5_Tasks({ investigation, onUpdate }: Props) {
                       </InfoBox>
                       <p className="text-xs text-zinc-400">
                         Taken hoeven niet afzonderlijk vastgelegd te worden voor deze strategie.
-                        Voer de meetwaarden in bij stap 7.
+                        Voer de meetwaarden in bij{' '}
+                        <button type="button" onClick={() => onGoToStep(7)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 8</button>.
                       </p>
                     </div>
                   )}

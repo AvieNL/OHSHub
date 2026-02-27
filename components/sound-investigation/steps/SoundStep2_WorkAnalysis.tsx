@@ -11,6 +11,7 @@ import { InfoBox } from '@/components/InfoBox';
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
+  onGoToStep: (step: number) => void;
 }
 
 const WORK_PATTERNS: { value: WorkPattern; label: string }[] = [
@@ -32,10 +33,12 @@ function HEGForm({
   heg,
   onSave,
   onCancel,
+  onGoToStep,
 }: {
   heg: SoundHEG;
   onSave: (h: SoundHEG) => void;
   onCancel: () => void;
+  onGoToStep: (step: number) => void;
 }) {
   const [form, setForm] = useState(heg);
 
@@ -120,7 +123,8 @@ function HEGForm({
 
       <div>
         <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Voorkeursstrategie (kan worden gewijzigd in stap 3)
+          Voorkeursstrategie (kan worden gewijzigd in{' '}
+          <button type="button" onClick={() => onGoToStep(3)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 4</button>)
         </label>
         <div className="flex flex-wrap gap-2">
           {(['task-based', 'job-based', 'full-day'] as SoundStrategy[]).map((s) => (
@@ -186,7 +190,7 @@ function HEGForm({
   );
 }
 
-export default function SoundStep2_WorkAnalysis({ investigation, onUpdate }: Props) {
+export default function SoundStep2_WorkAnalysis({ investigation, onUpdate, onGoToStep }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const { hegs } = investigation;
 
@@ -250,7 +254,7 @@ export default function SoundStep2_WorkAnalysis({ investigation, onUpdate }: Pro
         {hegs.map((heg) => (
           <div key={heg.id}>
             {editingId === heg.id ? (
-              <HEGForm heg={heg} onSave={saveHEG} onCancel={() => setEditingId(null)} />
+              <HEGForm heg={heg} onSave={saveHEG} onCancel={() => setEditingId(null)} onGoToStep={onGoToStep} />
             ) : (
               <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/30">
                 <div className="flex items-start justify-between gap-4">
@@ -307,6 +311,7 @@ export default function SoundStep2_WorkAnalysis({ investigation, onUpdate }: Pro
           heg={draftNew}
           onSave={saveHEG}
           onCancel={() => { setEditingId(null); setDraftNew(null); }}
+          onGoToStep={onGoToStep}
         />
       ) : (
         <button
@@ -322,7 +327,8 @@ export default function SoundStep2_WorkAnalysis({ investigation, onUpdate }: Pro
 
       {hegs.length === 0 && !isAddingNew && (
         <p className="text-center text-sm text-zinc-400 dark:text-zinc-500">
-          Voeg minimaal één <Abbr id="HEG">HEG</Abbr> toe om door te gaan naar stap 3.
+          Voeg minimaal één <Abbr id="HEG">HEG</Abbr> toe om door te gaan naar{' '}
+          <button type="button" onClick={() => onGoToStep(3)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 4</button>.
         </p>
       )}
     </div>

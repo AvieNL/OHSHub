@@ -11,6 +11,7 @@ import { SectionRef } from '@/components/SectionRef';
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
+  onGoToStep: (step: number) => void;
 }
 
 function fmt1(n: number): string {
@@ -173,7 +174,7 @@ function generateComplianceStatement(inv: SoundInvestigation): string {
     return `Dit onderzoek${company}${location} is uitgevoerd conform NEN-EN-ISO 9612:2025 (Third edition). ` +
            `De meetonzekerheid is bepaald conform Bijlage C (k = 1,65; eenzijdig 95%-betrouwbaarheidsinterval). ` +
            `Meetapparatuur: ${instLine}. ` +
-           `Resultaten worden vastgelegd zodra de berekeningen zijn uitgevoerd (stap 7).`;
+           `Resultaten worden vastgelegd zodra de berekeningen zijn uitgevoerd (stap 9).`;
   }
 
   const resultLines = statistics.map((stat) => {
@@ -386,7 +387,7 @@ function buildReportMarkdown(inv: SoundInvestigation): string {
   lines.push('*NEN-EN-ISO 9612:2025 · T₀ = 8 h · k = 1,65 (eenzijdig 95%)*');
   lines.push('');
   if (statistics.length === 0) {
-    lines.push('*Geen berekeningen beschikbaar. Voer meetwaarden in bij stap 6 en herbereken bij stap 7.*');
+    lines.push('*Geen berekeningen beschikbaar. Voer meetwaarden in bij stap 8 en herbereken bij stap 9.*');
   } else {
     for (const stat of statistics) {
       const heg  = hegs.find((h) => h.id === stat.hegId);
@@ -696,7 +697,7 @@ export default function SoundStep10_Report({ investigation, onUpdate }: Props) {
             rows={4}
             value={report.complianceStatement ?? ''}
             onChange={(e) => upd({ complianceStatement: e.target.value })}
-            placeholder="Klik 'Genereer op basis van meetresultaten' voor een automatisch gegenereerde conformiteitsverklaring op basis van stap 7."
+            placeholder="Klik 'Genereer op basis van meetresultaten' voor een automatisch gegenereerde conformiteitsverklaring op basis van stap 9."
             className="w-full min-h-24 resize-none overflow-hidden rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
           />
           {report.complianceStatement && (

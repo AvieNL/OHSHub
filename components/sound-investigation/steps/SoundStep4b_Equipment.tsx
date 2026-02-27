@@ -22,6 +22,7 @@ import { InfoBox } from '@/components/InfoBox';
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
+  onGoToStep: (step: number) => void;
 }
 
 const CATEGORY_OPTIONS: { value: EquipmentCategory; label: string; short: string }[] = [
@@ -804,10 +805,12 @@ function HEGPPESection({
   heg,
   measurements,
   onUpdateHEG,
+  onGoToStep,
 }: {
   heg: SoundHEG;
   measurements: SoundInvestigation['measurements'];
   onUpdateHEG: (partial: Partial<SoundHEG>) => void;
+  onGoToStep: (step: number) => void;
 }) {
   const configured = hasPPEConfigured(heg);
   const hegMeasurements = measurements.filter((m) => m.hegId === heg.id && !m.excluded);
@@ -927,7 +930,10 @@ function HEGPPESection({
                       </p>
                     )}
                     <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                      Gecombineerde <Abbr id="APF">APF</Abbr> wordt gebruikt in stap 9 (berekeningen) en stap 10 (beoordeling).
+                      Gecombineerde <Abbr id="APF">APF</Abbr> wordt gebruikt in{' '}
+                      <button type="button" onClick={() => onGoToStep(8)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 9 (berekeningen)</button>{' '}
+                      en{' '}
+                      <button type="button" onClick={() => onGoToStep(9)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 10 (beoordeling)</button>.
                     </p>
                   </div>
                 )}
@@ -940,7 +946,7 @@ function HEGPPESection({
   );
 }
 
-export default function SoundStep4b_Equipment({ investigation, onUpdate }: Props) {
+export default function SoundStep4b_Equipment({ investigation, onUpdate, onGoToStep }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
   const equipment = investigation.equipment ?? [];
@@ -981,7 +987,8 @@ export default function SoundStep4b_Equipment({ investigation, onUpdate }: Props
         </h2>
         <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
           Registreer voertuigen, machines en gereedschappen die gebruikt worden bij de beoordeelde werkzaamheden.
-          Arbeidsmiddelen kunnen per taak worden geselecteerd in Stap 7.
+          Arbeidsmiddelen kunnen per taak worden geselecteerd in{' '}
+          <button type="button" onClick={() => onGoToStep(6)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 7</button>.
         </p>
       </div>
 
@@ -1107,7 +1114,9 @@ export default function SoundStep4b_Equipment({ investigation, onUpdate }: Props
             </h3>
             <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
               Leg de gehoorbescherming vast die werknemers gebruiken.
-              De demping (<Abbr id="APF">APF</Abbr>) wordt meegenomen in de grenswaarde-toetsing (stap 10 — art. 6.6 lid 2 Arbobesluit).
+              De demping (<Abbr id="APF">APF</Abbr>) wordt meegenomen in de grenswaarde-toetsing ({' '}
+              <button type="button" onClick={() => onGoToStep(9)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 10</button>{' '}
+              — art. 6.6 lid 2 Arbobesluit).
             </p>
           </div>
 
@@ -1133,6 +1142,7 @@ export default function SoundStep4b_Equipment({ investigation, onUpdate }: Props
               heg={heg}
               measurements={investigation.measurements}
               onUpdateHEG={(partial) => updateHEG(partial, heg.id)}
+              onGoToStep={onGoToStep}
             />
           ))}
         </div>

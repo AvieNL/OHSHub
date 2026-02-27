@@ -13,6 +13,7 @@ import { Abbr } from '@/components/Abbr';
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
+  onGoToStep: (step: number) => void;
 }
 
 // ─── Question definitions ─────────────────────────────────────────────────────
