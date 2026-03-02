@@ -6,6 +6,7 @@ import { newPhysicalId } from '@/lib/physical-investigation-storage';
 import { computeLiftingResult, computeCarryingResult } from '@/lib/physical-stats';
 import { InfoBox } from '@/components/InfoBox';
 import { Abbr } from '@/components/Abbr';
+import { Alert, Button, Card, FieldLabel, Icon, Input, Select } from '@/components/ui';
 
 interface Props {
   investigation: PhysicalInvestigation;
@@ -42,7 +43,6 @@ function LiftingForm({
   onCancel: () => void;
 }) {
   const [d, setD] = useState<Partial<LiftingTask>>(task);
-  const INPUT = 'w-full rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400';
 
   function save() {
     if (!d.taskName?.trim() || !d.bgId) return;
@@ -77,87 +77,83 @@ function LiftingForm({
     : null;
 
   return (
-    <div className="rounded-xl border border-orange-200 bg-orange-50/50 px-5 py-4 dark:border-orange-800/30 dark:bg-orange-900/10">
+    <Card variant="form">
       <h4 className="mb-4 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
         {d.id ? 'Tiltaak bewerken' : `Nieuwe tiltaak — ${bgName}`}
       </h4>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Naam taak *</label>
-          <input type="text" value={d.taskName ?? ''} onChange={(e) => setD({ ...d, taskName: e.target.value })} placeholder="Bijv. Tillen dozen van transportband naar pallet" className={INPUT} />
+          <FieldLabel>Naam taak *</FieldLabel>
+          <Input type="text" value={d.taskName ?? ''} onChange={(e) => setD({ ...d, taskName: e.target.value })} placeholder="Bijv. Tillen dozen van transportband naar pallet" />
         </div>
 
         {/* Main NIOSH parameters */}
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+          <FieldLabel>
             Gewicht G (kg) <span className="text-zinc-400">— max 25 kg aanbevolen</span>
-          </label>
-          <input type="number" min={0} step={0.1} value={d.weight ?? ''} onChange={(e) => setD({ ...d, weight: parseFloat(e.target.value) || 0 })} className={INPUT} />
+          </FieldLabel>
+          <Input type="number" min={0} step={0.1} value={d.weight ?? ''} onChange={(e) => setD({ ...d, weight: parseFloat(e.target.value) || 0 })} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+          <FieldLabel>
             Horizontale afstand begin H (cm) <span className="text-zinc-400">optim: 25 cm</span>
-          </label>
-          <input type="number" min={1} value={d.H_start ?? ''} onChange={(e) => setD({ ...d, H_start: parseInt(e.target.value) || 0 })} className={INPUT} />
+          </FieldLabel>
+          <Input type="number" min={1} value={d.H_start ?? ''} onChange={(e) => setD({ ...d, H_start: parseInt(e.target.value) || 0 })} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+          <FieldLabel>
             Verticale hoogte begin V_start (cm) <span className="text-zinc-400">optim: 75 cm</span>
-          </label>
-          <input type="number" min={0} value={d.V_start ?? ''} onChange={(e) => setD({ ...d, V_start: parseInt(e.target.value) || 0 })} className={INPUT} />
+          </FieldLabel>
+          <Input type="number" min={0} value={d.V_start ?? ''} onChange={(e) => setD({ ...d, V_start: parseInt(e.target.value) || 0 })} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-            Verticale hoogte einde V_end (cm)
-          </label>
-          <input type="number" min={0} value={d.V_end ?? ''} onChange={(e) => setD({ ...d, V_end: parseInt(e.target.value) || 0 })} className={INPUT} />
+          <FieldLabel>Verticale hoogte einde V_end (cm)</FieldLabel>
+          <Input type="number" min={0} value={d.V_end ?? ''} onChange={(e) => setD({ ...d, V_end: parseInt(e.target.value) || 0 })} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+          <FieldLabel>
             Asymmetrie begin A (graden) <span className="text-zinc-400">0° = recht voor</span>
-          </label>
-          <input type="number" min={0} max={135} value={d.A_start ?? ''} onChange={(e) => setD({ ...d, A_start: parseInt(e.target.value) || 0 })} className={INPUT} />
+          </FieldLabel>
+          <Input type="number" min={0} max={135} value={d.A_start ?? ''} onChange={(e) => setD({ ...d, A_start: parseInt(e.target.value) || 0 })} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-            Frequentie (tilbewegingen/min)
-          </label>
-          <input type="number" min={0} step={0.1} value={d.frequency ?? ''} onChange={(e) => setD({ ...d, frequency: parseFloat(e.target.value) || 0 })} className={INPUT} />
+          <FieldLabel>Frequentie (tilbewegingen/min)</FieldLabel>
+          <Input type="number" min={0} step={0.1} value={d.frequency ?? ''} onChange={(e) => setD({ ...d, frequency: parseFloat(e.target.value) || 0 })} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Duurcategorie</label>
-          <select value={d.duration ?? 'long'} onChange={(e) => setD({ ...d, duration: e.target.value as NIOSHDuration })} className={INPUT}>
+          <FieldLabel>Duurcategorie</FieldLabel>
+          <Select value={d.duration ?? 'long'} onChange={(e) => setD({ ...d, duration: e.target.value as NIOSHDuration })}>
             {(Object.entries(DURATION_LABELS) as [NIOSHDuration, string][]).map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
             ))}
-          </select>
+          </Select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Gripkwaliteit</label>
-          <select value={d.grip ?? 'fair'} onChange={(e) => setD({ ...d, grip: e.target.value as NIFGrip })} className={INPUT}>
+          <FieldLabel>Gripkwaliteit</FieldLabel>
+          <Select value={d.grip ?? 'fair'} onChange={(e) => setD({ ...d, grip: e.target.value as NIFGrip })}>
             {(Object.entries(GRIP_LABELS) as [NIFGrip, string][]).map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {/* Optional end-position parameters */}
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+          <FieldLabel>
             Horizontale afstand einde H_end (cm) <span className="text-zinc-400">optioneel</span>
-          </label>
-          <input type="number" min={1} value={d.H_end ?? ''} onChange={(e) => setD({ ...d, H_end: e.target.value ? parseInt(e.target.value) : undefined })} placeholder="Laat leeg = gelijk aan begin" className={INPUT} />
+          </FieldLabel>
+          <Input type="number" min={1} value={d.H_end ?? ''} onChange={(e) => setD({ ...d, H_end: e.target.value ? parseInt(e.target.value) : undefined })} placeholder="Laat leeg = gelijk aan begin" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+          <FieldLabel>
             Asymmetrie einde A_end (graden) <span className="text-zinc-400">optioneel</span>
-          </label>
-          <input type="number" min={0} max={135} value={d.A_end ?? ''} onChange={(e) => setD({ ...d, A_end: e.target.value ? parseInt(e.target.value) : undefined })} placeholder="Laat leeg = gelijk aan begin" className={INPUT} />
+          </FieldLabel>
+          <Input type="number" min={0} max={135} value={d.A_end ?? ''} onChange={(e) => setD({ ...d, A_end: e.target.value ? parseInt(e.target.value) : undefined })} placeholder="Laat leeg = gelijk aan begin" />
         </div>
 
         {/* Risk flags */}
         <div className="sm:col-span-2">
-          <label className="mb-2 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Aanvullende risicofactoren</label>
+          <FieldLabel>Aanvullende risicofactoren</FieldLabel>
           <div className="grid gap-1.5 sm:grid-cols-2">
             {([
               ['oneHanded', 'Éénhandig tillen'],
@@ -183,8 +179,8 @@ function LiftingForm({
         </div>
 
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Opmerkingen</label>
-          <input type="text" value={d.notes ?? ''} onChange={(e) => setD({ ...d, notes: e.target.value })} placeholder="Aanvullende informatie" className={INPUT} />
+          <FieldLabel>Opmerkingen</FieldLabel>
+          <Input type="text" value={d.notes ?? ''} onChange={(e) => setD({ ...d, notes: e.target.value })} placeholder="Aanvullende informatie" />
         </div>
       </div>
 
@@ -205,10 +201,10 @@ function LiftingForm({
       )}
 
       <div className="mt-4 flex gap-2">
-        <button type="button" onClick={save} disabled={!d.taskName?.trim()} className="rounded-lg bg-orange-500 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-40">Opslaan</button>
-        <button type="button" onClick={onCancel} className="rounded-lg border border-zinc-200 px-4 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800">Annuleren</button>
+        <Button variant="primary" onClick={save} disabled={!d.taskName?.trim()}>Opslaan</Button>
+        <Button variant="secondary" onClick={onCancel}>Annuleren</Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -243,9 +239,9 @@ export default function PhysicalStep4_Lifting({ investigation, onUpdate }: Props
     return (
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 5 — Tillen &amp; dragen (NIOSH)</h2>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-800/30 dark:bg-amber-900/10 dark:text-amber-400">
-          ⚠ Definieer eerst belastingsgroepen in stap 3.
-        </div>
+        <Alert variant="warning" size="md">
+          Definieer eerst belastingsgroepen in stap 3.
+        </Alert>
       </div>
     );
   }
@@ -282,7 +278,6 @@ export default function PhysicalStep4_Lifting({ investigation, onUpdate }: Props
           <div key={bg.id} className="rounded-xl border border-zinc-200 dark:border-zinc-700">
             <div className="flex items-center justify-between gap-3 rounded-t-xl bg-zinc-50 px-4 py-3 dark:bg-zinc-800/50">
               <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{bg.name}</h3>
-              {!['push-pull', 'repetitive', 'posture', 'forces'].every((m) => !methods.includes(m as never)) || true ? null : null}
             </div>
             <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {tasks.map((task) => {
@@ -316,8 +311,8 @@ export default function PhysicalStep4_Lifting({ investigation, onUpdate }: Props
                           }`}>
                             {result.verdict === 'high' ? 'Zeer risicovol' : result.verdict === 'moderate' ? 'Risicovol' : 'Acceptabel'}
                           </span>
-                          <button onClick={() => setEditingLiftId(task.id)} className="text-xs text-zinc-400 hover:text-orange-600">Bewerken</button>
-                          <button onClick={() => onUpdate({ liftingTasks: liftingTasks.filter((t) => t.id !== task.id) })} className="text-xs text-zinc-400 hover:text-red-500">Verwijderen</button>
+                          <Button variant="ghost" size="xs" leftIcon={<Icon name="pencil" size="xs" />} onClick={() => setEditingLiftId(task.id)}>Bewerken</Button>
+                          <Button variant="danger" size="xs" leftIcon={<Icon name="trash" size="xs" />} onClick={() => onUpdate({ liftingTasks: liftingTasks.filter((t) => t.id !== task.id) })}>Verwijderen</Button>
                         </div>
                       </div>
                     )}
@@ -331,16 +326,14 @@ export default function PhysicalStep4_Lifting({ investigation, onUpdate }: Props
                 </div>
               ) : (
                 <div className="px-4 py-3">
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    leftIcon={<Icon name="plus" size="xs" />}
                     onClick={() => setAddingLiftBg(bg.id)}
-                    className="flex items-center gap-1.5 text-xs text-orange-600 hover:text-orange-700 dark:text-orange-400"
                   >
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
                     Tiltaak toevoegen
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>

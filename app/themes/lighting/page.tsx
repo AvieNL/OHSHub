@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import InvestigationPlaceholder from '@/components/InvestigationPlaceholder';
+import { THEME_LEGAL_INFO } from '@/lib/theme-legal-info';
+import { themes } from '@/lib/themes';
 
 export const metadata: Metadata = {
   title: 'Verlichting — OHSHub',
@@ -7,12 +9,16 @@ export const metadata: Metadata = {
     'Onderzoeksinstrument voor werkplekverlichting conform NEN-EN-12464-1:2021 en Arbobesluit art. 6.29–6.32.',
 };
 
+const { legislation, norms, limitGroups, adminObligations } = THEME_LEGAL_INFO['lighting'];
+const theme = themes.find((t) => t.slug === 'lighting')!;
+
 export default function LightingPage() {
   return (
     <InvestigationPlaceholder
       title="Verlichting"
       subtitle="NEN-EN 12464"
       description="Systematische beoordeling van kunstmatige en daglichtsituaties op de werkplek conform NEN-EN-12464-1:2021. Onvoldoende of ongepaste verlichting leidt tot visuele vermoeidheid, verhoogde foutkans, hoofdpijn en een hoger risico op bedrijfsongevallen. De beoordeling omvat verlichtingssterkte, uniformiteit, verblinding (UGR) en kleurweergave."
+      iconPaths={theme.iconPaths}
       color={{
         border: 'border-amber-500',
         badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
@@ -21,39 +27,10 @@ export default function LightingPage() {
         limitBg: 'bg-amber-50 dark:bg-amber-950/30',
         limitBorder: 'border-amber-200 dark:border-amber-900',
       }}
-      legislation={[
-        'Arbobesluit art. 6.29–6.32 — verlichting van arbeidsplaatsen: daglicht, kunstlicht en noodverlichting',
-        'Bouwbesluit 2012 art. 6.35 — minimumeisen verlichtingssterkte voor verblijfsgebieden',
-        'Arbobesluit art. 3.1g — ergonomische inrichting werkplek (visueel comfort)',
-        'Richtlijn 89/654/EEG — minimumvoorschriften veiligheid en gezondheid op arbeidsplaatsen',
-      ]}
-      norms={[
-        { name: 'NEN-EN-12464-1:2021', desc: 'Licht en verlichting — Verlichting van werkplekken — Deel 1: Binnenwerkplekken. Vervangt de 2011-editie.' },
-        { name: 'NEN-EN-12464-2:2014', desc: 'Licht en verlichting — Verlichting van werkplekken — Deel 2: Buitenwerkplekken' },
-        { name: 'NEN-EN-12665:2011', desc: 'Licht en verlichting — Basisbegrippen en criteria voor het specificeren van verlichtingseisen' },
-        { name: 'CIE 117:1995', desc: 'Discomfort Glare in Interior Lighting — Unified Glare Rating (UGR) methode' },
-        { name: 'NEN-EN-1838:2013', desc: 'Toegepaste verlichting — Noodverlichting' },
-        { name: 'NVVL Richtlijn Daglicht', desc: 'Nederlandse Vereniging voor Verlichtingskunde — richtlijnen voor daglichttoetreding en beoordeling' },
-      ]}
-      limitGroups={[
-        {
-          title: 'Verlichtingssterkte (Em) — voorbeelden',
-          limits: [
-            { label: 'Gangen, trappenhuizen', value: '≥ 100 lux' },
-            { label: 'Kantoorwerk (beeldscherm)', value: '≥ 500 lux' },
-            { label: 'Tekenkamer, fijn assemblage', value: '≥ 750 lux' },
-            { label: 'Zeer nauwkeurig werk', value: '≥ 1 000 lux' },
-          ],
-        },
-        {
-          title: 'Overige parameters',
-          limits: [
-            { label: 'Uniformiteitsratio', sublabel: 'U0 = Emin/Em', value: '≥ 0,60–0,70' },
-            { label: 'Verblindingsindex', sublabel: 'UGR', value: '≤ 16–22' },
-            { label: 'Kleurweergave-index', sublabel: 'Ra', value: '≥ 80' },
-          ],
-        },
-      ]}
+      legislation={legislation}
+      norms={norms}
+      limitGroups={limitGroups}
+      adminObligations={adminObligations}
       steps={[
         { title: 'Vooronderzoek', desc: 'Vragenlijst: type werkzaamheden, visuele nauwkeurigheid, klachten (hoofdpijn, oogvermoeidheid), aanwezigheid daglicht en noodverlichting.' },
         { title: 'Opdracht & kaders', desc: 'Opdrachtgever, uitvoerende deskundige, te beoordelen ruimten en functies, onderzoeksperiode en referentiedocumentatie.' },

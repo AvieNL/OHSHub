@@ -2,6 +2,7 @@
 
 import type { PhysicalInvestigation, PhysicalLoadMethod } from '@/lib/physical-investigation-types';
 import { InfoBox } from '@/components/InfoBox';
+import { Alert } from '@/components/ui';
 
 interface Props {
   investigation: PhysicalInvestigation;
@@ -96,9 +97,9 @@ export default function PhysicalStep3_Strategy({ investigation, onUpdate }: Prop
       </InfoBox>
 
       {bgs.length === 0 && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-800/30 dark:bg-amber-900/10 dark:text-amber-400">
-          ⚠ Definieer eerst belastingsgroepen in stap 3 om de strategie te kunnen koppelen.
-        </div>
+        <Alert variant="warning" size="md">
+          Definieer eerst belastingsgroepen in stap 3 om de strategie te kunnen koppelen.
+        </Alert>
       )}
 
       <div className="grid gap-3 sm:grid-cols-2">

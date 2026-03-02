@@ -7,6 +7,7 @@ import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
 import { LegalRef } from '@/components/LegalRef';
 import { InfoBox } from '@/components/InfoBox';
+import { Alert, FormGrid, Input, Select, Textarea } from '@/components/ui';
 
 interface Props {
   investigation: SoundInvestigation;
@@ -494,11 +495,11 @@ function AudiometrySection({
           </span>
         </div>
         {isUAVOrAbove && (
-          <div className="rounded-lg bg-orange-50 px-3 py-2 text-xs text-orange-700 dark:bg-orange-900/15 dark:text-orange-400">
+          <Alert variant="orange" size="sm">
             <strong>Verplicht:</strong> Periodiek preventief gehooronderzoek aanbieden via bedrijfsarts
             (Arbobesluit art. 6.10 lid 1). Bij vastgestelde gehoorschade: risicobeoordeling herzien en
             werknemer persoonlijk informeren (art. 6.10a).
-          </div>
+          </Alert>
         )}
 
         {/* Status select */}
@@ -506,42 +507,38 @@ function AudiometrySection({
           <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
             Status gehooronderzoek
           </label>
-          <select
+          <Select
             value={heg.audiometryStatus ?? ''}
             onChange={(e) => upd({ audiometryStatus: (e.target.value || undefined) as SoundHEG['audiometryStatus'] })}
-            className="w-full rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-full"
           >
             <option value="">— selecteer —</option>
             {STATUS_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {/* Not conducted: warning + notes only */}
         {heg.audiometryStatus === 'not-conducted' && (
           <>
-            <div className={`rounded-lg px-3 py-2 text-xs ${
-              isUAVOrAbove
-                ? 'bg-red-50 text-red-700 dark:bg-red-900/15 dark:text-red-400'
-                : 'bg-amber-50 text-amber-700 dark:bg-amber-900/15 dark:text-amber-400'
-            }`}>
+            <Alert variant={isUAVOrAbove ? 'error' : 'warning'} size="sm">
               {isUAVOrAbove
                 ? <><strong>Actie vereist:</strong> Gehooronderzoek is nog niet uitgevoerd. Bij de bovenste actiewaarde is periodiek preventief gehooronderzoek verplicht (art. 6.10 lid 1).</>
                 : <><strong>Aanbevolen:</strong> Gehooronderzoek is nog niet uitgevoerd. Overweeg om gehooronderzoek aan te bieden (art. 6.10).</>}
               {' '}Voeg dit toe als maatregel in{' '}
               <button type="button" onClick={() => onGoToStep(10)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 11</button>.
-            </div>
+            </Alert>
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
                 Opmerkingen
               </label>
-              <textarea
+              <Textarea
                 rows={2}
                 value={heg.audiometryFindings ?? ''}
                 onChange={(e) => upd({ audiometryFindings: e.target.value || undefined })}
                 placeholder="Bijv. Nog niet ingepland. Verantwoordelijke: HR-afdeling."
-                className="w-full resize-none rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                className="w-full"
               />
             </div>
           </>
@@ -553,12 +550,12 @@ function AudiometrySection({
             <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
               Opmerkingen
             </label>
-            <textarea
+            <Textarea
               rows={2}
               value={heg.audiometryFindings ?? ''}
               onChange={(e) => upd({ audiometryFindings: e.target.value || undefined })}
               placeholder="Bijv. Blootstelling onder LAV; audiometrie niet vereist op basis van RI&E."
-              className="w-full resize-none rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+              className="w-full"
             />
           </div>
         )}
@@ -566,16 +563,16 @@ function AudiometrySection({
         {/* Active statuses: full detail fields */}
         {(heg.audiometryStatus === 'conducted' || heg.audiometryStatus === 'offered' || heg.audiometryStatus === 'pending') && (
           <>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <FormGrid>
               <div>
                 <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
                   Datum aanbieding / uitvoering
                 </label>
-                <input
+                <Input
                   type="date"
                   value={heg.audiometryDate ?? ''}
                   onChange={(e) => upd({ audiometryDate: e.target.value || undefined })}
-                  className="w-full rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                  className="w-full"
                 />
               </div>
 
@@ -586,12 +583,12 @@ function AudiometrySection({
                     <abbr title="Arbobesluit art. 6.10: documenteer deelnamepercentage periodiek onderzoek" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">art. 6.10</abbr>
                   </label>
                   <div className="flex items-center gap-2">
-                    <input
+                    <Input
                       type="number" min={0} max={100} step={1}
                       value={heg.audiometryParticipationPct ?? ''}
                       onChange={(e) => upd({ audiometryParticipationPct: parseFloat(e.target.value) || undefined })}
                       placeholder="—"
-                      className="w-24 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                      className="w-24"
                     />
                     <span className="text-sm text-zinc-500">%</span>
                   </div>
@@ -602,25 +599,25 @@ function AudiometrySection({
                 <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
                   Volgende oproep
                 </label>
-                <input
+                <Input
                   type="date"
                   value={heg.audiometryNextDate ?? ''}
                   onChange={(e) => upd({ audiometryNextDate: e.target.value || undefined })}
-                  className="w-full rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                  className="w-full"
                 />
               </div>
-            </div>
+            </FormGrid>
 
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
                 Bevindingen / conclusie
               </label>
-              <textarea
+              <Textarea
                 rows={2}
                 value={heg.audiometryFindings ?? ''}
                 onChange={(e) => upd({ audiometryFindings: e.target.value || undefined })}
                 placeholder="Bijv. Geen gehoorverlies vastgesteld. Volgende oproep over 2 jaar."
-                className="w-full resize-none rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                className="w-full"
               />
             </div>
           </>
@@ -950,10 +947,10 @@ export default function SoundStep8_Assessment({ investigation, onUpdate, onGoToS
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           Stap 10 — Beoordeling actiewaarden
         </h2>
-        <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning" size="md">
           Definieer eerst <Abbr id="HEG">HEG</Abbr>&apos;s in{' '}
           <button type="button" onClick={() => onGoToStep(2)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 3</button>.
-        </div>
+        </Alert>
       </div>
     );
   }
@@ -1023,12 +1020,12 @@ export default function SoundStep8_Assessment({ investigation, onUpdate, onGoToS
       </section>
 
       {statistics.length === 0 ? (
-        <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning" size="md">
           Voer eerst meetwaarden in bij{' '}
           <button type="button" onClick={() => onGoToStep(7)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 8</button>{' '}
           en bereken de blootstelling bij{' '}
           <button type="button" onClick={() => onGoToStep(8)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 9</button>.
-        </div>
+        </Alert>
       ) : (
         <section className="space-y-4">
           <h3 className="border-b border-zinc-100 pb-2 text-sm font-semibold uppercase tracking-wider text-zinc-400 dark:border-zinc-800 dark:text-zinc-500">
@@ -1075,9 +1072,9 @@ export default function SoundStep8_Assessment({ investigation, onUpdate, onGoToS
           </div>
 
           {hegs.length > statistics.length && (
-            <div className="rounded-lg bg-amber-50 px-4 py-3 text-xs text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+            <Alert variant="warning" size="sm">
               {hegs.length - statistics.length} <Abbr id="HEG">HEG</Abbr>{hegs.length - statistics.length !== 1 ? '\'s' : ''} heeft onvoldoende meetgegevens.
-            </div>
+            </Alert>
           )}
         </section>
       )}

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { Investigation, MeasurementPlanEntry } from '@/lib/investigation-types';
 import { newId } from '@/lib/investigation-storage';
+import { Button, Input, Select, Textarea, Icon } from '@/components/ui';
 
 interface Props {
   investigation: Investigation;
@@ -53,57 +54,56 @@ function PlanForm({
           <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
             SEG <span className="text-red-500">*</span>
           </label>
-          <select
+          <Select
             value={plan.segId}
             onChange={(e) => f({ segId: e.target.value })}
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+            className="w-full"
           >
             <option value="">Selecteer SEG…</option>
             {segs.map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
-          </select>
+          </Select>
         </div>
 
         <div>
           <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
             Stof <span className="text-red-500">*</span>
           </label>
-          <select
+          <Select
             value={plan.substanceId}
             onChange={(e) => f({ substanceId: e.target.value })}
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+            className="w-full"
           >
             <option value="">Selecteer stof…</option>
             {substances.map((s) => (
               <option key={s.id} value={s.id}>{s.productName}</option>
             ))}
-          </select>
+          </Select>
         </div>
 
         <div>
           <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Type meting</label>
-          <select
+          <Select
             value={plan.measurementType}
             onChange={(e) => f({ measurementType: e.target.value as MeasurementPlanEntry['measurementType'] })}
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+            className="w-full"
           >
             <option value="8h-tgg">8-uurs TGG (langetermijn)</option>
             <option value="15min">15-min STEL (kortetermijn)</option>
             <option value="ceiling">Plafondwaarde (piek)</option>
-          </select>
+          </Select>
         </div>
 
         <div>
           <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
             Aantal metingen gepland
           </label>
-          <input
+          <Input
             type="number"
-            min="3"
-            value={plan.plannedCount}
+            value={String(plan.plannedCount)}
             onChange={(e) => f({ plannedCount: parseInt(e.target.value) || 6 })}
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+            className="w-full"
           />
           <p className="mt-1 text-xs text-zinc-400">
             {plan.plannedCount >= 6 ? '≥ 6: volledige statistische toets mogelijk' : '3–5: preliminary test (beperkt)'}
@@ -112,59 +112,58 @@ function PlanForm({
 
         <div>
           <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Meetmethode (EN 482)</label>
-          <input
+          <Input
             type="text"
             value={plan.method ?? ''}
             onChange={(e) => f({ method: e.target.value })}
             placeholder="Bijv. NIOSH 1500, ISO 8518, MDHS14"
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+            className="w-full"
           />
         </div>
 
         <div>
           <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Laboratorium</label>
-          <input
+          <Input
             type="text"
             value={plan.lab ?? ''}
             onChange={(e) => f({ lab: e.target.value })}
             placeholder="Naam en accreditatienummer lab"
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+            className="w-full"
           />
         </div>
 
         <div>
           <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Geplande datum</label>
-          <input
+          <Input
             type="date"
             value={plan.plannedDate ?? ''}
             onChange={(e) => f({ plannedDate: e.target.value })}
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+            className="w-full"
           />
         </div>
 
         <div className="sm:col-span-2">
           <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Opmerkingen</label>
-          <textarea
+          <Textarea
             rows={2}
             value={plan.notes ?? ''}
             onChange={(e) => f({ notes: e.target.value })}
             placeholder="Worst-case scenario, bijzondere condities, representatieve taken…"
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
           />
         </div>
       </div>
 
       <div className="mt-4 flex justify-end gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-        <button onClick={onCancel} className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800">
+        <Button variant="secondary" onClick={onCancel}>
           Annuleren
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="primary"
           onClick={onSave}
           disabled={!isValid}
-          className="rounded-lg bg-orange-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-40"
         >
           Meetplan opslaan
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -275,8 +274,22 @@ export default function Step6_MeasurementPlan({ investigation, onUpdate }: Props
                     </div>
                   </div>
                   <div className="flex shrink-0 gap-2">
-                    <button onClick={() => { setDraft({ ...p }); setEditingId(p.id); }} className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 transition hover:bg-white dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-700">Bewerken</button>
-                    <button onClick={() => remove(p.id)} className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-red-500 transition hover:bg-red-50 dark:border-zinc-600 dark:hover:bg-red-900/20">Verwijderen</button>
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      onClick={() => { setDraft({ ...p }); setEditingId(p.id); }}
+                      leftIcon={<Icon name="pencil" size="xs" />}
+                    >
+                      Bewerken
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="xs"
+                      onClick={() => remove(p.id)}
+                      leftIcon={<Icon name="trash" size="xs" />}
+                    >
+                      Verwijderen
+                    </Button>
                   </div>
                 </div>
               )}
@@ -290,16 +303,15 @@ export default function Step6_MeasurementPlan({ investigation, onUpdate }: Props
       )}
 
       {editingId === null && (
-        <button
+        <Button
+          variant="dashed"
+          className="w-full justify-center py-4"
           onClick={startAdd}
           disabled={segs.length === 0 || substances.length === 0}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 py-4 text-sm font-medium text-zinc-500 transition hover:border-orange-400 hover:bg-orange-50 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:hover:border-orange-600 dark:hover:bg-orange-900/10 dark:hover:text-orange-400"
+          leftIcon={<Icon name="plus" size="sm" />}
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
           Meetplan toevoegen
-        </button>
+        </Button>
       )}
 
       {segs.length === 0 && (

@@ -7,6 +7,7 @@ import { newClimateId } from '@/lib/climate-investigation-storage';
 import { getMetabolicRate } from '@/lib/climate-stats';
 import { Abbr } from '@/components/Abbr';
 import { InfoBox } from '@/components/InfoBox';
+import { Button, Card, FieldLabel, Icon, Input, Textarea } from '@/components/ui';
 
 interface Props {
   investigation: ClimateInvestigation;
@@ -31,69 +32,57 @@ function BGForm({
   const effectiveRate = getMetabolicRate(form);
 
   return (
-    <div className="space-y-4 rounded-xl border border-orange-200 bg-orange-50/50 p-5 dark:border-orange-800/50 dark:bg-orange-900/10">
+    <Card variant="form">
       <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
         {form.name ? `BG bewerken: ${form.name}` : 'Nieuwe blootstellingsgroep toevoegen'}
       </h4>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Naam BG <span className="text-red-500">*</span>
-          </label>
-          <input
+          <FieldLabel>Naam BG <span className="text-red-500">*</span></FieldLabel>
+          <Input
             type="text"
             value={form.name}
             onChange={(e) => upd({ name: e.target.value })}
             placeholder="Bijv. Assemblagemedewerkers hal A"
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Functie / beroepsprofiel
-          </label>
-          <input
+          <FieldLabel>Functie / beroepsprofiel</FieldLabel>
+          <Input
             type="text"
             value={form.jobTitle ?? ''}
             onChange={(e) => upd({ jobTitle: e.target.value })}
             placeholder="Bijv. Assemblagemedewerker"
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Aantal medewerkers
-          </label>
-          <input
+          <FieldLabel>Aantal medewerkers</FieldLabel>
+          <Input
             type="number"
             min={1}
             value={form.workerCount || ''}
             onChange={(e) => upd({ workerCount: parseInt(e.target.value) || 1 })}
-            className="w-24 rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-24"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Effectieve werkdag (uur)
-          </label>
-          <input
+          <FieldLabel>Effectieve werkdag (uur)</FieldLabel>
+          <Input
             type="number"
             min={0.5}
             max={16}
             step={0.5}
             value={form.workHoursPerDay || ''}
             onChange={(e) => upd({ workHoursPerDay: parseFloat(e.target.value) || 8 })}
-            className="w-24 rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-24"
           />
         </div>
       </div>
 
       {/* Metabolic class */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Metabole klasse (<Abbr id="ISO7243">ISO 8996</Abbr> / ISO 7243 Tabel A.1)
-        </label>
+        <FieldLabel>Metabole klasse (<Abbr id="ISO7243">ISO 8996</Abbr> / ISO 7243 Tabel A.1)</FieldLabel>
         <div className="space-y-2">
           {([0, 1, 2, 3, 4] as MetabolicClass[]).map((cls) => {
             const info = METABOLIC_CLASSES[cls];
@@ -136,15 +125,16 @@ function BGForm({
             Handmatige override metabole belasting (W/m²) — laat leeg om klasse te gebruiken
           </label>
           <div className="flex items-center gap-2">
-            <input
+            <Input
               type="number"
               min={58}
               max={800}
               step={10}
+              size="sm"
               value={form.metabolicRateOverride ?? ''}
               onChange={(e) => upd({ metabolicRateOverride: parseFloat(e.target.value) || undefined })}
               placeholder={`${METABOLIC_CLASSES[form.metabolicClass].rate}`}
-              className="w-28 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+              className="w-28"
             />
             <span className="text-xs text-zinc-400">W/m² — effectief: <strong>{effectiveRate} W/m²</strong></span>
           </div>
@@ -153,9 +143,7 @@ function BGForm({
 
       {/* Clothing */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Kledinginsulatie I_cl (clo) — ISO 9920
-        </label>
+        <FieldLabel>Kledinginsulatie I_cl (clo) — ISO 9920</FieldLabel>
         <div className="mb-2 flex flex-wrap gap-2">
           {CLOTHING_PRESETS.map((p) => (
             <button
@@ -175,25 +163,26 @@ function BGForm({
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <label className="text-xs text-zinc-500 dark:text-zinc-400">Handmatig:</label>
-            <input
+            <Input
               type="number"
               min={0}
               max={5}
               step={0.1}
+              size="sm"
               value={form.clothingInsulation || ''}
               onChange={(e) => upd({ clothingInsulation: parseFloat(e.target.value) || 0 })}
-              className="w-20 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+              className="w-20"
             />
             <span className="text-xs text-zinc-400">clo</span>
           </div>
         </div>
         <div className="mt-2">
-          <input
+          <Input
             type="text"
+            size="sm"
             value={form.clothingDescription ?? ''}
             onChange={(e) => upd({ clothingDescription: e.target.value })}
             placeholder="Omschrijving kleding (bijv. overall + shirt)"
-            className="w-full rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
           />
         </div>
       </div>
@@ -214,34 +203,28 @@ function BGForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Beschrijving werkzaamheden / toelichting
-        </label>
-        <textarea
+        <FieldLabel>Beschrijving werkzaamheden / toelichting</FieldLabel>
+        <Textarea
           rows={2}
           value={form.description ?? ''}
           onChange={(e) => upd({ description: e.target.value })}
           placeholder="Omschrijf de werkzaamheden en werkomstandigheden…"
-          className="w-full resize-none rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
         />
       </div>
 
       <div className="flex gap-2">
-        <button
+        <Button
+          variant="primary"
           onClick={() => { if (form.name.trim()) onSave(form); }}
           disabled={!form.name.trim()}
-          className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-40"
         >
           Opslaan
-        </button>
-        <button
-          onClick={onCancel}
-          className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
-        >
+        </Button>
+        <Button variant="secondary" onClick={onCancel}>
           Annuleren
-        </button>
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -340,18 +323,12 @@ export default function ClimateStep2_WorkAnalysis({ investigation, onUpdate }: P
                     )}
                   </div>
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => setEditingId(bg.id)}
-                      className="rounded border border-zinc-200 px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-700"
-                    >
+                    <Button variant="ghost" size="xs" onClick={() => setEditingId(bg.id)} leftIcon={<Icon name="pencil" size="xs" />}>
                       Bewerken
-                    </button>
-                    <button
-                      onClick={() => removeBG(bg.id)}
-                      className="rounded border border-zinc-200 px-2 py-1 text-xs text-zinc-500 hover:bg-red-50 hover:text-red-500 dark:border-zinc-700"
-                    >
+                    </Button>
+                    <Button variant="danger" size="xs" onClick={() => removeBG(bg.id)} leftIcon={<Icon name="trash" size="xs" />}>
                       Verwijderen
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -368,15 +345,14 @@ export default function ClimateStep2_WorkAnalysis({ investigation, onUpdate }: P
           onCancel={() => { setEditingId(null); setDraftNew(null); }}
         />
       ) : (
-        <button
+        <Button
+          variant="dashed"
+          className="w-full justify-center py-4"
           onClick={startNew}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 py-4 text-sm text-zinc-500 transition hover:border-orange-400 hover:text-orange-600 dark:border-zinc-600 dark:text-zinc-400 dark:hover:border-orange-500 dark:hover:text-orange-400"
+          leftIcon={<Icon name="plus" size="sm" />}
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
           <Abbr id="BG">Blootstellingsgroep</Abbr> (BG) toevoegen
-        </button>
+        </Button>
       )}
 
       {bgs.length === 0 && editingId !== newId && (

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { ClimateInvestigation, ClimateReport } from '@/lib/climate-investigation-types';
 import { computeAllClimateStatistics, verdictBadgeClass, pmvCategoryBadgeClass } from '@/lib/climate-stats';
 import { Abbr } from '@/components/Abbr';
+import { Button, Icon, Textarea, Input } from '@/components/ui';
 
 interface Props {
   investigation: ClimateInvestigation;
@@ -160,8 +161,6 @@ export default function ClimateStep12_Report({ investigation, onUpdate }: Props)
     updateReport({ reviewTriggers: updated });
   }
 
-  const INPUT_BASE = 'w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400';
-
   // Determine overall compliance status
   const hasExceedances = statistics.some(
     (s) =>
@@ -275,12 +274,11 @@ export default function ClimateStep12_Report({ investigation, onUpdate }: Props)
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
           Conclusie
         </h3>
-        <textarea
+        <Textarea
           rows={5}
           value={investigation.report.conclusion ?? ''}
           onChange={(e) => updateReport({ conclusion: e.target.value })}
           placeholder="Samenvatting van de belangrijkste bevindingen en conclusies…"
-          className={INPUT_BASE + ' resize-none'}
         />
       </div>
 
@@ -289,12 +287,11 @@ export default function ClimateStep12_Report({ investigation, onUpdate }: Props)
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
           Conformiteitsverklaring
         </h3>
-        <textarea
+        <Textarea
           rows={3}
           value={investigation.report.complianceStatement ?? ''}
           onChange={(e) => updateReport({ complianceStatement: e.target.value })}
           placeholder="Bijv. 'Alle gemeten blootstellingsgroepen voldoen aan de normen van ISO 7730:2025 categorie B en ISO 7243:2017.'"
-          className={INPUT_BASE + ' resize-none'}
         />
       </div>
 
@@ -303,11 +300,10 @@ export default function ClimateStep12_Report({ investigation, onUpdate }: Props)
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
           Datum volgende herbeoordeling
         </h3>
-        <input
+        <Input
           type="date"
           value={investigation.report.nextReviewDate ?? ''}
           onChange={(e) => updateReport({ nextReviewDate: e.target.value })}
-          className={INPUT_BASE}
         />
       </div>
 
@@ -339,12 +335,11 @@ export default function ClimateStep12_Report({ investigation, onUpdate }: Props)
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
           Rapportnotities
         </h3>
-        <textarea
+        <Textarea
           rows={3}
           value={investigation.report.notes ?? ''}
           onChange={(e) => updateReport({ notes: e.target.value })}
           placeholder="Aanvullende opmerkingen over het onderzoek…"
-          className={INPUT_BASE + ' resize-none'}
         />
       </div>
 
@@ -355,30 +350,17 @@ export default function ClimateStep12_Report({ investigation, onUpdate }: Props)
           Kopieer de rapporttekst naar klembord voor gebruik in een tekstverwerker of e-mail.
         </p>
         <div className="flex flex-wrap gap-2">
-          <button
+          <Button
+            variant="primary"
             onClick={() => {
               navigator.clipboard.writeText(buildReportText(investigation));
               setCopied(true);
               setTimeout(() => setCopied(false), 2000);
             }}
-            className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+            leftIcon={copied ? <Icon name="check" size="sm" /> : <Icon name="document" size="sm" />}
           >
-            {copied ? (
-              <>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-                Gekopieerd!
-              </>
-            ) : (
-              <>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
-                </svg>
-                Kopieer rapporttekst
-              </>
-            )}
-          </button>
+            {copied ? 'Gekopieerd!' : 'Kopieer rapporttekst'}
+          </Button>
         </div>
       </div>
 

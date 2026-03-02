@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { ClimateInvestigation, ClimatePreSurvey, PreClimateResponse, ClimateSurveyRecommendation } from '@/lib/climate-investigation-types';
 import { Abbr } from '@/components/Abbr';
 import { InfoBox } from '@/components/InfoBox';
+import { Button, Input, Select, Textarea } from '@/components/ui';
 
 interface Props {
   investigation: ClimateInvestigation;
@@ -154,25 +155,23 @@ export default function ClimateStep0_PreSurvey({ investigation, onUpdate }: Prop
           <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
             Naam respondent (geïnterviewde)
           </label>
-          <input
+          <Input
             type="text"
             value={survey.respondentName ?? ''}
             onChange={(e) => updateSurvey({ respondentName: e.target.value })}
             placeholder="Naam van de contactpersoon / geïnterviewde"
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
           />
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
             Geschatte omgevingstemperatuur (°C)
           </label>
-          <input
+          <Input
             type="number"
             step={0.5}
             value={survey.estimatedTemp ?? ''}
             onChange={(e) => updateSurvey({ estimatedTemp: parseFloat(e.target.value) || undefined })}
             placeholder="Bijv. 32"
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
           />
         </div>
       </div>
@@ -195,12 +194,11 @@ export default function ClimateStep0_PreSurvey({ investigation, onUpdate }: Prop
             <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
               Omschrijving klachten
             </label>
-            <textarea
+            <Textarea
               rows={2}
               value={survey.complaintsDescription ?? ''}
               onChange={(e) => updateSurvey({ complaintsDescription: e.target.value })}
               placeholder="Bijv. medewerkers klagen over tocht bij de ramen, hitte bij de oven…"
-              className="w-full resize-none rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
             />
           </div>
         )}
@@ -255,12 +253,9 @@ export default function ClimateStep0_PreSurvey({ investigation, onUpdate }: Prop
         })}
 
         {!showAll && (
-          <button
-            onClick={() => setShowAll(true)}
-            className="text-sm text-orange-600 underline hover:text-orange-700 dark:text-orange-400"
-          >
+          <Button variant="link" onClick={() => setShowAll(true)}>
             Toon alle vragen ({PRE_SURVEY_QUESTIONS.length})
-          </button>
+          </Button>
         )}
       </div>
 
@@ -295,12 +290,11 @@ export default function ClimateStep0_PreSurvey({ investigation, onUpdate }: Prop
         <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
           Aanbeveling handmatig overschrijven (optioneel)
         </label>
-        <select
+        <Select
           value={survey.recommendationOverride ?? ''}
           onChange={(e) =>
             updateSurvey({ recommendationOverride: (e.target.value || undefined) as ClimateSurveyRecommendation | undefined })
           }
-          className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
         >
           <option value="">— gebruik berekende aanbeveling —</option>
           <option value="comfort-measurement">PMV/PPD comfortmeting aanbevolen</option>
@@ -308,18 +302,17 @@ export default function ClimateStep0_PreSurvey({ investigation, onUpdate }: Prop
           <option value="cold-measurement">IREQ-koudestressbeoordeling aanbevolen</option>
           <option value="full-investigation">Volledig klimaatonderzoek (alle scenario&apos;s)</option>
           <option value="not-required">Meting niet vereist</option>
-        </select>
+        </Select>
         {survey.recommendationOverride && (
           <div className="mt-2">
             <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
               Motivering afwijking aanbeveling
             </label>
-            <textarea
+            <Textarea
               rows={2}
               value={survey.conclusionNotes ?? ''}
               onChange={(e) => updateSurvey({ conclusionNotes: e.target.value })}
               placeholder="Reden voor het afwijken van de berekende aanbeveling…"
-              className="w-full resize-none rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
             />
           </div>
         )}

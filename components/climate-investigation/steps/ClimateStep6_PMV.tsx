@@ -6,6 +6,7 @@ import { computeAllClimateStatistics, pmvCategoryBadgeClass, getMetabolicRate } 
 import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
 import { InfoBox } from '@/components/InfoBox';
+import { Alert } from '@/components/ui';
 
 interface Props {
   investigation: ClimateInvestigation;
@@ -31,9 +32,9 @@ export default function ClimateStep6_PMV({ investigation, onUpdate }: Props) {
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           Stap 7 — Thermisch comfort (<Abbr id="PMV">PMV</Abbr>/<Abbr id="PPD">PPD</Abbr>)
         </h2>
-        <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800/30 dark:text-zinc-400">
+        <Alert variant="neutral">
           Dit scenario is niet geselecteerd. Selecteer &ldquo;Thermisch comfort&rdquo; in stap 4 om de PMV/PPD-beoordeling in te schakelen.
-        </div>
+        </Alert>
       </div>
     );
   }
@@ -42,9 +43,9 @@ export default function ClimateStep6_PMV({ investigation, onUpdate }: Props) {
     return (
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 7 — Thermisch comfort (PMV/PPD)</h2>
-        <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning">
           Definieer eerst blootstellingsgroepen in stap 3.
-        </div>
+        </Alert>
       </div>
     );
   }

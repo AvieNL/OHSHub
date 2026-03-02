@@ -1,7 +1,11 @@
 'use client';
 
-import type { Investigation, InvestigationScope, PersonEntry } from '@/lib/investigation-types';
+import type { Investigation, InvestigationScope } from '@/lib/investigation-types';
+import type { BasePerson, CommonScopeFields } from '@/lib/shared-investigation-types';
 import { Abbr } from '@/components/Abbr';
+import { Button, Input, Textarea, Alert, Icon } from '@/components/ui';
+import { PersonSection } from '@/components/shared/scope/PersonSection';
+import { ScopeFields } from '@/components/shared/scope/ScopeFields';
 
 interface Props {
   investigation: Investigation;
@@ -18,169 +22,30 @@ const NORMS: { id: string; label: React.ReactNode }[] = [
   { id: 'arie',       label: <><Abbr id="ARIE">ARIE</Abbr> (Arbobesluit hfst. 2 afd. 2) — grote hoeveelheden</> },
 ];
 
-// ─── PersonList — reusable add/edit/remove list ───────────────────────────────
-
-interface PersonListProps {
-  label: string;
-  namePlaceholder: string;
-  rolePlaceholder: string;
-  orgPlaceholder: string;
-  showOrg?: boolean;
-  showAnonymous?: boolean;
-  entries: PersonEntry[];
-  onChange: (entries: PersonEntry[]) => void;
-}
-
-function PersonList({
-  label,
-  namePlaceholder,
-  rolePlaceholder,
-  orgPlaceholder,
-  showOrg = true,
-  showAnonymous = false,
-  entries,
-  onChange,
-}: PersonListProps) {
-  function addEntry() {
-    onChange([...entries, { id: crypto.randomUUID(), name: '', role: '', organization: '' }]);
-  }
-
-  function updateEntry(id: string, patch: Partial<PersonEntry>) {
-    onChange(entries.map((e) => (e.id === id ? { ...e, ...patch } : e)));
-  }
-
-  function removeEntry(id: string) {
-    onChange(entries.filter((e) => e.id !== id));
-  }
-
-  const INPUT =
-    'rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-800 placeholder-zinc-400 outline-none transition focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:border-orange-400';
-
-  return (
-    <div className="space-y-2">
-      {entries.map((entry, idx) => (
-        <div
-          key={entry.id}
-          className="rounded-lg border border-zinc-200 p-5 dark:border-zinc-700"
-        >
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
-                {label} {entries.length > 1 ? idx + 1 : ''}
-              </span>
-              {showAnonymous && (
-                <label className="flex cursor-pointer items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-                  <input
-                    type="checkbox"
-                    checked={entry.anonymous ?? false}
-                    onChange={(e) => updateEntry(entry.id, { anonymous: e.target.checked })}
-                    className="accent-orange-500"
-                  />
-                  Anoniem
-                </label>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => removeEntry(entry.id)}
-              className="rounded p-1 text-zinc-400 transition hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-              title="Verwijderen"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Naam</label>
-              <input
-                type="text"
-                value={entry.anonymous ? '' : entry.name}
-                onChange={(e) => updateEntry(entry.id, { name: e.target.value })}
-                placeholder={entry.anonymous ? 'Anoniem' : namePlaceholder}
-                disabled={entry.anonymous}
-                className={`w-full ${INPUT} ${entry.anonymous ? 'cursor-not-allowed opacity-40' : ''}`}
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Functie / rol</label>
-              <input
-                type="text"
-                value={entry.role ?? ''}
-                onChange={(e) => updateEntry(entry.id, { role: e.target.value })}
-                placeholder={rolePlaceholder}
-                className={`w-full ${INPUT}`}
-              />
-            </div>
-            {showOrg && (
-              <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Organisatie</label>
-                <input
-                  type="text"
-                  value={entry.organization ?? ''}
-                  onChange={(e) => updateEntry(entry.id, { organization: e.target.value })}
-                  placeholder={orgPlaceholder}
-                  className={`w-full ${INPUT}`}
-                />
-              </div>
-            )}
-            {!entry.anonymous && (
-              <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">E-mailadres</label>
-                <input
-                  type="email"
-                  value={entry.email ?? ''}
-                  onChange={(e) => updateEntry(entry.id, { email: e.target.value })}
-                  placeholder="naam@bedrijf.nl"
-                  className={`w-full ${INPUT}`}
-                />
-              </div>
-            )}
-            {!entry.anonymous && (
-              <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Telefoonnummer</label>
-                <input
-                  type="tel"
-                  value={entry.phone ?? ''}
-                  onChange={(e) => updateEntry(entry.id, { phone: e.target.value })}
-                  placeholder="+31 6 12345678"
-                  className={`w-full ${INPUT}`}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      ))}
-      <button
-        type="button"
-        onClick={addEntry}
-        className="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-300 px-4 py-2.5 text-sm text-zinc-500 transition hover:border-orange-400 hover:text-orange-600 dark:border-zinc-600 dark:text-zinc-400 dark:hover:border-orange-500 dark:hover:text-orange-400"
-      >
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
-        {label} toevoegen
-      </button>
-    </div>
-  );
-}
+const QUALIFICATION_OPTIONS = [
+  { value: 'AH',           label: 'Arbeidshygiënist' },
+  { value: 'HVK',          label: "HVK'er (Hoger Veiligheidskundige)" },
+  { value: 'toxicoloog',   label: 'Toxicoloog' },
+  { value: 'bedrijfsarts', label: 'Bedrijfsarts' },
+  { value: 'other',        label: 'Overige' },
+];
 
 function Tip({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mt-2 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 dark:bg-amber-900/15">
-      <svg className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.355a9.727 9.727 0 01-3 0M12 3v1.5M6.22 4.72l1.06 1.06M4.5 12H3m1.72 5.78 1.06-1.06M12 21v-1.5m5.78-1.72-1.06 1.06M21 12h-1.5m-1.72-5.78-1.06 1.06" />
-      </svg>
-      <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">{children}</p>
-    </div>
+    <Alert variant="warning" className="mt-2">
+      {children}
+    </Alert>
   );
 }
 
 export default function Step1_Scope({ investigation, onUpdate }: Props) {
   const scope = investigation.scope;
 
-  function update(patch: Partial<InvestigationScope>) {
+  function updateScope(patch: Partial<InvestigationScope>) {
+    onUpdate({ scope: { ...scope, ...patch } });
+  }
+
+  function updateCommonScope(patch: Partial<CommonScopeFields>) {
     onUpdate({ scope: { ...scope, ...patch } });
   }
 
@@ -188,14 +53,14 @@ export default function Step1_Scope({ investigation, onUpdate }: Props) {
     const norms = scope.applicableNorms.includes(id)
       ? scope.applicableNorms.filter((n) => n !== id)
       : [...scope.applicableNorms, id];
-    update({ applicableNorms: norms });
+    updateScope({ applicableNorms: norms });
   }
 
   return (
     <div className="space-y-8">
       <div>
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 1 — Opdracht en juridische kaders vaststellen
+          Stap 2 — Opdracht en juridische kaders vaststellen
         </h2>
         <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
           Scherpstellen van de onderzoeksvraag, scope, en de toepasselijke wet- en regelgeving.
@@ -206,69 +71,102 @@ export default function Step1_Scope({ investigation, onUpdate }: Props) {
       {/* 1.1 Betrokken personen */}
       <section className="space-y-6">
         <h3 className="border-b border-zinc-100 pb-2 text-sm font-semibold uppercase tracking-wider text-zinc-400 dark:border-zinc-800 dark:text-zinc-500">
-          1.1 Betrokken personen
+          2.1 Betrokken personen
         </h3>
 
-        {/* Onderzoekers */}
-        <div className="space-y-3">
-          <div>
-            <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Onderzoeker(s)</p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Degene(n) die het blootstellingsonderzoek uitvoert.
-            </p>
-          </div>
-          <PersonList
-            label="Onderzoeker"
-            namePlaceholder="J. de Vries"
-            rolePlaceholder="Arbodeskundige (HOVd)"
-            orgPlaceholder="ArboAdvies B.V."
-            entries={investigation.investigators}
-            onChange={(entries) => onUpdate({ investigators: entries })}
-          />
-        </div>
+        <PersonSection
+          title="Onderzoeker(s)"
+          description="Degene(n) die het blootstellingsonderzoek uitvoert."
+          persons={investigation.investigators as BasePerson[]}
+          onAdd={() =>
+            onUpdate({
+              investigators: [
+                ...investigation.investigators,
+                { id: crypto.randomUUID(), name: '' },
+              ],
+            })
+          }
+          onUpdate={(id, patch) =>
+            onUpdate({
+              investigators: investigation.investigators.map((p) =>
+                p.id === id ? { ...p, ...patch } as typeof p : p,
+              ),
+            })
+          }
+          onRemove={(id) =>
+            onUpdate({
+              investigators: investigation.investigators.filter((p) => p.id !== id),
+            })
+          }
+          cardLabel="Onderzoeker"
+          showQualification
+          qualificationOptions={QUALIFICATION_OPTIONS}
+        />
 
-        {/* Opdrachtgevers */}
-        <div className="space-y-3">
-          <div>
-            <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Opdrachtgever(s)</p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Bedrijf of persoon die het onderzoek heeft opgedragen.
-            </p>
-          </div>
-          <PersonList
-            label="Opdrachtgever"
-            namePlaceholder="P. Jansen"
-            rolePlaceholder="Hoofd HSE / directeur"
-            orgPlaceholder="Schildersbedrijf De Vries B.V."
-            entries={investigation.clients}
-            onChange={(entries) => onUpdate({ clients: entries })}
-          />
-        </div>
+        <PersonSection
+          title="Opdrachtgever(s)"
+          description="Bedrijf of persoon die het onderzoek heeft opgedragen."
+          persons={investigation.clients as BasePerson[]}
+          onAdd={() =>
+            onUpdate({
+              clients: [...investigation.clients, { id: crypto.randomUUID(), name: '' }],
+            })
+          }
+          onUpdate={(id, patch) =>
+            onUpdate({
+              clients: investigation.clients.map((p) =>
+                p.id === id ? { ...p, ...patch } as typeof p : p,
+              ),
+            })
+          }
+          onRemove={(id) =>
+            onUpdate({ clients: investigation.clients.filter((p) => p.id !== id) })
+          }
+          cardLabel="Opdrachtgever"
+        />
 
-        {/* Respondenten */}
-        <div className="space-y-3">
-          <div>
-            <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Respondenten / betrokken medewerkers</p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Medewerkers die zijn geraadpleegd of waarvan de blootstelling is gemeten.
-            </p>
-          </div>
-          <PersonList
-            label="Respondent"
-            namePlaceholder="A. Bakker"
-            rolePlaceholder="Spuiter"
-            orgPlaceholder="Afdeling Lakkerij"
-            showAnonymous
-            entries={investigation.respondents}
-            onChange={(entries) => onUpdate({ respondents: entries })}
-          />
-        </div>
+        <PersonSection
+          title="Respondenten / betrokken medewerkers"
+          description="Medewerkers die zijn geraadpleegd of waarvan de blootstelling is gemeten. Anonimisering mogelijk."
+          persons={investigation.respondents as BasePerson[]}
+          onAdd={() =>
+            onUpdate({
+              respondents: [
+                ...investigation.respondents,
+                { id: crypto.randomUUID(), name: '' },
+              ],
+            })
+          }
+          onUpdate={(id, patch) =>
+            onUpdate({
+              respondents: investigation.respondents.map((p) =>
+                p.id === id ? { ...p, ...patch } as typeof p : p,
+              ),
+            })
+          }
+          onRemove={(id) =>
+            onUpdate({
+              respondents: investigation.respondents.filter((p) => p.id !== id),
+            })
+          }
+          cardLabel="Respondent"
+          showAnonymous
+          showInvestigationRole
+        />
       </section>
 
-      {/* 1.1 Scope */}
+      {/* 2.2 Onderzoeksgegevens */}
       <section className="space-y-4">
         <h3 className="border-b border-zinc-100 pb-2 text-sm font-semibold uppercase tracking-wider text-zinc-400 dark:border-zinc-800 dark:text-zinc-500">
-          1.2 Scope en vraagstelling
+          2.2 Onderzoeksgegevens
+        </h3>
+        <ScopeFields scope={scope} onChange={updateCommonScope} />
+      </section>
+
+      {/* 2.3 Scope en vraagstelling */}
+      <section className="space-y-4">
+        <h3 className="border-b border-zinc-100 pb-2 text-sm font-semibold uppercase tracking-wider text-zinc-400 dark:border-zinc-800 dark:text-zinc-500">
+          2.3 Scope en vraagstelling
         </h3>
 
         <div>
@@ -294,7 +192,7 @@ export default function Step1_Scope({ investigation, onUpdate }: Props) {
                   name="question"
                   value={opt.value}
                   checked={scope.question === opt.value}
-                  onChange={() => update({ question: opt.value as InvestigationScope['question'] })}
+                  onChange={() => updateScope({ question: opt.value as InvestigationScope['question'] })}
                   className="accent-orange-500"
                 />
                 <span className="text-zinc-700 dark:text-zinc-300">{opt.label}</span>
@@ -312,30 +210,13 @@ export default function Step1_Scope({ investigation, onUpdate }: Props) {
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Naam en adres van de werklocatie <span className="text-xs font-normal text-zinc-400">(§6(b) NEN-EN 689)</span>
-          </label>
-          <input
-            type="text"
-            value={scope.workplaceAddress ?? ''}
-            onChange={(e) => update({ workplaceAddress: e.target.value })}
-            placeholder="Bijv. Schildersbedrijf De Vries B.V. — Industrieweg 12, 1234 AB Amsterdam"
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm text-zinc-800 placeholder-zinc-400 outline-none transition focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:border-orange-400"
-          />
-          <p className="mt-1 text-xs text-zinc-400">
-            Naam en adres van de werkplek (locatie waar de werkzaamheden plaatsvinden). Dit kan afwijken van het vestigingsadres van de werkgever.
-          </p>
-        </div>
-
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
             Welke afdelingen / functies vallen binnen scope?
           </label>
-          <textarea
+          <Textarea
             rows={3}
             value={scope.departments}
-            onChange={(e) => update({ departments: e.target.value })}
+            onChange={(e) => updateScope({ departments: e.target.value })}
             placeholder="Bijv. Afdeling Lakkerij (spuiter), afdeling Onderhoud (monteur), schoonmaakdienst…"
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm text-zinc-800 placeholder-zinc-400 outline-none transition focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:border-orange-400"
           />
         </div>
 
@@ -347,7 +228,7 @@ export default function Step1_Scope({ investigation, onUpdate }: Props) {
           <input
             type="checkbox"
             checked={scope.isPartOfRIE}
-            onChange={(e) => update({ isPartOfRIE: e.target.checked })}
+            onChange={(e) => updateScope({ isPartOfRIE: e.target.checked })}
             className="accent-orange-500"
           />
           <span className="text-zinc-700 dark:text-zinc-300">
@@ -356,10 +237,10 @@ export default function Step1_Scope({ investigation, onUpdate }: Props) {
         </label>
       </section>
 
-      {/* 1.2 Bijzondere risico's */}
+      {/* 2.4 Bijzondere juridische kaders */}
       <section className="space-y-4">
         <h3 className="border-b border-zinc-100 pb-2 text-sm font-semibold uppercase tracking-wider text-zinc-400 dark:border-zinc-800 dark:text-zinc-500">
-          1.3 Bijzondere juridische kaders
+          2.4 Bijzondere juridische kaders
         </h3>
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -369,7 +250,7 @@ export default function Step1_Scope({ investigation, onUpdate }: Props) {
             <input
               type="checkbox"
               checked={scope.atexApplicable}
-              onChange={(e) => update({ atexApplicable: e.target.checked })}
+              onChange={(e) => updateScope({ atexApplicable: e.target.checked })}
               className="mt-0.5 accent-orange-500"
             />
             <div>
@@ -386,7 +267,7 @@ export default function Step1_Scope({ investigation, onUpdate }: Props) {
             <input
               type="checkbox"
               checked={scope.arieApplicable}
-              onChange={(e) => update({ arieApplicable: e.target.checked })}
+              onChange={(e) => updateScope({ arieApplicable: e.target.checked })}
               className="mt-0.5 accent-orange-500"
             />
             <div>
@@ -401,15 +282,15 @@ export default function Step1_Scope({ investigation, onUpdate }: Props) {
         {(scope.atexApplicable || scope.arieApplicable) && (
           <Tip>
             <Abbr id="ATEX">ATEX</Abbr> en <Abbr id="ARIE">ARIE</Abbr> vereisen aanvullende specifieke beoordelingen buiten dit instrument.
-            Neem contact op met een kerndeskundige (HVKS of veiligheidskundige).
+            Neem contact op met een kerndeskundige (<Abbr id="HVK">HVK'er</Abbr> of veiligheidskundige).
           </Tip>
         )}
       </section>
 
-      {/* 1.3 Normen */}
+      {/* 2.5 Toepasselijke normen */}
       <section className="space-y-4">
         <h3 className="border-b border-zinc-100 pb-2 text-sm font-semibold uppercase tracking-wider text-zinc-400 dark:border-zinc-800 dark:text-zinc-500">
-          1.4 Toepasselijke normen en handreikingen
+          2.5 Toepasselijke normen en handreikingen
         </h3>
         <div className="space-y-2">
           {NORMS.map((norm) => (
@@ -431,20 +312,6 @@ export default function Step1_Scope({ investigation, onUpdate }: Props) {
             </label>
           ))}
         </div>
-      </section>
-
-      {/* Notes */}
-      <section>
-        <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Aanvullende opmerkingen / bijzonderheden
-        </label>
-        <textarea
-          rows={3}
-          value={scope.notes ?? ''}
-          onChange={(e) => update({ notes: e.target.value })}
-          placeholder="Bijzondere omstandigheden, contactpersonen, referenties naar eerdere onderzoeken…"
-          className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm text-zinc-800 placeholder-zinc-400 outline-none transition focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:border-orange-400"
-        />
       </section>
     </div>
   );

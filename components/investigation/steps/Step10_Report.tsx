@@ -9,6 +9,7 @@ import type {
 } from '@/lib/investigation-types';
 import { computeStats } from '@/lib/measurement-stats';
 import { downloadPDF } from '@/lib/pdf-html';
+import { Button, Input, Textarea } from '@/components/ui';
 
 interface Props {
   investigation: Investigation;
@@ -298,12 +299,11 @@ export default function Step10_Report({ investigation, onUpdate }: Props) {
       {/* ── Conclusion ─────────────────────────────────────────────────────── */}
       <div className="space-y-4">
         <SectionTitle>Conclusie & oordeel</SectionTitle>
-        <textarea
+        <Textarea
           rows={5}
           value={report.conclusion ?? ''}
           onChange={(e) => updateReport({ conclusion: e.target.value })}
           placeholder="Beschrijf de algehele conclusie van dit onderzoek: zijn de blootstellingen aanvaardbaar, welke maatregelen zijn essentieel, en wat is de vervolgstap?"
-          className="w-full rounded-lg border border-zinc-200 px-3 py-2.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
         />
       </div>
 
@@ -315,11 +315,11 @@ export default function Step10_Report({ investigation, onUpdate }: Props) {
             <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
               Datum volgende herbeoordeling
             </label>
-            <input
+            <Input
               type="date"
               value={report.nextReviewDate ?? ''}
               onChange={(e) => updateReport({ nextReviewDate: e.target.value })}
-              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+              className="w-full"
             />
             <div className="mt-2">
               {(() => {
@@ -330,15 +330,14 @@ export default function Step10_Report({ investigation, onUpdate }: Props) {
                   .at(-1);
                 return (
                   <>
-                    <button
-                      type="button"
+                    <Button
+                      variant="secondary"
                       onClick={() => updateReport({ nextReviewDate: suggestReviewDate(investigation) })}
-                      className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 transition hover:border-orange-400 hover:text-orange-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:border-orange-500 dark:hover:text-orange-400"
                     >
                       {latestDeadline
                         ? `Instellen op basis van maatregelen (${latestDeadline})`
                         : 'Instellen op 1 jaar vanaf vandaag'}
-                    </button>
+                    </Button>
                     {latestDeadline && (
                       <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
                         De verste maatregel-deadline is {latestDeadline}. Na implementatie is herbeoordeling aangewezen.
@@ -381,12 +380,11 @@ export default function Step10_Report({ investigation, onUpdate }: Props) {
       {/* ── Historical notes ────────────────────────────────────────────────── */}
       <div className="space-y-3">
         <SectionTitle>Historische aantekeningen & wijzigingslog</SectionTitle>
-        <textarea
+        <Textarea
           rows={3}
           value={report.historicalNotes ?? ''}
           onChange={(e) => updateReport({ historicalNotes: e.target.value })}
           placeholder="Eerdere onderzoeken, wijzigingen in de situatie, vorige meetresultaten, ontvangen adviezen…"
-          className="w-full rounded-lg border border-zinc-200 px-3 py-2.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
         />
       </div>
 
@@ -394,27 +392,32 @@ export default function Step10_Report({ investigation, onUpdate }: Props) {
       <div className="space-y-4">
         <SectionTitle>Exportopties</SectionTitle>
         <div className="flex flex-wrap gap-3">
-          <button
+          <Button
+            variant="primary"
             onClick={() => downloadPDF(investigation)}
-            className="inline-flex items-center gap-2 rounded-lg border border-orange-300 bg-orange-500 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-orange-600 dark:border-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700"
+            leftIcon={
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+            }
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-            </svg>
             PDF rapport genereren
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="secondary"
             onClick={() => downloadCSV(investigation)}
-            className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+            leftIcon={
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+              </svg>
+            }
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-            </svg>
             Excel / CSV
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="secondary"
             onClick={() => {
               const blob = new Blob([JSON.stringify([investigation], null, 2)], { type: 'application/json' });
               const url = URL.createObjectURL(blob);
@@ -425,34 +428,36 @@ export default function Step10_Report({ investigation, onUpdate }: Props) {
               a.click();
               URL.revokeObjectURL(url);
             }}
-            className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+            leftIcon={
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+            }
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-            </svg>
             Opslaan als bestand
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="secondary"
             onClick={handleCopyText}
-            className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
-          >
-            {copied ? (
-              <>
+            leftIcon={
+              copied ? (
                 <svg className="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
-                <span className="text-emerald-600 dark:text-emerald-400">Gekopieerd!</span>
-              </>
-            ) : (
-              <>
+              ) : (
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
                 </svg>
-                Tekst kopiëren
-              </>
+              )
+            }
+          >
+            {copied ? (
+              <span className="text-emerald-600 dark:text-emerald-400">Gekopieerd!</span>
+            ) : (
+              'Tekst kopiëren'
             )}
-          </button>
+          </Button>
         </div>
         <p className="text-xs text-zinc-400 dark:text-zinc-500">
           PDF: opent een opgemaakt rapport in een nieuw venster — gebruik daarna Afdrukken → Opslaan als PDF.

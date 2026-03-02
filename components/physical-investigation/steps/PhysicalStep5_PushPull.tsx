@@ -6,6 +6,7 @@ import { newPhysicalId } from '@/lib/physical-investigation-storage';
 import { computePushPullResult } from '@/lib/physical-stats';
 import { InfoBox } from '@/components/InfoBox';
 import { Abbr } from '@/components/Abbr';
+import { Alert, Button, Card, FieldLabel, Icon, Input, Select } from '@/components/ui';
 
 interface Props {
   investigation: PhysicalInvestigation;
@@ -50,7 +51,6 @@ function PushPullForm({
   onCancel: () => void;
 }) {
   const [d, setD] = useState<Partial<PushPullTask>>(task);
-  const INPUT = 'w-full rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400';
 
   const handleHeight = d.handleHeight ?? 'mid';
   const wheelFactor = d.wheelCondition === 'poor' ? 0.6 : d.wheelCondition === 'average' ? 0.8 : 1.0;
@@ -80,42 +80,42 @@ function PushPullForm({
   }
 
   return (
-    <div className="rounded-xl border border-orange-200 bg-orange-50/50 px-5 py-4 dark:border-orange-800/30 dark:bg-orange-900/10">
+    <Card variant="form">
       <h4 className="mb-4 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
         {d.id ? 'Taak bewerken' : `Nieuwe duwen/trekken taak — ${bgName}`}
       </h4>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Naam taak *</label>
-          <input type="text" value={d.taskName ?? ''} onChange={(e) => setD({ ...d, taskName: e.target.value })} placeholder="Bijv. Palletwagen beladen verplaatsen magazijn" className={INPUT} />
+          <FieldLabel>Naam taak *</FieldLabel>
+          <Input type="text" value={d.taskName ?? ''} onChange={(e) => setD({ ...d, taskName: e.target.value })} placeholder="Bijv. Palletwagen beladen verplaatsen magazijn" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Type</label>
-          <select value={d.type ?? 'push'} onChange={(e) => setD({ ...d, type: e.target.value as PushPullType })} className={INPUT}>
+          <FieldLabel>Type</FieldLabel>
+          <Select value={d.type ?? 'push'} onChange={(e) => setD({ ...d, type: e.target.value as PushPullType })}>
             {(Object.entries(TYPE_LABELS) as [PushPullType, string][]).map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
             ))}
-          </select>
+          </Select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Totaal gewicht (last + middel, kg)</label>
-          <input type="number" min={0} value={d.totalMass ?? ''} onChange={(e) => setD({ ...d, totalMass: parseFloat(e.target.value) || 0 })} className={INPUT} />
+          <FieldLabel>Totaal gewicht (last + middel, kg)</FieldLabel>
+          <Input type="number" min={0} value={d.totalMass ?? ''} onChange={(e) => setD({ ...d, totalMass: parseFloat(e.target.value) || 0 })} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Handgreephoogte</label>
-          <select value={d.handleHeight ?? 'mid'} onChange={(e) => setD({ ...d, handleHeight: e.target.value as HandleHeight })} className={INPUT}>
+          <FieldLabel>Handgreephoogte</FieldLabel>
+          <Select value={d.handleHeight ?? 'mid'} onChange={(e) => setD({ ...d, handleHeight: e.target.value as HandleHeight })}>
             {(Object.entries(HANDLE_LABELS) as [HandleHeight, string][]).map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
             ))}
-          </select>
+          </Select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Conditie vloer / wieltjes</label>
-          <select value={d.wheelCondition ?? 'good'} onChange={(e) => setD({ ...d, wheelCondition: e.target.value as PushPullTask['wheelCondition'] })} className={INPUT}>
+          <FieldLabel>Conditie vloer / wieltjes</FieldLabel>
+          <Select value={d.wheelCondition ?? 'good'} onChange={(e) => setD({ ...d, wheelCondition: e.target.value as PushPullTask['wheelCondition'] })}>
             {(Object.entries(WHEEL_LABELS)).map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {/* Reference values info */}
@@ -125,24 +125,24 @@ function PushPullForm({
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Aanzetkracht F_init (N) — gemeten</label>
-          <input type="number" min={0} value={d.initialForce ?? ''} onChange={(e) => setD({ ...d, initialForce: e.target.value ? parseFloat(e.target.value) : undefined })} placeholder={`Grenswaarde: ${adjLimits.init} N`} className={INPUT} />
+          <FieldLabel>Aanzetkracht F_init (N) — gemeten</FieldLabel>
+          <Input type="number" min={0} value={d.initialForce ?? ''} onChange={(e) => setD({ ...d, initialForce: e.target.value ? parseFloat(e.target.value) : undefined })} placeholder={`Grenswaarde: ${adjLimits.init} N`} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Voortbewegingskracht F_sust (N) — gemeten</label>
-          <input type="number" min={0} value={d.sustainedForce ?? ''} onChange={(e) => setD({ ...d, sustainedForce: e.target.value ? parseFloat(e.target.value) : undefined })} placeholder={`Grenswaarde: ${adjLimits.sust} N`} className={INPUT} />
+          <FieldLabel>Voortbewegingskracht F_sust (N) — gemeten</FieldLabel>
+          <Input type="number" min={0} value={d.sustainedForce ?? ''} onChange={(e) => setD({ ...d, sustainedForce: e.target.value ? parseFloat(e.target.value) : undefined })} placeholder={`Grenswaarde: ${adjLimits.sust} N`} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Afstand per cyclus (m)</label>
-          <input type="number" min={0} step={0.5} value={d.distancePerCycle ?? ''} onChange={(e) => setD({ ...d, distancePerCycle: parseFloat(e.target.value) || 0 })} className={INPUT} />
+          <FieldLabel>Afstand per cyclus (m)</FieldLabel>
+          <Input type="number" min={0} step={0.5} value={d.distancePerCycle ?? ''} onChange={(e) => setD({ ...d, distancePerCycle: parseFloat(e.target.value) || 0 })} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Frequentie (cycli/uur)</label>
-          <input type="number" min={0} value={d.frequency ?? ''} onChange={(e) => setD({ ...d, frequency: parseFloat(e.target.value) || 0 })} className={INPUT} />
+          <FieldLabel>Frequentie (cycli/uur)</FieldLabel>
+          <Input type="number" min={0} value={d.frequency ?? ''} onChange={(e) => setD({ ...d, frequency: parseFloat(e.target.value) || 0 })} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Helling (%)</label>
-          <input type="number" min={0} max={20} step={0.5} value={d.gradient ?? ''} onChange={(e) => setD({ ...d, gradient: e.target.value ? parseFloat(e.target.value) : undefined })} placeholder="0 = vlakke vloer" className={INPUT} />
+          <FieldLabel>Helling (%)</FieldLabel>
+          <Input type="number" min={0} max={20} step={0.5} value={d.gradient ?? ''} onChange={(e) => setD({ ...d, gradient: e.target.value ? parseFloat(e.target.value) : undefined })} placeholder="0 = vlakke vloer" />
         </div>
         <div className="flex items-center gap-2">
           <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
@@ -151,15 +151,15 @@ function PushPullForm({
           </label>
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Opmerkingen</label>
-          <input type="text" value={d.notes ?? ''} onChange={(e) => setD({ ...d, notes: e.target.value })} placeholder="Aanvullende informatie" className={INPUT} />
+          <FieldLabel>Opmerkingen</FieldLabel>
+          <Input type="text" value={d.notes ?? ''} onChange={(e) => setD({ ...d, notes: e.target.value })} placeholder="Aanvullende informatie" />
         </div>
       </div>
       <div className="mt-4 flex gap-2">
-        <button type="button" onClick={save} disabled={!d.taskName?.trim()} className="rounded-lg bg-orange-500 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-40">Opslaan</button>
-        <button type="button" onClick={onCancel} className="rounded-lg border border-zinc-200 px-4 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800">Annuleren</button>
+        <Button variant="primary" onClick={save} disabled={!d.taskName?.trim()}>Opslaan</Button>
+        <Button variant="secondary" onClick={onCancel}>Annuleren</Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -183,9 +183,9 @@ export default function PhysicalStep5_PushPull({ investigation, onUpdate }: Prop
     return (
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 6 — Duwen &amp; trekken</h2>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-800/30 dark:bg-amber-900/10 dark:text-amber-400">
-          ⚠ Definieer eerst belastingsgroepen in stap 3.
-        </div>
+        <Alert variant="warning" size="md">
+          Definieer eerst belastingsgroepen in stap 3.
+        </Alert>
       </div>
     );
   }
@@ -249,8 +249,8 @@ export default function PhysicalStep5_PushPull({ investigation, onUpdate }: Prop
                           }`}>
                             {result.verdict === 'high' ? 'Overschreden' : result.verdict === 'moderate' ? 'Grensgebied' : 'Acceptabel'}
                           </span>
-                          <button onClick={() => setEditingId(task.id)} className="text-xs text-zinc-400 hover:text-orange-600">Bewerken</button>
-                          <button onClick={() => onUpdate({ pushPullTasks: pushPullTasks.filter((t) => t.id !== task.id) })} className="text-xs text-zinc-400 hover:text-red-500">Verwijderen</button>
+                          <Button variant="ghost" size="xs" leftIcon={<Icon name="pencil" size="xs" />} onClick={() => setEditingId(task.id)}>Bewerken</Button>
+                          <Button variant="danger" size="xs" leftIcon={<Icon name="trash" size="xs" />} onClick={() => onUpdate({ pushPullTasks: pushPullTasks.filter((t) => t.id !== task.id) })}>Verwijderen</Button>
                         </div>
                       </div>
                     )}
@@ -264,16 +264,14 @@ export default function PhysicalStep5_PushPull({ investigation, onUpdate }: Prop
                 </div>
               ) : (
                 <div className="px-4 py-3">
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    leftIcon={<Icon name="plus" size="xs" />}
                     onClick={() => setAddingBg(bg.id)}
-                    className="flex items-center gap-1.5 text-xs text-orange-600 hover:text-orange-700 dark:text-orange-400"
                   >
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
                     Duw/trek-taak toevoegen
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>

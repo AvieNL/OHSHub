@@ -3,6 +3,7 @@
 import type { ClimateInvestigation, ClimateScenario } from '@/lib/climate-investigation-types';
 import { Abbr } from '@/components/Abbr';
 import { InfoBox } from '@/components/InfoBox';
+import { Alert } from '@/components/ui';
 
 interface Props {
   investigation: ClimateInvestigation;
@@ -135,10 +136,10 @@ export default function ClimateStep3_Strategy({ investigation, onUpdate }: Props
       </div>
 
       {scenarios.length === 0 && (
-        <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning">
           Selecteer minimaal één scenario om door te gaan. De bijbehorende meetstappen worden op basis
           van uw selectie ingeschakeld.
-        </div>
+        </Alert>
       )}
 
       {scenarios.length > 0 && (

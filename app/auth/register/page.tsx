@@ -10,6 +10,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -26,10 +27,23 @@ export default function RegisterPage() {
       setError('Wachtwoord moet minimaal 6 tekens bevatten.');
       return;
     }
+    if (!privacyAccepted) {
+      setError('U dient de privacyverklaring te accepteren om een account aan te maken.');
+      return;
+    }
 
     setLoading(true);
     const supabase = createClient();
-    const { error: authError } = await supabase.auth.signUp({ email, password });
+    const { error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          privacy_version_accepted: '1.0',
+          privacy_accepted_at: new Date().toISOString(),
+        },
+      },
+    });
 
     if (authError) {
       setError(authError.message);
@@ -130,6 +144,26 @@ export default function RegisterPage() {
               placeholder="••••••••"
             />
           </div>
+
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={privacyAccepted}
+              onChange={(e) => setPrivacyAccepted(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-300 accent-orange-500 dark:border-zinc-600"
+            />
+            <span className="text-sm text-zinc-600 dark:text-zinc-400">
+              Ik heb de{' '}
+              <Link
+                href="/privacy"
+                target="_blank"
+                className="text-orange-500 underline hover:text-orange-600"
+              >
+                privacyverklaring
+              </Link>{' '}
+              gelezen en ga akkoord met de verwerking van mijn persoonsgegevens.
+            </span>
+          </label>
 
           {error && (
             <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">

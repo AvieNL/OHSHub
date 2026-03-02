@@ -5,6 +5,7 @@ import type { ClimateInvestigation, ClimateInstrument, ClimateInstrumentType } f
 import { newClimateId } from '@/lib/climate-investigation-storage';
 import { Abbr } from '@/components/Abbr';
 import { InfoBox } from '@/components/InfoBox';
+import { Button, FieldLabel, Icon, Input, Select } from '@/components/ui';
 
 interface Props {
   investigation: ClimateInvestigation;
@@ -45,7 +46,6 @@ function InstrumentCard({
   onRemove: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const INPUT = 'w-full rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400';
 
   return (
     <div className="rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/30">
@@ -75,50 +75,50 @@ function InstrumentCard({
             )}
           </div>
         </button>
-        <button onClick={onRemove} className="shrink-0 text-xs text-zinc-400 hover:text-red-500">
+        <Button variant="danger" size="xs" onClick={onRemove} leftIcon={<Icon name="trash" size="xs" />}>
           Verwijderen
-        </button>
+        </Button>
       </div>
 
       {expanded && (
         <div className="border-t border-zinc-200 px-4 pb-4 pt-3 dark:border-zinc-700">
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Type instrument</label>
-              <select
+              <FieldLabel>Type instrument</FieldLabel>
+              <Select
+                size="sm"
                 value={instrument.type}
                 onChange={(e) => onUpdate({ ...instrument, type: e.target.value as ClimateInstrumentType })}
-                className={INPUT}
               >
                 {Object.entries(INSTRUMENT_TYPE_LABELS).map(([k, v]) => (
                   <option key={k} value={k}>{v}</option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Fabrikant</label>
-              <input type="text" value={instrument.manufacturer ?? ''} onChange={(e) => onUpdate({ ...instrument, manufacturer: e.target.value })} placeholder="Bijv. Brüel & Kjær" className={INPUT} />
+              <FieldLabel>Fabrikant</FieldLabel>
+              <Input size="sm" type="text" value={instrument.manufacturer ?? ''} onChange={(e) => onUpdate({ ...instrument, manufacturer: e.target.value })} placeholder="Bijv. Brüel & Kjær" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Model</label>
-              <input type="text" value={instrument.model ?? ''} onChange={(e) => onUpdate({ ...instrument, model: e.target.value })} placeholder="Bijv. 1213" className={INPUT} />
+              <FieldLabel>Model</FieldLabel>
+              <Input size="sm" type="text" value={instrument.model ?? ''} onChange={(e) => onUpdate({ ...instrument, model: e.target.value })} placeholder="Bijv. 1213" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Serienummer</label>
-              <input type="text" value={instrument.serialNumber ?? ''} onChange={(e) => onUpdate({ ...instrument, serialNumber: e.target.value })} placeholder="S/N" className={INPUT} />
+              <FieldLabel>Serienummer</FieldLabel>
+              <Input size="sm" type="text" value={instrument.serialNumber ?? ''} onChange={(e) => onUpdate({ ...instrument, serialNumber: e.target.value })} placeholder="S/N" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Datum laatste kalibratie</label>
-              <input type="date" value={instrument.lastCalibration ?? ''} onChange={(e) => onUpdate({ ...instrument, lastCalibration: e.target.value })} className={INPUT} />
+              <FieldLabel>Datum laatste kalibratie</FieldLabel>
+              <Input size="sm" type="date" value={instrument.lastCalibration ?? ''} onChange={(e) => onUpdate({ ...instrument, lastCalibration: e.target.value })} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Kalibratiereference / certificaatnummer</label>
-              <input type="text" value={instrument.calibrationRef ?? ''} onChange={(e) => onUpdate({ ...instrument, calibrationRef: e.target.value })} placeholder="Cert. nr." className={INPUT} />
+              <FieldLabel>Kalibratiereference / certificaatnummer</FieldLabel>
+              <Input size="sm" type="text" value={instrument.calibrationRef ?? ''} onChange={(e) => onUpdate({ ...instrument, calibrationRef: e.target.value })} placeholder="Cert. nr." />
             </div>
           </div>
           <div className="mt-3">
-            <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Opmerkingen</label>
-            <input type="text" value={instrument.notes ?? ''} onChange={(e) => onUpdate({ ...instrument, notes: e.target.value })} placeholder="Bijv. windscherm aanwezig, uitgebreid bereik" className={INPUT} />
+            <FieldLabel>Opmerkingen</FieldLabel>
+            <Input size="sm" type="text" value={instrument.notes ?? ''} onChange={(e) => onUpdate({ ...instrument, notes: e.target.value })} placeholder="Bijv. windscherm aanwezig, uitgebreid bereik" />
           </div>
         </div>
       )}
@@ -180,9 +180,7 @@ export default function ClimateStep4_Equipment({ investigation, onUpdate }: Prop
                 onClick={() => addInstrument(t)}
                 className="flex items-center gap-1.5 rounded-lg border border-blue-300 bg-white px-2.5 py-1 text-xs font-medium text-blue-700 transition hover:bg-blue-100 dark:border-blue-700 dark:bg-zinc-800 dark:text-blue-400 dark:hover:bg-blue-900/20"
               >
-                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
+                <Icon name="plus" size="xs" />
                 {INSTRUMENT_TYPE_LABELS[t]}
               </button>
             ))}
@@ -215,9 +213,7 @@ export default function ClimateStep4_Equipment({ investigation, onUpdate }: Prop
               onClick={() => addInstrument(t)}
               className="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-300 px-2.5 py-1.5 text-xs text-zinc-500 transition hover:border-orange-400 hover:text-orange-600 dark:border-zinc-600 dark:text-zinc-400 dark:hover:border-orange-500 dark:hover:text-orange-400"
             >
-              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
+              <Icon name="plus" size="xs" />
               {INSTRUMENT_TYPE_LABELS[t]}
             </button>
           ))}

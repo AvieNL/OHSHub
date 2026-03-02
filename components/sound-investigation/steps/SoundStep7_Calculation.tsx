@@ -14,6 +14,7 @@ import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
 import { InfoBox } from '@/components/InfoBox';
 import { SectionRef } from '@/components/SectionRef';
+import { Alert, Button, Icon } from '@/components/ui';
 
 interface Props {
   investigation: SoundInvestigation;
@@ -448,24 +449,24 @@ function HEGResult({
         />
 
         {stat.c1u1Excessive && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800/50 dark:bg-red-900/15 dark:text-red-400">
+          <Alert variant="error">
             <strong>⚠ H-4 — <Formula math="c_1 u_1" /> &gt; 3,5 dB: meetplan herzien</strong>{' '}
             (Tabel C.4 / <SectionRef id="§10.4">§10.4</SectionRef> NEN-EN-ISO 9612:2025). De bemonsteringsonzekerheid is te groot voor een
             betrouwbare uitspraak. Voeg extra steekproeven toe, verkleiner de{' '}
             <Abbr id="HEG">HEG</Abbr>, of gebruik een andere meetstrategie.
-          </div>
+          </Alert>
         )}
 
         {/* K-3 / K-5 — task warnings (task-based strategy only) */}
         {stat.taskWarnings && stat.taskWarnings.length > 0 && (
-          <div className="space-y-1 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+          <Alert variant="warning">
             {stat.taskWarnings.map((w, i) => (
               <p key={i}>⚠ {w}</p>
             ))}
-          </div>
+          </Alert>
         )}
         {stat.spreadWarnings && stat.spreadWarnings.length > 0 && (
-          <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+          <Alert variant="warning">
             <p className="mb-1 font-semibold">
               ⚠ K-5 — Spreiding te groot (Bijlage E NEN-EN-ISO 9612:2025):
             </p>
@@ -477,7 +478,7 @@ function HEGResult({
                 </li>
               ))}
             </ul>
-          </div>
+          </Alert>
         )}
 
         {/* Peak */}
@@ -534,10 +535,10 @@ export default function SoundStep7_Calculation({ investigation, onUpdate, onGoTo
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           Stap 9 — <Formula math="L_{EX,8h}" /> &amp; onzekerheid
         </h2>
-        <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning" size="md">
           Voer eerst meetwaarden in bij{' '}
-          <button type="button" onClick={() => onGoToStep(7)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 8</button>.
-        </div>
+          <Button variant="link" type="button" onClick={() => onGoToStep(7)}>stap 8</Button>.
+        </Alert>
       </div>
     );
   }
@@ -562,12 +563,9 @@ export default function SoundStep7_Calculation({ investigation, onUpdate, onGoTo
             <Abbr id="NEN9612">NEN-EN-ISO 9612</Abbr>:2025.
           </p>
         </div>
-        <button
-          onClick={recompute}
-          className="shrink-0 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
-        >
+        <Button variant="secondary" className="shrink-0" onClick={recompute}>
           Herberekenen
-        </button>
+        </Button>
       </div>
 
       <InfoBox title="§9.2 / §9.3 / §12.2 / §15.d — Meetprocedure & eisen (NEN-EN-ISO 9612)">
@@ -629,14 +627,14 @@ export default function SoundStep7_Calculation({ investigation, onUpdate, onGoTo
       </InfoBox>
 
       {hegsWithoutPPE.length > 0 && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-800/50 dark:bg-blue-900/15">
+        <Alert variant="info" size="md">
           <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">
             Gehoorbescherming niet ingevoerd
           </p>
           <p className="mt-1 text-xs text-blue-700 dark:text-blue-400">
             Voor de volgende <Abbr id="HEG">HEG</Abbr>{hegsWithoutPPE.length > 1 ? '&apos;s' : ''} is de actiewaarde overschreden maar is nog geen gehoorbescherming ingevoerd.
             Voer de gebruikte <Abbr id="PBM">PBM</Abbr> in via{' '}
-            <button type="button" onClick={() => onGoToStep(5)} className="cursor-pointer font-medium underline decoration-dotted underline-offset-2 hover:no-underline">stap 6 — Arbeidsmiddelen</button>{' '}
+            <Button variant="link" type="button" onClick={() => onGoToStep(5)} className="font-medium">stap 6 — Arbeidsmiddelen</Button>{' '}
             om de grenswaarde-toetsing (<Formula math="L_{EX,8h,oor}" />) te completeren:
           </p>
           <ul className="mt-1.5 space-y-0.5 text-xs text-blue-700 dark:text-blue-400">
@@ -647,7 +645,7 @@ export default function SoundStep7_Calculation({ investigation, onUpdate, onGoTo
               </li>
             ))}
           </ul>
-        </div>
+        </Alert>
       )}
 
       {/* Formula reference box */}
@@ -658,12 +656,11 @@ export default function SoundStep7_Calculation({ investigation, onUpdate, onGoTo
           className="flex w-full items-center justify-between px-5 py-3 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
         >
           <span className="font-semibold text-zinc-600 dark:text-zinc-300">Formules NEN-EN-ISO 9612:2025</span>
-          <svg
-            className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform ${formulasOpen ? 'rotate-180' : ''}`}
-            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
+          <Icon
+            name="chevron-down"
+            size="md"
+            className={`text-zinc-400 transition-transform ${formulasOpen ? 'rotate-180' : ''}`}
+          />
         </button>
         {formulasOpen && (
         <div className="border-t border-zinc-200 px-5 py-4 dark:border-zinc-700 space-y-3">
@@ -772,10 +769,10 @@ export default function SoundStep7_Calculation({ investigation, onUpdate, onGoTo
       </div>
 
       {noResults ? (
-        <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning" size="md">
           Geen berekeningen mogelijk. Zorg dat voor elke <Abbr id="HEG">HEG</Abbr> minimaal 3 geldige meetwaarden zijn ingevoerd in{' '}
-          <button type="button" onClick={() => onGoToStep(7)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 8</button>.
-        </div>
+          <Button variant="link" type="button" onClick={() => onGoToStep(7)}>stap 8</Button>.
+        </Alert>
       ) : (
         <div className="space-y-6">
           {statistics.map((stat) => {
@@ -796,11 +793,11 @@ export default function SoundStep7_Calculation({ investigation, onUpdate, onGoTo
       )}
 
       {hegs.length > statistics.length && (
-        <div className="rounded-lg bg-amber-50 px-4 py-3 text-xs text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning">
           {hegs.length - statistics.length} <Abbr id="HEG">HEG</Abbr>{hegs.length - statistics.length !== 1 ? '\'s' : ''} heeft onvoldoende meetwaarden (minimaal 3 nodig).
           Voer meer metingen in bij{' '}
-          <button type="button" onClick={() => onGoToStep(7)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 8</button>.
-        </div>
+          <Button variant="link" type="button" onClick={() => onGoToStep(7)}>stap 8</Button>.
+        </Alert>
       )}
     </div>
   );

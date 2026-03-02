@@ -7,6 +7,7 @@ import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
 import { SectionRef } from '@/components/SectionRef';
 import { InfoBox } from '@/components/InfoBox';
+import { Alert, Button, Icon, Input, Select } from '@/components/ui';
 
 interface Props {
   investigation: SoundInvestigation;
@@ -95,18 +96,20 @@ function TaskRow({
   return (
     <tr>
       <td className="px-3 py-2">
-        <input
+        <Input
           type="text"
+          size="xs"
           value={task.name}
           onChange={(e) => onUpdate({ ...task, name: e.target.value })}
           placeholder="Taaknaam"
-          className="w-full rounded border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+          className="w-full"
         />
       </td>
       <td className="px-3 py-2">
         <div className="flex items-center gap-1">
-          <input
+          <Input
             type="number"
+            size="xs"
             min={1}
             max={960}
             step={5}
@@ -116,33 +119,35 @@ function TaskRow({
               if (h != null) onUpdate({ ...task, durationHours: h });
             }}
             placeholder="0"
-            className="w-20 rounded border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-20"
           />
           <span className="text-xs text-zinc-400">min</span>
         </div>
       </td>
       <td className="px-3 py-2">
         <div className="flex items-center gap-1">
-          <input
+          <Input
             type="number"
+            size="xs"
             min={0}
             max={960}
             step={5}
             value={toMin(task.durationMin)}
             onChange={(e) => onUpdate({ ...task, durationMin: fromMin(e.target.value) })}
             placeholder="—"
-            className="w-16 rounded border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-16"
           />
           <span className="text-xs text-zinc-400">–</span>
-          <input
+          <Input
             type="number"
+            size="xs"
             min={0}
             max={960}
             step={5}
             value={toMin(task.durationMax)}
             onChange={(e) => onUpdate({ ...task, durationMax: fromMin(e.target.value) })}
             placeholder="—"
-            className="w-16 rounded border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-16"
           />
           <span className="text-xs text-zinc-400">min</span>
         </div>
@@ -158,12 +163,13 @@ function TaskRow({
         )}
       </td>
       <td className="px-3 py-2">
-        <input
+        <Input
           type="text"
+          size="xs"
           value={task.notes ?? ''}
           onChange={(e) => onUpdate({ ...task, notes: e.target.value })}
           placeholder="Omschrijving…"
-          className="w-full rounded border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+          className="w-full"
         />
       </td>
       <td className="px-3 py-2 align-top">
@@ -196,9 +202,7 @@ function TaskRow({
           onClick={onRemove}
           className="text-zinc-400 hover:text-red-500"
         >
-          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <Icon name="x" size="sm" />
         </button>
       </td>
     </tr>
@@ -238,15 +242,15 @@ function CopyTasksBar({
   return (
     <div className="flex items-center gap-2 rounded-lg border border-dashed border-zinc-300 bg-zinc-50 px-3 py-2 dark:border-zinc-600 dark:bg-zinc-800/30">
       <span className="text-xs text-zinc-500 dark:text-zinc-400">Kopieer taken van:</span>
-      <select
+      <Select
+        size="xs"
         value={selectedId}
         onChange={(e) => setSourceHegId(e.target.value)}
-        className="rounded border border-zinc-200 px-2 py-1 text-xs outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
       >
         {hegsWithTasks.map((h) => (
           <option key={h.id} value={h.id}>{h.name}</option>
         ))}
-      </select>
+      </Select>
       <button
         onClick={handleCopy}
         className="rounded bg-zinc-200 px-3 py-1 text-xs font-medium text-zinc-700 transition hover:bg-orange-500 hover:text-white dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-orange-500 dark:hover:text-white"
@@ -268,10 +272,10 @@ export default function SoundStep5_Tasks({ investigation, onUpdate, onGoToStep }
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           Stap 7 — Meetplan & taken
         </h2>
-        <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning" size="md">
           Definieer eerst <Abbr id="HEG">HEG</Abbr>&apos;s in{' '}
           <button type="button" onClick={() => onGoToStep(2)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 3</button>.
-        </div>
+        </Alert>
       </div>
     );
   }
@@ -343,12 +347,11 @@ export default function SoundStep5_Tasks({ investigation, onUpdate, onGoToStep }
                       : `Strategie: ${heg.strategy === 'job-based' ? 'Functiegericht' : 'Volledige dag'} · ${heg.workerCount} medewerkers`}
                   </p>
                 </div>
-                <svg
-                  className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
+                <Icon
+                  name="chevron-down"
+                  size="md"
+                  className={`shrink-0 text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                />
               </button>
 
               {isOpen && (
@@ -404,28 +407,25 @@ export default function SoundStep5_Tasks({ investigation, onUpdate, onGoToStep }
 
                       {/* Duration check */}
                       {hegTasks.length > 0 && (
-                        <div className={`rounded-lg px-3 py-2 text-xs ${
-                          Math.abs(totalDuration - heg.effectiveDayHours) < 0.1
-                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/15 dark:text-emerald-400'
-                            : 'bg-amber-50 text-amber-700 dark:bg-amber-900/15 dark:text-amber-400'
-                        }`}>
+                        <Alert
+                          variant={Math.abs(totalDuration - heg.effectiveDayHours) < 0.1 ? 'success' : 'warning'}
+                        >
                           <Formula math="\Sigma T_m" /> = {Math.round(totalDuration * 60)} min · <Formula math="T_e" /> = {Math.round(heg.effectiveDayHours * 60)} min
                           {Math.abs(totalDuration - heg.effectiveDayHours) < 0.1
                             ? ' ✓ Totaal klopt'
                             : <> — verschil {Math.round(Math.abs(totalDuration - heg.effectiveDayHours) * 60)} min. Pas taken aan of <Formula math="T_e" /> in{' '}
                             <button type="button" onClick={() => onGoToStep(2)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 3</button>.</>}
-                        </div>
+                        </Alert>
                       )}
 
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => addTask(heg.id)}
-                        className="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-300 px-4 py-2 text-sm text-zinc-500 transition hover:border-orange-400 hover:text-orange-600 dark:border-zinc-600 dark:text-zinc-400"
+                        leftIcon={<Icon name="plus" size="xs" />}
                       >
-                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
                         Taak toevoegen
-                      </button>
+                      </Button>
                     </div>
                   ) : (
                     /* Job-based / full-day guidance */

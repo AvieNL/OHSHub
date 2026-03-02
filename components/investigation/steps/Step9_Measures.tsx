@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { Investigation, ControlMeasure, ControlType } from '@/lib/investigation-types';
 import { newId } from '@/lib/investigation-storage';
+import { Button, Input, Select, Textarea, Icon } from '@/components/ui';
 
 interface Props {
   investigation: Investigation;
@@ -113,17 +114,17 @@ function ControlMeasureForm({
           <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
             Type maatregel (AHS-hiërarchie) <span className="text-red-500">*</span>
           </label>
-          <select
+          <Select
             value={measure.type}
             onChange={(e) => f({ type: e.target.value as ControlType })}
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+            className="w-full"
           >
             {AHS_LEVELS.map((l) => (
               <option key={l.type} value={l.type}>
                 {l.rank}. {l.label}
               </option>
             ))}
-          </select>
+          </Select>
           <p className="mt-1 text-xs text-zinc-400">{ahsFor(measure.type).description}</p>
         </div>
 
@@ -131,29 +132,28 @@ function ControlMeasureForm({
           <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
             Prioriteit (1 = hoogst)
           </label>
-          <select
+          <Select
             value={measure.priority}
             onChange={(e) => f({ priority: parseInt(e.target.value) as ControlMeasure['priority'] })}
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+            className="w-full"
           >
             {[1, 2, 3, 4, 5].map((p) => (
               <option key={p} value={p}>
                 {p} — {p === 1 ? 'Urgent' : p === 2 ? 'Hoog' : p === 3 ? 'Normaal' : p === 4 ? 'Laag' : 'Later'}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         <div className="sm:col-span-2">
           <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
             Beschrijving van de maatregel <span className="text-red-500">*</span>
           </label>
-          <textarea
+          <Textarea
             rows={2}
             value={measure.description}
             onChange={(e) => f({ description: e.target.value })}
             placeholder="Wat gaat u concreet doen?"
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
           />
         </div>
 
@@ -161,12 +161,12 @@ function ControlMeasureForm({
           <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
             Doelstelling / norm
           </label>
-          <input
+          <Input
             type="text"
             value={measure.targetDescription ?? ''}
             onChange={(e) => f({ targetDescription: e.target.value })}
             placeholder="Bijv. concentratie reduceren tot < 50% OELV"
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+            className="w-full"
           />
         </div>
 
@@ -174,12 +174,12 @@ function ControlMeasureForm({
           <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
             Verantwoordelijke
           </label>
-          <input
+          <Input
             type="text"
             value={measure.responsible ?? ''}
             onChange={(e) => f({ responsible: e.target.value })}
             placeholder="Naam of functie"
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+            className="w-full"
           />
         </div>
 
@@ -187,11 +187,11 @@ function ControlMeasureForm({
           <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
             Deadline
           </label>
-          <input
+          <Input
             type="date"
             value={measure.deadline ?? ''}
             onChange={(e) => f({ deadline: e.target.value })}
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+            className="w-full"
           />
         </div>
 
@@ -199,45 +199,38 @@ function ControlMeasureForm({
           <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
             Status
           </label>
-          <select
+          <Select
             value={measure.status}
             onChange={(e) => f({ status: e.target.value as ControlMeasure['status'] })}
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+            className="w-full"
           >
             <option value="planned">Gepland</option>
             <option value="in-progress">In uitvoering</option>
             <option value="completed">Afgerond</option>
-          </select>
+          </Select>
         </div>
 
         <div>
           <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
             Opmerkingen
           </label>
-          <input
+          <Input
             type="text"
             value={measure.notes ?? ''}
             onChange={(e) => f({ notes: e.target.value })}
             placeholder="Bijzonderheden, randvoorwaarden…"
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+            className="w-full"
           />
         </div>
       </div>
 
       <div className="mt-4 flex justify-end gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-        <button
-          onClick={onCancel}
-          className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
-        >
+        <Button variant="secondary" onClick={onCancel}>
           Annuleren
-        </button>
-        <button
-          onClick={onSave}
-          disabled={!isValid}
-          className="rounded-lg bg-orange-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-40"
-        >
+        </Button>
+        <Button variant="primary" onClick={onSave} disabled={!isValid}>
           Maatregel opslaan
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -396,21 +389,25 @@ export default function Step9_Measures({ investigation, onUpdate }: Props) {
                         </div>
                       </div>
                       <div className="flex shrink-0 gap-2">
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="xs"
                           onClick={() => {
                             setDraft({ ...m });
                             setEditingId(m.id);
                           }}
-                          className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 transition hover:bg-white dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                          leftIcon={<Icon name="pencil" size="xs" />}
                         >
                           Bewerken
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="xs"
                           onClick={() => remove(m.id)}
-                          className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-red-500 transition hover:bg-red-50 dark:border-zinc-600 dark:hover:bg-red-900/20"
+                          leftIcon={<Icon name="trash" size="xs" />}
                         >
                           Verwijderen
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -425,21 +422,14 @@ export default function Step9_Measures({ investigation, onUpdate }: Props) {
       )}
 
       {editingId === null && (
-        <button
+        <Button
+          variant="dashed"
+          className="w-full justify-center py-4"
           onClick={startAdd}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 py-4 text-sm font-medium text-zinc-500 transition hover:border-orange-400 hover:bg-orange-50 hover:text-orange-600 dark:border-zinc-700 dark:hover:border-orange-600 dark:hover:bg-orange-900/10 dark:hover:text-orange-400"
+          leftIcon={<Icon name="plus" size="sm" />}
         >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2.5}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
           Maatregel toevoegen
-        </button>
+        </Button>
       )}
 
       {controlMeasures.length === 0 && editingId === null && (

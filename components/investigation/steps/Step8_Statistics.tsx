@@ -2,6 +2,7 @@
 
 import type { Investigation, MeasurementStatistics, MeasurementVerdict, Substance } from '@/lib/investigation-types';
 import { computeStats, getUT } from '@/lib/measurement-stats';
+import { Alert } from '@/components/ui';
 
 interface Props {
   investigation: Investigation;
@@ -245,9 +246,9 @@ export default function Step8_Statistics({ investigation }: Props) {
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           Stap 8 — Kwantitatieve beoordeling
         </h2>
-        <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning">
           Stel meetplannen op in stap 6 en voer meetwaarden in bij stap 7.
-        </div>
+        </Alert>
       </div>
     );
   }
@@ -368,33 +369,33 @@ export default function Step8_Statistics({ investigation }: Props) {
       </div>
 
       {hasRespiratorPPE && (
-        <div className="rounded-lg bg-amber-50 px-4 py-3 text-xs text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning">
           <strong>Let op — PBM-correctie vereist (NEN-EN 689:2018+C1:2019, §5.3.2):</strong>{' '}
-          Voor één of meer VBG's is een ademhalingsbeschermingsmiddel (ABM) opgegeven. Als de
+          Voor één of meer VBG&apos;s is een ademhalingsbeschermingsmiddel (ABM) opgegeven. Als de
           metingen zijn verricht terwijl het ABM gedragen werd, geven de meetwaarden de
           werkelijke inademing <em>niet</em> correct weer. Corrigeer de gemeten concentraties
           met de toewijzingsbeschermingsfactor (APF) vóór statistische analyse.
-        </div>
+        </Alert>
       )}
 
       {hasLongShift && (
-        <div className="rounded-lg bg-amber-50 px-4 py-3 text-xs text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning">
           <strong>Let op — Dienst &gt; 8 uur (NEN-EN 689:2018+C1:2019, Bijlage G):</strong>{' '}
-          Voor één of meer VBG's is een blootstellingsduur van meer dan 8 uur per dag opgegeven.
+          Voor één of meer VBG&apos;s is een blootstellingsduur van meer dan 8 uur per dag opgegeven.
           Bereken conform Bijlage G formule G.1 de afgeleide dagblootstelling:{' '}
           <em>
             E<sub>d</sub> = C<sub>i</sub> × t / 8
           </em>{' '}
           (gemeten concentratie × dienstverlening in uren ÷ 8). Vergelijk E<sub>d</sub> — niet{' '}
           C<sub>i</sub> — met de OELV in de statistische toets hieronder.
-        </div>
+        </Alert>
       )}
 
       {!hasAnyStats && (
-        <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning">
           Nog geen meetplannen met voldoende meetwaarden (min. 3 per plan). Voer meetwaarden in
           bij stap 7.
-        </div>
+        </Alert>
       )}
 
       <div className="space-y-4">

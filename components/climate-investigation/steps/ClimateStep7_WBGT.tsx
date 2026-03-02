@@ -5,6 +5,7 @@ import { CAV_VALUES, METABOLIC_CLASSES } from '@/lib/climate-investigation-types
 import { computeAllClimateStatistics, verdictBadgeClass, getMetabolicRate } from '@/lib/climate-stats';
 import { Abbr } from '@/components/Abbr';
 import { InfoBox } from '@/components/InfoBox';
+import { Alert } from '@/components/ui';
 
 interface Props {
   investigation: ClimateInvestigation;
@@ -38,9 +39,9 @@ export default function ClimateStep7_WBGT({ investigation, onUpdate }: Props) {
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           Stap 8 — Hittestress screening (<Abbr id="WBGT">WBGT</Abbr>)
         </h2>
-        <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800/30 dark:text-zinc-400">
+        <Alert variant="neutral">
           Dit scenario is niet geselecteerd. Selecteer &ldquo;Warmtestress&rdquo; in stap 4 om de WBGT-beoordeling in te schakelen.
-        </div>
+        </Alert>
       </div>
     );
   }
@@ -51,9 +52,9 @@ export default function ClimateStep7_WBGT({ investigation, onUpdate }: Props) {
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           Stap 8 — Hittestress screening (WBGT)
         </h2>
-        <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning">
           Definieer eerst blootstellingsgroepen in stap 3.
-        </div>
+        </Alert>
       </div>
     );
   }
@@ -210,46 +211,31 @@ export default function ClimateStep7_WBGT({ investigation, onUpdate }: Props) {
 
                     {/* Overschrijding — PHS vereist */}
                     {stat.wbgtVerdict === 'exceeds' && (
-                      <div className="flex items-start gap-3 rounded-lg bg-red-50 px-4 py-3 text-sm dark:bg-red-900/15">
-                        <svg className="mt-0.5 h-4 w-4 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                        </svg>
-                        <div>
-                          <p className="font-semibold text-red-800 dark:text-red-300">WBGTref overschreden — PHS-analyse vereist</p>
-                          <p className="mt-0.5 text-xs text-red-700 dark:text-red-400">
-                            De referentiewaarde is overschreden. Ga naar stap 9 (<Abbr id="PHS">Predicted Heat Strain</Abbr>) voor
-                            een gedetailleerde analyse conform <Abbr id="ISO7933">ISO 7933:2023</Abbr>.
-                          </p>
-                        </div>
-                      </div>
+                      <Alert variant="error">
+                        <p className="font-semibold">WBGTref overschreden — PHS-analyse vereist</p>
+                        <p className="mt-0.5 text-xs">
+                          De referentiewaarde is overschreden. Ga naar stap 9 (<Abbr id="PHS">Predicted Heat Strain</Abbr>) voor
+                          een gedetailleerde analyse conform <Abbr id="ISO7933">ISO 7933:2023</Abbr>.
+                        </p>
+                      </Alert>
                     )}
 
                     {/* Nabij de grens */}
                     {stat.wbgtVerdict === 'caution' && (
-                      <div className="flex items-start gap-3 rounded-lg bg-amber-50 px-4 py-3 text-sm dark:bg-amber-900/15">
-                        <svg className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                        </svg>
-                        <div>
-                          <p className="font-semibold text-amber-800 dark:text-amber-300">WBGT nabij referentiewaarde</p>
-                          <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-400">
-                            De WBGT-waarde nadert de referentiewaarde (verschil &lt; 2 K). Overweeg preventieve maatregelen
-                            en herhaal de meting bij warmere omstandigheden of hogere activiteit.
-                          </p>
-                        </div>
-                      </div>
+                      <Alert variant="warning">
+                        <p className="font-semibold">WBGT nabij referentiewaarde</p>
+                        <p className="mt-0.5 text-xs">
+                          De WBGT-waarde nadert de referentiewaarde (verschil &lt; 2 K). Overweeg preventieve maatregelen
+                          en herhaal de meting bij warmere omstandigheden of hogere activiteit.
+                        </p>
+                      </Alert>
                     )}
 
                     {/* Aanvaardbaar */}
                     {stat.wbgtVerdict === 'acceptable' && (
-                      <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2.5 text-sm dark:bg-emerald-900/15">
-                        <svg className="h-4 w-4 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                        </svg>
-                        <p className="text-emerald-800 dark:text-emerald-300">
-                          WBGT ligt ruim onder de referentiewaarde — hittestress is aanvaardbaar.
-                        </p>
-                      </div>
+                      <Alert variant="success">
+                        WBGT ligt ruim onder de referentiewaarde — hittestress is aanvaardbaar.
+                      </Alert>
                     )}
                   </div>
                 )}

@@ -5,6 +5,7 @@ import type { PhysicalInvestigation, PhysicalMeasure, PhysicalMeasureType, Physi
 import { newPhysicalId } from '@/lib/physical-investigation-storage';
 import { computeAllPhysicalStatistics, computeLiftingResult, computePushPullResult, computeRepetitiveResult } from '@/lib/physical-stats';
 import { InfoBox } from '@/components/InfoBox';
+import { Button, Card, FieldLabel, Icon, Input, Select } from '@/components/ui';
 
 interface Props {
   investigation: PhysicalInvestigation;
@@ -158,7 +159,6 @@ function MeasureForm({
   onCancel: () => void;
 }) {
   const [d, setD] = useState<Partial<PhysicalMeasure>>(measure);
-  const INPUT = 'w-full rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400';
 
   function save() {
     if (!d.description?.trim()) return;
@@ -176,33 +176,33 @@ function MeasureForm({
   }
 
   return (
-    <div className="rounded-xl border border-orange-200 bg-orange-50/50 px-4 py-4 dark:border-orange-800/30 dark:bg-orange-900/10">
+    <Card variant="form">
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Type maatregel</label>
-          <select value={d.type ?? 'technical'} onChange={(e) => {
+          <FieldLabel>Type maatregel</FieldLabel>
+          <Select value={d.type ?? 'technical'} onChange={(e) => {
             const t = e.target.value as PhysicalMeasureType;
             setD({ ...d, type: t, priority: TYPE_PRIORITY[t] as 1 | 2 | 3 });
-          }} className={INPUT}>
+          }}>
             {(Object.entries(TYPE_LABELS) as [PhysicalMeasureType, string][]).map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
             ))}
-          </select>
+          </Select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Prioriteit (1–3)</label>
-          <select value={d.priority ?? 1} onChange={(e) => setD({ ...d, priority: parseInt(e.target.value) as 1 | 2 | 3 })} className={INPUT}>
+          <FieldLabel>Prioriteit (1–3)</FieldLabel>
+          <Select value={d.priority ?? 1} onChange={(e) => setD({ ...d, priority: parseInt(e.target.value) as 1 | 2 | 3 })}>
             <option value={1}>Prioriteit 1 — direct / hoge urgentie</option>
             <option value={2}>Prioriteit 2 — op korte termijn</option>
             <option value={3}>Prioriteit 3 — middellange termijn</option>
-          </select>
+          </Select>
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Omschrijving maatregel *</label>
-          <input type="text" value={d.description ?? ''} onChange={(e) => setD({ ...d, description: e.target.value })} placeholder="Beschrijf de concrete maatregel" className={INPUT} />
+          <FieldLabel>Omschrijving maatregel *</FieldLabel>
+          <Input type="text" value={d.description ?? ''} onChange={(e) => setD({ ...d, description: e.target.value })} placeholder="Beschrijf de concrete maatregel" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Belastingsgroepen</label>
+          <FieldLabel>Belastingsgroepen</FieldLabel>
           <div className="space-y-1">
             {bgs.map((bg) => (
               <label key={bg.id} className="flex cursor-pointer items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
@@ -222,28 +222,28 @@ function MeasureForm({
         </div>
         <div className="space-y-3">
           <div>
-            <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Verantwoordelijke</label>
-            <input type="text" value={d.responsible ?? ''} onChange={(e) => setD({ ...d, responsible: e.target.value })} placeholder="Naam / functie" className={INPUT} />
+            <FieldLabel>Verantwoordelijke</FieldLabel>
+            <Input type="text" value={d.responsible ?? ''} onChange={(e) => setD({ ...d, responsible: e.target.value })} placeholder="Naam / functie" />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Streefdatum</label>
-            <input type="date" value={d.deadline ?? ''} onChange={(e) => setD({ ...d, deadline: e.target.value })} className={INPUT} />
+            <FieldLabel>Streefdatum</FieldLabel>
+            <Input type="date" value={d.deadline ?? ''} onChange={(e) => setD({ ...d, deadline: e.target.value })} />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Status</label>
-            <select value={d.status ?? 'planned'} onChange={(e) => setD({ ...d, status: e.target.value as PhysicalMeasureStatus })} className={INPUT}>
+            <FieldLabel>Status</FieldLabel>
+            <Select value={d.status ?? 'planned'} onChange={(e) => setD({ ...d, status: e.target.value as PhysicalMeasureStatus })}>
               {(Object.entries(STATUS_LABELS) as [PhysicalMeasureStatus, string][]).map(([k, v]) => (
                 <option key={k} value={k}>{v}</option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
       </div>
       <div className="mt-3 flex gap-2">
-        <button type="button" onClick={save} disabled={!d.description?.trim()} className="rounded-lg bg-orange-500 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-40">Opslaan</button>
-        <button type="button" onClick={onCancel} className="rounded-lg border border-zinc-200 px-4 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800">Annuleren</button>
+        <Button variant="primary" onClick={save} disabled={!d.description?.trim()}>Opslaan</Button>
+        <Button variant="secondary" onClick={onCancel}>Annuleren</Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -337,23 +337,19 @@ export default function PhysicalStep9_Measures({ investigation, onUpdate }: Prop
 
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          leftIcon={<Icon name="plus" size="sm" />}
           onClick={() => setShowNewForm(true)}
-          className="flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
         >
-          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
           Maatregel toevoegen
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="secondary"
           onClick={regenerate}
-          className="flex items-center gap-1.5 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
         >
           ↺ Auto-genereer maatregelen
-        </button>
+        </Button>
       </div>
 
       {showNewForm && (
@@ -389,8 +385,8 @@ export default function PhysicalStep9_Measures({ investigation, onUpdate }: Prop
                       <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[m.status]}`}>
                         {STATUS_LABELS[m.status]}
                       </span>
-                      <button onClick={() => setEditingId(m.id)} className="text-xs text-zinc-400 hover:text-orange-600">Bewerken</button>
-                      <button onClick={() => onUpdate({ measures: measures.filter((x) => x.id !== m.id) })} className="text-xs text-zinc-400 hover:text-red-500">Verwijderen</button>
+                      <Button variant="ghost" size="xs" leftIcon={<Icon name="pencil" size="xs" />} onClick={() => setEditingId(m.id)}>Bewerken</Button>
+                      <Button variant="danger" size="xs" leftIcon={<Icon name="trash" size="xs" />} onClick={() => onUpdate({ measures: measures.filter((x) => x.id !== m.id) })}>Verwijderen</Button>
                     </div>
                   </div>
                 )}

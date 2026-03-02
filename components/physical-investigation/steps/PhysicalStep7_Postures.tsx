@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { PhysicalInvestigation, PostureObservation, PostureBodyPart, PostureFrequency, PostureVerdict } from '@/lib/physical-investigation-types';
 import { newPhysicalId } from '@/lib/physical-investigation-storage';
 import { InfoBox } from '@/components/InfoBox';
+import { Alert, Button, Card, FieldLabel, Icon, Input, Select } from '@/components/ui';
 
 interface Props {
   investigation: PhysicalInvestigation;
@@ -75,7 +76,6 @@ function PostureForm({
   onCancel: () => void;
 }) {
   const [d, setD] = useState<Partial<PostureObservation>>(obs);
-  const INPUT = 'w-full rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400';
 
   const bodyPart = d.bodyPart ?? 'trunk';
   const isStatic = d.isStatic ?? false;
@@ -103,30 +103,30 @@ function PostureForm({
   }
 
   return (
-    <div className="rounded-xl border border-orange-200 bg-orange-50/50 px-5 py-4 dark:border-orange-800/30 dark:bg-orange-900/10">
+    <Card variant="form">
       <h4 className="mb-4 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
         {d.id ? 'Houding bewerken' : `Nieuwe houdingsobservatie — ${bgName}`}
       </h4>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Naam taak / activiteit *</label>
-          <input type="text" value={d.taskName ?? ''} onChange={(e) => setD({ ...d, taskName: e.target.value })} placeholder="Bijv. Inpakken staand aan transportband" className={INPUT} />
+          <FieldLabel>Naam taak / activiteit *</FieldLabel>
+          <Input type="text" value={d.taskName ?? ''} onChange={(e) => setD({ ...d, taskName: e.target.value })} placeholder="Bijv. Inpakken staand aan transportband" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Lichaamsgebied</label>
-          <select value={d.bodyPart ?? 'trunk'} onChange={(e) => setD({ ...d, bodyPart: e.target.value as PostureBodyPart, verdict: undefined })} className={INPUT}>
+          <FieldLabel>Lichaamsgebied</FieldLabel>
+          <Select value={d.bodyPart ?? 'trunk'} onChange={(e) => setD({ ...d, bodyPart: e.target.value as PostureBodyPart, verdict: undefined })}>
             {(Object.entries(BODY_PART_LABELS) as [PostureBodyPart, string][]).map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
             ))}
-          </select>
+          </Select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Frequentie / duur</label>
-          <select value={d.frequency ?? 'occasional'} onChange={(e) => setD({ ...d, frequency: e.target.value as PostureFrequency, verdict: undefined })} className={INPUT}>
+          <FieldLabel>Frequentie / duur</FieldLabel>
+          <Select value={d.frequency ?? 'occasional'} onChange={(e) => setD({ ...d, frequency: e.target.value as PostureFrequency, verdict: undefined })}>
             {(Object.entries(FREQ_LABELS) as [PostureFrequency, string][]).map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
             ))}
-          </select>
+          </Select>
         </div>
         <div className="flex items-center gap-3">
           <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
@@ -140,15 +140,15 @@ function PostureForm({
           </label>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Hoek (°) — optioneel</label>
-          <input type="number" min={0} max={180} value={d.angle ?? ''} onChange={(e) => setD({ ...d, angle: e.target.value ? parseInt(e.target.value) : undefined, verdict: undefined })} placeholder="Bijv. 30 = 30° voorover gebogen" className={INPUT} />
+          <FieldLabel>Hoek (°) — optioneel</FieldLabel>
+          <Input type="number" min={0} max={180} value={d.angle ?? ''} onChange={(e) => setD({ ...d, angle: e.target.value ? parseInt(e.target.value) : undefined, verdict: undefined })} placeholder="Bijv. 30 = 30° voorover gebogen" />
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Beschrijving houding</label>
-          <input type="text" value={d.postureDescription ?? ''} onChange={(e) => setD({ ...d, postureDescription: e.target.value })} placeholder="Bijv. romp 30° voorover gebogen, armen voor het lichaam" className={INPUT} />
+          <FieldLabel>Beschrijving houding</FieldLabel>
+          <Input type="text" value={d.postureDescription ?? ''} onChange={(e) => setD({ ...d, postureDescription: e.target.value })} placeholder="Bijv. romp 30° voorover gebogen, armen voor het lichaam" />
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Oordeel</label>
+          <FieldLabel>Oordeel</FieldLabel>
           <div className="flex gap-2">
             {(Object.entries(VERDICT_LABELS) as [PostureVerdict, typeof VERDICT_LABELS[PostureVerdict]][]).map(([k, v]) => (
               <button
@@ -172,15 +172,15 @@ function PostureForm({
           )}
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Opmerkingen</label>
-          <input type="text" value={d.notes ?? ''} onChange={(e) => setD({ ...d, notes: e.target.value })} placeholder="Aanvullende informatie" className={INPUT} />
+          <FieldLabel>Opmerkingen</FieldLabel>
+          <Input type="text" value={d.notes ?? ''} onChange={(e) => setD({ ...d, notes: e.target.value })} placeholder="Aanvullende informatie" />
         </div>
       </div>
       <div className="mt-4 flex gap-2">
-        <button type="button" onClick={save} disabled={!d.taskName?.trim()} className="rounded-lg bg-orange-500 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-40">Opslaan</button>
-        <button type="button" onClick={onCancel} className="rounded-lg border border-zinc-200 px-4 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800">Annuleren</button>
+        <Button variant="primary" onClick={save} disabled={!d.taskName?.trim()}>Opslaan</Button>
+        <Button variant="secondary" onClick={onCancel}>Annuleren</Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -204,9 +204,9 @@ export default function PhysicalStep7_Postures({ investigation, onUpdate }: Prop
     return (
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 8 — Houdingen &amp; bewegingen</h2>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-800/30 dark:bg-amber-900/10 dark:text-amber-400">
-          ⚠ Definieer eerst belastingsgroepen in stap 3.
-        </div>
+        <Alert variant="warning" size="md">
+          Definieer eerst belastingsgroepen in stap 3.
+        </Alert>
       </div>
     );
   }
@@ -272,8 +272,8 @@ export default function PhysicalStep7_Postures({ investigation, onUpdate }: Prop
                           >
                             {info.label}
                           </span>
-                          <button onClick={() => setEditingId(o.id)} className="text-xs text-zinc-400 hover:text-orange-600">Bewerken</button>
-                          <button onClick={() => onUpdate({ postureObservations: postureObservations.filter((x) => x.id !== o.id) })} className="text-xs text-zinc-400 hover:text-red-500">Verwijderen</button>
+                          <Button variant="ghost" size="xs" leftIcon={<Icon name="pencil" size="xs" />} onClick={() => setEditingId(o.id)}>Bewerken</Button>
+                          <Button variant="danger" size="xs" leftIcon={<Icon name="trash" size="xs" />} onClick={() => onUpdate({ postureObservations: postureObservations.filter((x) => x.id !== o.id) })}>Verwijderen</Button>
                         </div>
                       </div>
                     )}
@@ -287,16 +287,14 @@ export default function PhysicalStep7_Postures({ investigation, onUpdate }: Prop
                 </div>
               ) : (
                 <div className="px-4 py-3">
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    leftIcon={<Icon name="plus" size="xs" />}
                     onClick={() => setAddingBg(bg.id)}
-                    className="flex items-center gap-1.5 text-xs text-orange-600 hover:text-orange-700 dark:text-orange-400"
                   >
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
                     Houdingsobservatie toevoegen
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>

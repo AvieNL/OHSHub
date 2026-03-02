@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Versiehistorie en informatie over OHSHub.',
 };
 
-const CURRENT_VERSION = '0.9.6';
+const CURRENT_VERSION = '0.14.1';
 
 const CHANGELOG: {
   version: string;
@@ -16,6 +16,156 @@ const CHANGELOG: {
   modules: string[];
   changes: string[];
 }[] = [
+  {
+    version: '0.14.1',
+    date: '2026-03-03',
+    type: 'patch',
+    title: 'Bedrijfsarts als beroepsprofiel + BIG-registratienummer',
+    modules: ['Gevaarlijke stoffen', 'Geluid', 'Klimaat', 'Fysieke belasting'],
+    changes: [
+      'Bedrijfsarts toegevoegd als kwalificatieoptie voor uitvoerend onderzoekers in alle vier modules.',
+      'Bij keuze Bedrijfsarts verschijnt een veld voor het BIG-registratienummer (Wet BIG art. 3).',
+      'BasePerson uitgebreid met bigNumber?: string.',
+    ],
+  },
+  {
+    version: '0.14.0',
+    date: '2026-03-03',
+    type: 'minor',
+    title: 'Pre-survey standaardisatie + gedeelde scope-componenten',
+    modules: ['Gevaarlijke stoffen', 'Geluid', 'Klimaat', 'Fysieke belasting'],
+    changes: [
+      'Nieuw: Step0_PreSurvey voor gevaarlijke stoffen — 15 ja/nee/onbekend vragen (categorie A–E), automatische aanbeveling (volledig/gericht/geen), handmatige override.',
+      'Nieuw: lib/shared-investigation-types.ts — BasePerson en CommonScopeFields interfaces.',
+      'Nieuw: components/shared/scope/PersonCard.tsx — gedeeld persoonskaartje met kwalificatie, AKD-registratie, anonimiteit.',
+      'Nieuw: components/shared/scope/PersonSection.tsx — gedeelde personen-sectie met add/update/remove.',
+      'Nieuw: components/shared/scope/ScopeFields.tsx — gedeelde onderzoeksgegevens-sectie (bedrijf, werkplek, medewerkers, doel, periode).',
+      'SoundPerson, PhysicalPerson, ClimatePerson, PersonEntry breiden nu BasePerson uit.',
+      'SoundInvestigationScope, PhysicalInvestigationScope, ClimateInvestigationScope en InvestigationScope breiden nu CommonScopeFields uit.',
+      'InvestigationShell uitgebreid van 10 naar 11 stappen — stap 1 is nu de voorverkenning gevaarlijke stoffen.',
+      'Alle vier Step1-bestanden herschreven: PersonSection + ScopeFields + module-specifieke aanvullingen.',
+    ],
+  },
+  {
+    version: '0.13.3',
+    date: '2026-03-02',
+    type: 'patch',
+    title: 'Migratie gevaarlijke stoffen stappen naar gedeelde UI-componenten',
+    modules: ['Gevaarlijke stoffen'],
+    changes: [
+      'Alle 10 stap-bestanden in components/investigation/steps/ gemigreerd naar Button, Input, Select, Textarea, Alert en Icon uit @/components/ui.',
+      'Raw <button>, <input>, <select> en <textarea> elementen vervangen door gedeelde UI-componenten voor consistente styling.',
+      'Button variant="dashed" voor toevoeg-knoppen, variant="ghost"/"danger" size="xs" voor bewerken/verwijderen in stappen 1–10.',
+      'Alert variant="warning" vervangt ad-hoc oranje/amber waarschuwingsdivs in stappen 3, 4 en 7.',
+    ],
+  },
+  {
+    version: '0.13.2',
+    date: '2026-03-02',
+    type: 'patch',
+    title: 'Migratie climate-investigation stappen naar gedeelde UI-componenten',
+    modules: ['Klimaat'],
+    changes: [
+      'Alle 13 stap-bestanden in components/climate-investigation/steps/ gemigreerd naar Button, Card, FieldLabel, FormGrid, Icon, Input, Select, Textarea en Alert uit @/components/ui.',
+      'Raw <input>, <select>, <textarea> en <button> elementen vervangen door gedeelde UI-componenten voor consistente styling.',
+      'Alert-component vervangt ad-hoc gekleurde waarschuwingsdivs (warning/neutral/error/success) in Steps 3, 5, 6, 7, 8, 9, 10, 11.',
+      'Card variant="form" vervangt oranje formuliercontainers in BGForm en MeasureForm.',
+      'Button variant="dashed" voor toevoeg-knoppen, variant="ghost"/"danger" size="xs" voor bewerken/verwijderen.',
+    ],
+  },
+  {
+    version: '0.13.1',
+    date: '2026-03-02',
+    type: 'patch',
+    title: 'Migratie physical-investigation stappen naar gedeelde UI-componenten',
+    modules: ['Fysieke belasting'],
+    changes: [
+      'Alle 11 stap-bestanden in components/physical-investigation/steps/ gemigreerd naar Button, Card, FieldLabel, FormGrid, Icon, Input, Select, Textarea en Alert uit @/components/ui.',
+      'Raw <input>, <select>, <textarea> en <button> elementen vervangen door gedeelde UI-componenten voor consistente styling.',
+      'Alert-component vervangt ad-hoc gekleurde waarschuwingsdivs (amber/warning).',
+      'Card variant="form" vervangt oranje formuliercontainers in BGForm, LiftingForm, PushPullForm, RepetitiveForm, PostureForm, ForceForm en MeasureForm.',
+    ],
+  },
+  {
+    version: '0.13.0',
+    date: '2026-03-02',
+    type: 'minor',
+    title: 'Gebruikersprofiel: naam & bedrijf',
+    modules: ['Platform'],
+    changes: [
+      'Nieuwe profiles-tabel (voornaam, tussenvoegsel, achternaam, bedrijf) met RLS en auto-aanmaken via trigger.',
+      'Mijn gegevens: profielsectie met bewerkbaar formulier (voornaam / tussenvoegsel / achternaam / bedrijf).',
+      'Navbar toont voornaam als die ingevuld is; anders het (afgekorte) e-mailadres. Avataarinitaal volgt mee.',
+      'Admin-overzicht: naam en bedrijf zichtbaar als tweede regel onder het e-mailadres.',
+      'Admin-detailpagina: naam en bedrijf toegevoegd aan de accountinfo-sectie.',
+      'JSON-export bevat nu ook het volledige profiel.',
+    ],
+  },
+  {
+    version: '0.12.2',
+    date: '2026-03-02',
+    type: 'patch',
+    title: 'Registratie van privacyakkoord per gebruiker',
+    modules: ['Platform'],
+    changes: [
+      'Privacyversie en acceptatiedatum worden bij registratie opgeslagen in user_roles (via Supabase user-metadata + trigger).',
+      'Admin-overzicht: waarschuwingsicoontje bij gebruikers zonder geregistreerde privacyversie.',
+      'Admin-detailpagina: accountinfo-sectie met e-mail, rol, aanmeldatum, laatste login en privacyakkoord (versie + datum).',
+      'Mijn gegevens: privacyversie en acceptatiedatum zichtbaar in accountgegevens.',
+      'JSON-export bevat nu ook privacy_version_accepted en privacy_accepted_at.',
+    ],
+  },
+  {
+    version: '0.12.1',
+    date: '2026-03-02',
+    type: 'patch',
+    title: 'Bedrijfsgegevens DiversiThijs & privacyverklaring definitief',
+    modules: ['Platform'],
+    changes: [
+      'Over-pagina: DiversiThijs als ontwikkelaar vermeld met KvK-nummer (92899943), vestigingsplaats Breedenbroek, e-mail info@diversithijs.nl en link naar privacyverklaring.',
+      'Privacyverklaring volledig bijgewerkt met definitieve bedrijfsnaam, contactgegevens, grondslagen, sub-verwerkers, bewaartermijnen en alle AVG-rechten.',
+    ],
+  },
+  {
+    version: '0.12.0',
+    date: '2026-03-02',
+    type: 'minor',
+    title: 'Vergeten wachtwoord & privacyverklaring',
+    modules: ['Platform'],
+    changes: [
+      'Nieuwe flow "Wachtwoord vergeten": e-mailformulier op /auth/forgot-password en wachtwoord-resetpagina op /auth/reset-password (via Supabase PKCE herstelmail).',
+      '"Wachtwoord vergeten?"-link toegevoegd aan de inlogpagina naast het wachtwoordveld.',
+      'Privacyverklaring-pagina (/privacy) aangemaakt met AVG-conforme structuur (art. 13 informatieplicht).',
+      'Registratiepagina: verplichte checkbox waarmee gebruikers de privacyverklaring accepteren voor accountaanmaak.',
+    ],
+  },
+  {
+    version: '0.11.0',
+    date: '2026-03-02',
+    type: 'minor',
+    title: 'AVG-pagina "Mijn gegevens"',
+    modules: ['Platform'],
+    changes: [
+      'Nieuwe pagina /account met vier AVG-secties: inzage (accountgegevens), rectificatie (e-mail wijzigen), portabiliteit (JSON-export) en vergetelheid (account verwijderen).',
+      'API-route DELETE /api/account verwijdert het eigen account via supabaseAdmin; CASCADE ruimt onderzoeken en rol op.',
+      'API-route GET /api/account/export retourneert alle persoonsgegevens als JSON (user-info, rol, onderzoeken).',
+      'Navbar: "Mijn gegevens"-link toegevoegd in het gebruikersdropdown (desktop) en in het hamburgermenu (mobiel).',
+    ],
+  },
+  {
+    version: '0.10.0',
+    date: '2026-03-02',
+    type: 'minor',
+    title: 'Straling, wetgeving & thema-iconen',
+    modules: ['Straling', 'Platform'],
+    changes: [
+      'Nieuw thema "Straling" toegevoegd als placeholder-pagina (ioniserende straling, UV, IR, laser, EMV).',
+      'Risico-inventarisatie wizard voor Straling (3 vragen: stralingstype, stralingswerkerscategorie, vergunning/melding).',
+      'Wetgeving, toepasselijke normen en grenswaarden nu zichtbaar op alle 8 thema-pagina\'s — zowel placeholders als uitgewerkte onderzoeken.',
+      'Centrale datalaag lib/theme-legal-info.ts met juridische referentiedata voor alle thema\'s; geen dubbele definities meer.',
+      'SVG-iconen (Heroicons v2) toegevoegd aan alle themakaarten op de homepagina en aan de pagina-headers.',
+    ],
+  },
   {
     version: '0.9.6',
     date: '2026-02-27',
@@ -237,10 +387,11 @@ const MODULE_BADGE: Record<string, string> = {
   'Klimaat':             'bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-400',
   'Fysieke belasting':   'bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400',
   'Gevaarlijke stoffen': 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400',
-  'Trillingen':          'bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-400',
-  'Biologische agentia': 'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-400',
-  'Verlichting':         'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/50 dark:text-yellow-400',
-  'Bio-agentia':         'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-400',
+  'Trillingen':          'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400',
+  'Biologische agentia': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400',
+  'Verlichting':         'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400',
+  'Straling':            'bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-400',
+  'Bio-agentia':         'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400',
   'Platform':            'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
 };
 
@@ -280,9 +431,29 @@ export default function OverPage() {
         <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           Over de ontwikkelaar
         </h2>
-        <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-          OHSHub wordt ontwikkeld door <strong className="text-zinc-800 dark:text-zinc-200">Thijs ter Avest</strong>, veiligheidskundige en arbeidshygiënist. Het platform is ontstaan vanuit de praktijk: een behoefte aan toegankelijke, gestructureerde ondersteuning bij arbeidshygiënisch onderzoek conform de geldende wet- en regelgeving en normen.
+        <p className="mb-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+          OHSHub wordt ontwikkeld door <strong className="text-zinc-800 dark:text-zinc-200">DiversiThijs</strong>, gevestigd te Breedenbroek. Het platform is ontstaan vanuit de praktijk: een behoefte aan toegankelijke, gestructureerde ondersteuning bij arbeidshygiënisch onderzoek conform de geldende wet- en regelgeving en normen.
         </p>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1.5 text-sm">
+          <dt className="text-zinc-400 dark:text-zinc-500">
+            <abbr title="Kamer van Koophandel" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">KvK</abbr>
+          </dt>
+          <dd className="text-zinc-700 dark:text-zinc-300">92899943</dd>
+          <dt className="text-zinc-400 dark:text-zinc-500">Vestigingsplaats</dt>
+          <dd className="text-zinc-700 dark:text-zinc-300">Breedenbroek</dd>
+          <dt className="text-zinc-400 dark:text-zinc-500">E-mail</dt>
+          <dd>
+            <a href="mailto:info@diversithijs.nl" className="text-orange-500 hover:underline">
+              info@diversithijs.nl
+            </a>
+          </dd>
+          <dt className="text-zinc-400 dark:text-zinc-500">Privacyverklaring</dt>
+          <dd>
+            <Link href="/privacy" className="text-orange-500 hover:underline">
+              /privacy
+            </Link>
+          </dd>
+        </dl>
       </section>
 
       {/* Disclaimer */}

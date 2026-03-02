@@ -4,6 +4,7 @@ import type { ClimateInvestigation } from '@/lib/climate-investigation-types';
 import { computeAllClimateStatistics, pmvCategoryBadgeClass } from '@/lib/climate-stats';
 import { Abbr } from '@/components/Abbr';
 import { InfoBox } from '@/components/InfoBox';
+import { Alert } from '@/components/ui';
 
 interface Props {
   investigation: ClimateInvestigation;
@@ -99,10 +100,10 @@ export default function ClimateStep10_LocalComfort({ investigation, onUpdate: _o
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           Stap 11 — Lokaal thermisch comfort
         </h2>
-        <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800/30 dark:text-zinc-400">
+        <Alert variant="neutral">
           Dit scenario is niet geselecteerd. Selecteer &ldquo;Lokaal thermisch comfort&rdquo; in stap 4 om
           de lokale comfortbeoordeling in te schakelen.
-        </div>
+        </Alert>
       </div>
     );
   }
@@ -111,9 +112,9 @@ export default function ClimateStep10_LocalComfort({ investigation, onUpdate: _o
     return (
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 11 — Lokaal thermisch comfort</h2>
-        <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning">
           Definieer eerst blootstellingsgroepen in stap 3.
-        </div>
+        </Alert>
       </div>
     );
   }
@@ -345,18 +346,13 @@ export default function ClimateStep10_LocalComfort({ investigation, onUpdate: _o
 
                     {/* Categorie D melding */}
                     {worstCat === 'D' && (
-                      <div className="flex items-start gap-3 rounded-lg bg-red-50 px-4 py-3 text-sm dark:bg-red-900/15">
-                        <svg className="mt-0.5 h-4 w-4 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                        </svg>
-                        <div>
-                          <p className="font-semibold text-red-800 dark:text-red-300">Categorie D — Onaanvaardbaar lokaal oncomfort</p>
-                          <p className="mt-0.5 text-xs text-red-700 dark:text-red-400">
-                            Een of meer lokale comfortparameters vallen buiten de Categorie C-grens. Maatregelen vereist.
-                            Zie stap 12 voor de beheersmaatregelen.
-                          </p>
-                        </div>
-                      </div>
+                      <Alert variant="error">
+                        <p className="font-semibold">Categorie D — Onaanvaardbaar lokaal oncomfort</p>
+                        <p className="mt-0.5 text-xs">
+                          Een of meer lokale comfortparameters vallen buiten de Categorie C-grens. Maatregelen vereist.
+                          Zie stap 12 voor de beheersmaatregelen.
+                        </p>
+                      </Alert>
                     )}
                   </div>
                 )}

@@ -5,6 +5,7 @@ import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
 import { SectionRef } from '@/components/SectionRef';
 import { InfoBox } from '@/components/InfoBox';
+import { Alert, Badge, Card, FieldLabel, Textarea } from '@/components/ui';
 
 interface Props {
   investigation: SoundInvestigation;
@@ -71,7 +72,7 @@ function StrategyCard({
   const guidance = STRATEGY_GUIDANCE[heg.workPattern ?? 'unspecified'];
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/30">
+    <Card>
       <div className="border-b border-zinc-200 px-5 py-3 dark:border-zinc-700">
         <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{heg.name}</p>
         <p className="text-xs text-zinc-400">
@@ -120,9 +121,7 @@ function StrategyCard({
                         {desc.title}
                       </p>
                       {isRec && (
-                        <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                          Aanbevolen
-                        </span>
+                        <Badge variant="emerald" shape="square">Aanbevolen</Badge>
                       )}
                     </div>
                     <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{desc.when}</p>
@@ -139,20 +138,20 @@ function StrategyCard({
 
         {/* Justification */}
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          <FieldLabel>
             Motivering keuze meetstrategie (<SectionRef id="§15.b.4">§15.b.4</SectionRef>)
-          </label>
-          <textarea
+          </FieldLabel>
+          <Textarea
             rows={2}
             value={heg.notes ?? ''}
             onChange={(e) => onUpdateHEG({ ...heg, notes: e.target.value })}
             placeholder="Beschrijf waarom deze strategie is gekozen…"
-            className="w-full resize-none rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+            className="w-full"
           />
         </div>
 
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -169,11 +168,11 @@ export default function SoundStep3_Strategy({ investigation, onUpdate, onGoToSte
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           Stap 4 — Meetstrategie (<SectionRef id="§8">§8</SectionRef>)
         </h2>
-        <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning" size="md">
           Definieer eerst <Abbr id="HEG">HEG</Abbr>&apos;s in{' '}
           <button type="button" onClick={() => onGoToStep(2)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 3</button>,
           dan kunt u hier per <Abbr id="HEG">HEG</Abbr> de meetstrategie kiezen.
-        </div>
+        </Alert>
       </div>
     );
   }

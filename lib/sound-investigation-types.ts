@@ -1,3 +1,5 @@
+import type { BasePerson, CommonScopeFields } from '@/lib/shared-investigation-types';
+
 // ─── Enums & literal types ────────────────────────────────────────────────────
 
 export type SoundStrategy = 'task-based' | 'job-based' | 'full-day';
@@ -23,28 +25,11 @@ export type WorkPattern =
 // ─── Personnel (§15.a.1, §15.a.3, §15.a.4) ───────────────────────────────────
 
 /** M-6: Kwalificatie onderzoeker (Arbowet art. 14 / WBFO) */
-export type PersonQualification = 'AH' | 'HVK' | 'acousticus' | 'other';
+export type PersonQualification = 'AH' | 'HVK' | 'acousticus' | 'bedrijfsarts' | 'other';
 
-export interface SoundPerson {
-  id: string;
-  name?: string;
-  role?: string;
-  organization?: string;
-  address?: string;
-  email?: string;
-  phone?: string;
-  /** When true the name field is hidden in the report */
-  anonymous?: boolean;
-  /** Rol van deze persoon in het onderzoek (alleen respondenten) */
-  investigationRole?: string;
+export interface SoundPerson extends BasePerson {
   /** M-6: Beroepsprofiel uitvoerende (Arbowet art. 14) */
   qualification?: PersonQualification;
-  /** M-6: Gecertificeerd Arbokerndeskundige (SZW-register) */
-  isAKD?: boolean;
-  /** M-6: AKD-registratienummer (SZW Arbokerndeskundigenregister) */
-  akdNumber?: string;
-  /** M-6: Vrije toelichting bij 'Overige' kwalificatie */
-  qualificationNote?: string;
 }
 
 // ─── HEG — Homogeneous noise Exposure Group (§7.2) ────────────────────────────
@@ -334,7 +319,7 @@ export interface SoundMeasure {
 
 // ─── Investigation scope (§15.a) ─────────────────────────────────────────────
 
-export interface SoundInvestigationScope {
+export interface SoundInvestigationScope extends CommonScopeFields {
   /** §15.a.1 name of client/company */
   companyName?: string;
   /** §15.a.2 identification of working place(s) */

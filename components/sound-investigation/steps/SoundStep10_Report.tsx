@@ -7,6 +7,7 @@ import { downloadSoundPDF } from '@/lib/sound-pdf-html';
 import katex from 'katex';
 import { Formula } from '@/components/Formula';
 import { SectionRef } from '@/components/SectionRef';
+import { Alert, Button, Card, FieldLabel, Icon, Input, Textarea } from '@/components/ui';
 
 interface Props {
   investigation: SoundInvestigation;
@@ -598,7 +599,7 @@ export default function SoundStep10_Report({ investigation, onUpdate }: Props) {
       </div>
 
       {/* ── Completion checklist ─────────────────────────────────────────── */}
-      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/30">
+      <Card>
         <div className="mb-3 flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
             Volledigheidscheck (<SectionRef id="§15">§15</SectionRef> vereisten)
@@ -619,7 +620,7 @@ export default function SoundStep10_Report({ investigation, onUpdate }: Props) {
             </div>
           ))}
         </div>
-      </div>
+      </Card>
 
       {/* ── Results summary ──────────────────────────────────────────────── */}
       {statistics.length > 0 && (
@@ -668,29 +669,27 @@ export default function SoundStep10_Report({ investigation, onUpdate }: Props) {
       <div className="space-y-4">
         <SectionTitle>Conclusie & conformiteit</SectionTitle>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Conclusie (<SectionRef id="§15.e.6">§15.e.6</SectionRef>)
-          </label>
-          <textarea
+          <FieldLabel>Conclusie (<SectionRef id="§15.e.6">§15.e.6</SectionRef>)</FieldLabel>
+          <Textarea
             rows={5}
             value={report.conclusion ?? ''}
             onChange={(e) => upd({ conclusion: e.target.value })}
             placeholder="Samenvatting van de bevindingen en de beoordeling van de geluidblootstelling…"
-            className="w-full resize-none rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-full"
           />
         </div>
         <div>
           <div className="mb-1 flex items-center justify-between gap-3">
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Conformiteitsverklaring (<SectionRef id="§15.e.7">§15.e.7</SectionRef>)
-            </label>
-            <button
+            <FieldLabel>Conformiteitsverklaring (<SectionRef id="§15.e.7">§15.e.7</SectionRef>)</FieldLabel>
+            <Button
               type="button"
+              variant="secondary"
+              size="xs"
               onClick={() => upd({ complianceStatement: generateComplianceStatement(investigation) })}
-              className="shrink-0 rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 transition hover:border-orange-400 hover:text-orange-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:border-orange-500 dark:hover:text-orange-400"
+              className="shrink-0"
             >
               Genereer op basis van meetresultaten
-            </button>
+            </Button>
           </div>
           <textarea
             ref={complianceRef}
@@ -708,12 +707,7 @@ export default function SoundStep10_Report({ investigation, onUpdate }: Props) {
                 className="flex w-full items-center justify-between px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
               >
                 <span>Weergave (formules gerenderd)</span>
-                <svg
-                  className={`h-3.5 w-3.5 transition-transform ${previewOpen ? 'rotate-180' : ''}`}
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
+                <Icon name="chevron-down" size="sm" className={`transition-transform ${previewOpen ? 'rotate-180' : ''}`} />
               </button>
               {previewOpen && (
                 <div
@@ -734,25 +728,23 @@ export default function SoundStep10_Report({ investigation, onUpdate }: Props) {
         <SectionTitle>Periodieke herbeoordeling</SectionTitle>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Datum volgende herbeoordeling
-            </label>
-            <input
+            <FieldLabel>Datum volgende herbeoordeling</FieldLabel>
+            <Input
               type="date"
               value={report.nextReviewDate ?? ''}
               onChange={(e) => upd({ nextReviewDate: e.target.value })}
-              className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+              className="w-full"
             />
             {latestDeadline && (
               <>
                 <div className="mt-2 flex items-center gap-2">
-                  <button
-                    type="button"
+                  <Button
+                    variant="secondary"
+                    size="xs"
                     onClick={() => upd({ nextReviewDate: latestDeadline })}
-                    className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 transition hover:border-orange-400 hover:text-orange-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:border-orange-500 dark:hover:text-orange-400"
                   >
                     Instellen op basis van maatregelen ({latestDeadline})
-                  </button>
+                  </Button>
                 </div>
                 <p className="mt-1.5 text-xs text-zinc-400 dark:text-zinc-500">
                   De verste maatregel-deadline is {latestDeadline}. Na implementatie van alle maatregelen is herbeoordeling logisch.
@@ -791,15 +783,13 @@ export default function SoundStep10_Report({ investigation, onUpdate }: Props) {
 
       {/* ── Notes ────────────────────────────────────────────────────────── */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Overige opmerkingen
-        </label>
-        <textarea
+        <FieldLabel>Overige opmerkingen</FieldLabel>
+        <Textarea
           rows={3}
           value={report.notes ?? ''}
           onChange={(e) => upd({ notes: e.target.value })}
           placeholder="Bijzonderheden, voorbehouden, aanvullende informatie…"
-          className="w-full resize-none rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+          className="w-full"
         />
       </div>
 
@@ -807,27 +797,23 @@ export default function SoundStep10_Report({ investigation, onUpdate }: Props) {
       <div className="space-y-4">
         <SectionTitle>Exportopties</SectionTitle>
         <div className="flex flex-wrap gap-3">
-          <button
+          <Button
             onClick={() => downloadSoundPDF(investigation)}
-            className="inline-flex items-center gap-2 rounded-lg border border-orange-300 bg-orange-500 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-orange-600 dark:border-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700"
+            variant="primary"
+            leftIcon={<Icon name="printer" size="md" />}
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-            </svg>
             PDF rapport genereren
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={() => downloadCSV(investigation)}
-            className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+            variant="secondary"
+            leftIcon={<Icon name="arrow-down-tray" size="md" />}
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-            </svg>
             Excel / CSV
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={() => {
               const blob = new Blob([JSON.stringify([investigation], null, 2)], { type: 'application/json' });
               const url  = URL.createObjectURL(blob);
@@ -838,23 +824,19 @@ export default function SoundStep10_Report({ investigation, onUpdate }: Props) {
               a.click();
               URL.revokeObjectURL(url);
             }}
-            className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+            variant="secondary"
+            leftIcon={<Icon name="arrow-down-tray" size="md" />}
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-            </svg>
             Opslaan als bestand
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={copyReport}
-            className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+            variant="secondary"
           >
             {copied ? (
               <>
-                <svg className="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
+                <Icon name="check" size="md" className="text-emerald-500" />
                 <span className="text-emerald-600 dark:text-emerald-400">Markdown gekopieerd!</span>
               </>
             ) : (
@@ -865,7 +847,7 @@ export default function SoundStep10_Report({ investigation, onUpdate }: Props) {
                 Kopieer als Markdown
               </>
             )}
-          </button>
+          </Button>
         </div>
         <p className="text-xs text-zinc-400 dark:text-zinc-500">
           PDF: opent een opgemaakt rapport in een nieuw venster — gebruik Afdrukken → Opslaan als PDF.
@@ -875,14 +857,14 @@ export default function SoundStep10_Report({ investigation, onUpdate }: Props) {
       </div>
 
       {/* ── §15 reference ────────────────────────────────────────────────── */}
-      <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-xs text-zinc-500 space-y-1 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-400">
+      <Alert variant="neutral" size="sm" className="space-y-1">
         <p className="font-semibold"><SectionRef id="§15">§15</SectionRef> NEN-EN-ISO 9612:2025 — Vereiste rapportinhoud:</p>
         <p><SectionRef id="§15.a">§15.a</SectionRef>: Naam opdrachtgever, arbeidsplaatsen, werknemers/groepen, meettijdstippen, doel</p>
         <p><SectionRef id="§15.b">§15.b</SectionRef>: Werkanalyse, HEGs, strategie met motivering</p>
         <p><SectionRef id="§15.c">§15.c</SectionRef>: Meetapparatuur (type, serienr., kalibratie)</p>
         <p><SectionRef id="§15.d">§15.d</SectionRef>: Meetcondities, afwijkingen normale omstandigheden</p>
         <p><SectionRef id="§15.e">§15.e</SectionRef>: <Formula math="L_{EX,8h}" />, <Formula math="L_{EX,8h,95\%}" />, onzekerheidscomponenten, <Formula math="L_{p,Cpeak}" /> (indien gemeten), toetsing actiewaarden, conformiteitsverklaring</p>
-      </div>
+      </Alert>
     </div>
   );
 }

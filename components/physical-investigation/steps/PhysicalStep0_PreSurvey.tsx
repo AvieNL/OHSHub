@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { PhysicalInvestigation, PhysicalPreSurvey, PhysicalSurveyRecommendation, PrePhysicalAnswer } from '@/lib/physical-investigation-types';
 import { InfoBox } from '@/components/InfoBox';
 import { Abbr } from '@/components/Abbr';
+import { Button, Card, FieldLabel, FormGrid, Input, Select } from '@/components/ui';
 
 interface Props {
   investigation: PhysicalInvestigation;
@@ -105,8 +106,6 @@ export default function PhysicalStep0_PreSurvey({ investigation, onUpdate }: Pro
 
   const groups: QGroup[] = ['lifting', 'push-pull', 'repetitive', 'posture', 'general'];
 
-  const INPUT = 'w-full rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400';
-
   return (
     <div className="space-y-6">
       <div>
@@ -130,27 +129,25 @@ export default function PhysicalStep0_PreSurvey({ investigation, onUpdate }: Pro
       </InfoBox>
 
       {/* Respondent info */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <FormGrid cols={2}>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Naam respondent</label>
-          <input
+          <FieldLabel>Naam respondent</FieldLabel>
+          <Input
             type="text"
             value={preSurvey.respondentName ?? ''}
             onChange={(e) => updatePreSurvey({ respondentName: e.target.value })}
             placeholder="Naam medewerker / leidinggevende"
-            className={INPUT}
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Datum voorverkenning</label>
-          <input
+          <FieldLabel>Datum voorverkenning</FieldLabel>
+          <Input
             type="date"
             value={preSurvey.completedAt ?? ''}
             onChange={(e) => updatePreSurvey({ completedAt: e.target.value })}
-            className={INPUT}
           />
         </div>
-      </div>
+      </FormGrid>
 
       {/* Questions per group */}
       {groups.map((group) => {
@@ -213,13 +210,12 @@ export default function PhysicalStep0_PreSurvey({ investigation, onUpdate }: Pro
         {preSurvey.complaintsReported && (
           <div className="space-y-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Beschrijving klachten</label>
-              <input
+              <FieldLabel>Beschrijving klachten</FieldLabel>
+              <Input
                 type="text"
                 value={preSurvey.complaintsDescription ?? ''}
                 onChange={(e) => updatePreSurvey({ complaintsDescription: e.target.value })}
                 placeholder="Bijv. lage rugpijn, nek-/schouderklachten, RSI-klachten"
-                className={INPUT}
               />
             </div>
           </div>
@@ -249,40 +245,38 @@ export default function PhysicalStep0_PreSurvey({ investigation, onUpdate }: Pro
 
       {/* Manual override */}
       <div>
-        <button
-          type="button"
+        <Button
+          variant="link"
           onClick={() => setShowOverride((o) => !o)}
           className="text-xs text-zinc-400 hover:text-orange-600 dark:hover:text-orange-400"
         >
           {showOverride ? '▲ Verberg' : '▼ Aanbeveling handmatig overschrijven'}
-        </button>
+        </Button>
         {showOverride && (
           <div className="mt-3 space-y-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-4 dark:border-zinc-700 dark:bg-zinc-800/30">
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Overschreven aanbeveling</label>
-              <select
+              <FieldLabel>Overschreven aanbeveling</FieldLabel>
+              <Select
                 value={preSurvey.recommendationOverride ?? ''}
                 onChange={(e) =>
                   updatePreSurvey({
                     recommendationOverride: (e.target.value || undefined) as PhysicalSurveyRecommendation | undefined,
                   })
                 }
-                className={INPUT}
               >
                 <option value="">— gebruik automatische aanbeveling —</option>
                 {(Object.keys(RECOMMENDATION_LABELS) as PhysicalSurveyRecommendation[]).map((k) => (
                   <option key={k} value={k}>{RECOMMENDATION_LABELS[k].label}</option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Reden afwijking</label>
-              <input
+              <FieldLabel>Reden afwijking</FieldLabel>
+              <Input
                 type="text"
                 value={preSurvey.conclusionNotes ?? ''}
                 onChange={(e) => updatePreSurvey({ conclusionNotes: e.target.value })}
                 placeholder="Toelichting op de afwijking van de aanbeveling"
-                className={INPUT}
               />
             </div>
           </div>

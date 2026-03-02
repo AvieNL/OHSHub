@@ -7,10 +7,20 @@ type UserRow = {
   id: string;
   email: string;
   role: string;
+  privacy_version_accepted: string | null;
+  privacy_accepted_at: string | null;
+  first_name: string | null;
+  tussenvoegsel: string | null;
+  last_name: string | null;
+  company: string | null;
   created_at: string;
   last_sign_in_at: string | null;
   investigation_count: number;
 };
+
+function fmtFullName(u: Pick<UserRow, 'first_name' | 'tussenvoegsel' | 'last_name'>): string {
+  return [u.first_name, u.tussenvoegsel, u.last_name].filter(Boolean).join(' ');
+}
 
 const ROLES = ['gebruiker', 'test-gebruiker', 'admin'] as const;
 
@@ -115,12 +125,31 @@ export default function AdminPage() {
               {users.map((user) => (
                 <tr key={user.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
                   <td className="px-6 py-4">
-                    <Link
-                      href={`/admin/users/${user.id}`}
-                      className="font-medium text-zinc-900 hover:underline dark:text-zinc-100"
-                    >
-                      {user.email}
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <div>
+                        <Link
+                          href={`/admin/users/${user.id}`}
+                          className="font-medium text-zinc-900 hover:underline dark:text-zinc-100"
+                        >
+                          {user.email}
+                        </Link>
+                        {fmtFullName(user) && (
+                          <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                            {fmtFullName(user)}{user.company ? ` · ${user.company}` : ''}
+                          </p>
+                        )}
+                      </div>
+                      {!user.privacy_version_accepted && (
+                        <span
+                          title="Privacyverklaring nog niet geregistreerd"
+                          className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400"
+                        >
+                          <svg className="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                          </svg>
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-4">
                     <select

@@ -1,3 +1,5 @@
+import type { BasePerson, CommonScopeFields } from '@/lib/shared-investigation-types';
+
 // ─── Enums & literal types ────────────────────────────────────────────────────
 
 /** Which assessment scenarios apply to this investigation */
@@ -19,24 +21,12 @@ export type ClimateMeasureType =
   | 'monitoring';    // continue bewaking WBGT/thermisch comfort
 
 /** Kwalificatie uitvoerend onderzoeker (Arbowet art. 14 / NEN-EN-ISO 7730) */
-export type ClimatePersonQualification = 'AH' | 'HVK' | 'ergonoom' | 'other';
+export type ClimatePersonQualification = 'AH' | 'HVK' | 'ergonoom' | 'bedrijfsarts' | 'other';
 
 // ─── Personnel ────────────────────────────────────────────────────────────────
 
-export interface ClimatePerson {
-  id: string;
-  name?: string;
-  role?: string;
-  organization?: string;
-  address?: string;
-  email?: string;
-  phone?: string;
-  anonymous?: boolean;
-  investigationRole?: string;
+export interface ClimatePerson extends BasePerson {
   qualification?: ClimatePersonQualification;
-  isAKD?: boolean;
-  akdNumber?: string;
-  qualificationNote?: string;
 }
 
 // ─── Blootstellingsgroep (BG) — Similar Exposure Group ───────────────────────
@@ -233,7 +223,7 @@ export interface ClimateMeasure {
 
 // ─── Onderzoekskader ──────────────────────────────────────────────────────────
 
-export interface ClimateInvestigationScope {
+export interface ClimateInvestigationScope extends CommonScopeFields {
   companyName?: string;
   workplaceName?: string;
   workplaceAddress?: string;

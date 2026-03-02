@@ -9,6 +9,7 @@ import type {
   SurveyRecommendation,
 } from '@/lib/sound-investigation-types';
 import { Abbr } from '@/components/Abbr';
+import { FieldLabel, FormGrid, Icon, Input, Textarea } from '@/components/ui';
 
 interface Props {
   investigation: SoundInvestigation;
@@ -67,18 +68,18 @@ const CATEGORIES: CategoryDef[] = [
     subtitle: 'Arbobesluit art. 7.4a — keuring; Machinerichtlijn 2006/42/EG',
     questions: [
       { id: 'Q12', text: 'Zijn er arbeidsmiddelen (machines, voertuigen, gereedschap) in gebruik die bijdragen aan de geluidsbelasting?' },
-      { id: 'Q13', text: 'Zijn er arbeidsmiddelen waarvoor de CE-conformiteitsverklaring geluidsemissiewaarden (L\u2090, L\u209A\u2090) vermeldt?' },
+      { id: 'Q13', text: 'Zijn er arbeidsmiddelen waarvoor de CE-conformiteitsverklaring geluidsemissiewaarden (Lₐ, Lₚₐ) vermeldt?' },
       { id: 'Q14', text: 'Is het onderhoud achterstallig aan geluidsproducerende arbeidsmiddelen?' },
     ],
   },
   {
     id: 'E',
     title: 'E — Administratief en wettelijk',
-    subtitle: 'Arbowet art. 5 — RI\u0026E',
+    subtitle: 'Arbowet art. 5 — RI&E',
     questions: [
-      { id: 'Q15', text: 'Is er een geldig RI\u0026E-rapport aanwezig?' },
-      { id: 'Q16', text: 'Zijn geluidsrisico\'s meegenomen in de RI\u0026E?' },
-      { id: 'Q17', text: 'Zijn er aanbevelingen uit de RI\u0026E met betrekking tot geluid die nog niet zijn opgevolgd?' },
+      { id: 'Q15', text: 'Is er een geldig RI&E-rapport aanwezig?' },
+      { id: 'Q16', text: 'Zijn geluidsrisico\'s meegenomen in de RI&E?' },
+      { id: 'Q17', text: 'Zijn er aanbevelingen uit de RI&E met betrekking tot geluid die nog niet zijn opgevolgd?' },
       { id: 'Q18', text: 'Zijn er klachten over geluid ingediend bij de werkgever of arbodienst?' },
       { id: 'Q19', text: 'Is de medezeggenschap (OR/PVT) betrokken bij de aanpak van geluidsrisico\'s?' },
     ],
@@ -136,7 +137,7 @@ const RECOMMENDATION_CONFIG: Record<
     badgeClass:
       'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400',
     description:
-      'Een volledig kwantitatief geluidsonderzoek conform NEN-EN-ISO 9612:2025 is aangewezen om de dagelijkse blootstelling (L\u2091\u02E3,\u2088\u2095) te bepalen en te toetsen aan de actiewaarden en grenswaarde (Arbobesluit art. 6.6).',
+      'Een volledig kwantitatief geluidsonderzoek conform NEN-EN-ISO 9612:2025 is aangewezen om de dagelijkse blootstelling (Lex,8h) te bepalen en te toetsen aan de actiewaarden en grenswaarde (Arbobesluit art. 6.6).',
   },
   indicative: {
     label: 'Indicatief onderzoek overwegen',
@@ -218,6 +219,21 @@ function QuestionRow({
 }) {
   const [showNotes, setShowNotes] = useState(!!response?.notes);
 
+  const notesToggleBtn = (
+    <button
+      type="button"
+      title="Toelichting toevoegen"
+      onClick={() => setShowNotes((v) => !v)}
+      className={`rounded p-1 text-xs transition ${
+        showNotes || response?.notes
+          ? 'text-orange-500 dark:text-orange-400'
+          : 'text-zinc-300 hover:text-zinc-500 dark:text-zinc-600 dark:hover:text-zinc-400'
+      }`}
+    >
+      <Icon name="note" size="sm" />
+    </button>
+  );
+
   return (
     <div className="rounded-lg border border-zinc-100 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-800/50">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -234,22 +250,7 @@ function QuestionRow({
               answer={response?.answer}
               onChange={(a) => onAnswerChange(q.id, a)}
             />
-            <button
-              type="button"
-              title="Toelichting toevoegen"
-              onClick={() => setShowNotes((v) => !v)}
-              className={`rounded p-1 text-xs transition ${
-                showNotes || response?.notes
-                  ? 'text-orange-500 dark:text-orange-400'
-                  : 'text-zinc-300 hover:text-zinc-500 dark:text-zinc-600 dark:hover:text-zinc-400'
-              }`}
-            >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round"
-                  d="M7 8h10M7 12h6m-6 4h4M5 20l2.586-2.586A2 2 0 019 17H19a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"
-                />
-              </svg>
-            </button>
+            {notesToggleBtn}
           </div>
         )}
       </div>
@@ -271,33 +272,19 @@ function QuestionRow({
             ))}
           </div>
           <div className="mt-1.5 flex justify-end">
-            <button
-              type="button"
-              title="Toelichting toevoegen"
-              onClick={() => setShowNotes((v) => !v)}
-              className={`rounded p-1 text-xs transition ${
-                showNotes || response?.notes
-                  ? 'text-orange-500 dark:text-orange-400'
-                  : 'text-zinc-300 hover:text-zinc-500 dark:text-zinc-600 dark:hover:text-zinc-400'
-              }`}
-            >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round"
-                  d="M7 8h10M7 12h6m-6 4h4M5 20l2.586-2.586A2 2 0 019 17H19a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"
-                />
-              </svg>
-            </button>
+            {notesToggleBtn}
           </div>
         </div>
       )}
 
       {(showNotes || response?.notes) && (
-        <input
+        <Input
           type="text"
           value={response?.notes ?? ''}
           onChange={(e) => onNotesChange(q.id, e.target.value)}
           placeholder="Toelichting…"
-          className="mt-2 w-full rounded border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-sm outline-none focus:border-orange-400 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-100"
+          size="sm"
+          className="mt-2 w-full bg-zinc-50 dark:bg-zinc-700"
         />
       )}
     </div>
@@ -377,31 +364,27 @@ export default function SoundStep0_PreSurvey({ investigation, onUpdate }: Props)
       </p>
 
       {/* Meta */}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <FormGrid>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Naam respondent / contactpersoon
-          </label>
-          <input
+          <FieldLabel>Naam respondent / contactpersoon</FieldLabel>
+          <Input
             type="text"
             value={survey.respondentName ?? ''}
             onChange={(e) => upd({ respondentName: e.target.value })}
             placeholder="Naam…"
-            className="w-full rounded-lg border border-zinc-200 px-4 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-full"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Datum voorverkenning
-          </label>
-          <input
+          <FieldLabel>Datum voorverkenning</FieldLabel>
+          <Input
             type="date"
             value={survey.completedAt ?? ''}
             onChange={(e) => upd({ completedAt: e.target.value })}
-            className="w-full rounded-lg border border-zinc-200 px-4 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-full"
           />
         </div>
-      </div>
+      </FormGrid>
 
       {/* Progress indicator */}
       <div className="flex items-center gap-3 text-xs text-zinc-400 dark:text-zinc-500">
@@ -500,12 +483,12 @@ export default function SoundStep0_PreSurvey({ investigation, onUpdate }: Props)
               ({RECOMMENDATION_CONFIG[autoRecommendation].badge}).
               Geef hieronder een toelichting bij deze keuze.
             </p>
-            <textarea
+            <Textarea
               value={survey.conclusionNotes ?? ''}
               onChange={(e) => upd({ conclusionNotes: e.target.value })}
               rows={3}
               placeholder="Toelichting bij de handmatige keuze…"
-              className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-amber-700 dark:bg-zinc-800 dark:text-zinc-100"
+              className="w-full border-amber-200 dark:border-amber-700"
             />
           </div>
         )}
@@ -516,12 +499,12 @@ export default function SoundStep0_PreSurvey({ investigation, onUpdate }: Props)
             <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
               Toelichting / afspraken (voor rapport)
             </label>
-            <textarea
+            <Textarea
               value={survey.conclusionNotes ?? ''}
               onChange={(e) => upd({ conclusionNotes: e.target.value })}
               rows={3}
               placeholder="Context, afspraken met opdrachtgever…"
-              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+              className="w-full"
             />
           </div>
         )}

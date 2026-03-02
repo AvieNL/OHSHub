@@ -18,6 +18,7 @@ import {
 import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
 import { InfoBox } from '@/components/InfoBox';
+import { Alert, Button, Card, FieldLabel, FormGrid, Icon, Input } from '@/components/ui';
 
 interface Props {
   investigation: SoundInvestigation;
@@ -59,30 +60,26 @@ function EquipmentForm({
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="space-y-4 rounded-xl border border-orange-200 bg-orange-50/50 p-5 dark:border-orange-800/50 dark:bg-orange-900/10">
+    <Card variant="form">
       <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
         Arbeidsmiddel vastleggen
       </h4>
 
       {/* Name */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Naam / omschrijving <span className="text-red-500">*</span>
-        </label>
-        <input
+        <FieldLabel>Naam / omschrijving <span className="text-red-500">*</span></FieldLabel>
+        <Input
           type="text"
           value={form.name}
           onChange={(e) => upd({ name: e.target.value })}
           placeholder="Bijv. Heftruck Toyota 8FBN25"
-          className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+          className="w-full"
         />
       </div>
 
       {/* Category */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Categorie
-        </label>
+        <FieldLabel>Categorie</FieldLabel>
         <div className="space-y-1.5">
           {CATEGORY_OPTIONS.map((opt) => (
             <label key={opt.value} className="flex cursor-pointer items-center gap-3">
@@ -99,42 +96,40 @@ function EquipmentForm({
       </div>
 
       {/* Manufacturer / Model / Serial / Year */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <FormGrid>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Fabrikant</label>
-          <input
+          <FieldLabel>Fabrikant</FieldLabel>
+          <Input
             type="text"
             value={form.manufacturer ?? ''}
             onChange={(e) => upd({ manufacturer: e.target.value })}
             placeholder="Bijv. Toyota"
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-full"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Model / type</label>
-          <input
+          <FieldLabel>Model / type</FieldLabel>
+          <Input
             type="text"
             value={form.model ?? ''}
             onChange={(e) => upd({ model: e.target.value })}
             placeholder="Bijv. 8FBN25"
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-full"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Serienummer</label>
-          <input
+          <FieldLabel>Serienummer</FieldLabel>
+          <Input
             type="text"
             value={form.serialNumber ?? ''}
             onChange={(e) => upd({ serialNumber: e.target.value })}
             placeholder="S/N"
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-full"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Bouwjaar
-          </label>
-          <input
+          <FieldLabel>Bouwjaar</FieldLabel>
+          <Input
             type="number"
             min={1900}
             max={currentYear}
@@ -144,34 +139,32 @@ function EquipmentForm({
               upd({ yearOfManufacture: isFinite(n) ? n : undefined });
             }}
             placeholder="Bijv. 2018"
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-full"
           />
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            {regNrLabel}
-          </label>
-          <input
+          <FieldLabel>{regNrLabel}</FieldLabel>
+          <Input
             type="text"
             value={form.registrationNumber ?? ''}
             onChange={(e) => upd({ registrationNumber: e.target.value })}
             placeholder={isVoertuig ? 'Bijv. AB-123-C' : 'Intern registratienummer'}
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-full"
           />
         </div>
-      </div>
+      </FormGrid>
 
       {/* Geluidemissie fabrikant */}
       <div>
         <p className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
           Geluidemissie fabrikant (<Abbr id="MRL">Machinerichtlijn</Abbr> 2006/42/<abbr title="Europese Gemeenschap" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">EG</abbr>)
         </p>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <FormGrid>
           <div>
             <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
               <abbr title="Gegarandeerd geluidsvermogensniveau (A-gewogen)" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">L<sub>WA</sub></abbr> gegarandeerd (dB)
             </label>
-            <input
+            <Input
               type="number"
               step={0.5}
               value={form.lwaGuaranteed ?? ''}
@@ -180,14 +173,14 @@ function EquipmentForm({
                 upd({ lwaGuaranteed: isFinite(n) ? n : undefined });
               }}
               placeholder="Bijv. 98"
-              className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+              className="w-full"
             />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
               <abbr title="Gewogen geluidsdrukniveau op de werkplek, fabrieksopgave" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">L<sub>pA</sub></abbr> werkplek fabrieksopgave (dB)
             </label>
-            <input
+            <Input
               type="number"
               step={0.5}
               value={form.lpaManufacturer ?? ''}
@@ -196,10 +189,10 @@ function EquipmentForm({
                 upd({ lpaManufacturer: isFinite(n) ? n : undefined });
               }}
               placeholder="Bijv. 78"
-              className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+              className="w-full"
             />
           </div>
-        </div>
+        </FormGrid>
       </div>
 
       {/* Keuring */}
@@ -217,62 +210,62 @@ function EquipmentForm({
         </label>
 
         {form.inspectionRequired && (
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <FormGrid className="mt-3">
             <div className="sm:col-span-2">
               <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Type keuring</label>
-              <input
+              <Input
                 type="text"
                 value={form.inspectionType ?? ''}
                 onChange={(e) => upd({ inspectionType: e.target.value })}
                 placeholder="Bijv. periodieke keuring heftrucks (NEN-EN 1726)"
-                className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                className="w-full"
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Datum keuring</label>
-              <input
+              <Input
                 type="date"
                 value={form.inspectionDate ?? ''}
                 onChange={(e) => upd({ inspectionDate: e.target.value })}
-                className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                className="w-full"
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Keuring geldig t/m</label>
-              <input
+              <Input
                 type="date"
                 value={form.inspectionExpiry ?? ''}
                 onChange={(e) => upd({ inspectionExpiry: e.target.value })}
-                className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                className="w-full"
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Keurende instantie</label>
-              <input
+              <Input
                 type="text"
                 value={form.inspectionBody ?? ''}
                 onChange={(e) => upd({ inspectionBody: e.target.value })}
                 placeholder="Bijv. TÜV, Kiwa, Lloyds"
-                className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                className="w-full"
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Keuringscertificaatnummer</label>
-              <input
+              <Input
                 type="text"
                 value={form.inspectionCertNumber ?? ''}
                 onChange={(e) => upd({ inspectionCertNumber: e.target.value })}
                 placeholder="Cert. nr."
-                className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                className="w-full"
               />
             </div>
-          </div>
+          </FormGrid>
         )}
       </div>
 
       {/* Maintenance */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Onderhoudsstatus</label>
+        <FieldLabel>Onderhoudsstatus</FieldLabel>
         <div className="flex gap-4">
           {MAINTENANCE_OPTIONS.map((opt) => (
             <label key={opt.value} className="flex cursor-pointer items-center gap-2 text-sm">
@@ -290,35 +283,27 @@ function EquipmentForm({
 
       {/* Notes */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Opmerkingen</label>
-        <input
+        <FieldLabel>Opmerkingen</FieldLabel>
+        <Input
           type="text"
           value={form.notes ?? ''}
           onChange={(e) => upd({ notes: e.target.value })}
           placeholder="Bijv. specifieke gebruiksomstandigheden, aanpassingen"
-          className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+          className="w-full"
         />
       </div>
 
       <div className="flex gap-2">
-        <button
-          onClick={() => {
-            if (!form.name.trim()) return;
-            onSave(form);
-          }}
+        <Button
+          variant="primary"
+          onClick={() => { if (form.name.trim()) onSave(form); }}
           disabled={!form.name.trim()}
-          className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-40"
         >
           Opslaan
-        </button>
-        <button
-          onClick={onCancel}
-          className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
-        >
-          Annuleren
-        </button>
+        </Button>
+        <Button variant="secondary" onClick={onCancel}>Annuleren</Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -334,9 +319,9 @@ function InspectionBadge({ eq }: { eq: SoundEquipment }) {
 
   if (!eq.inspectionDate && !eq.inspectionExpiry) {
     return (
-      <div className="mb-2 rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-700 dark:bg-red-900/15 dark:text-red-400">
+      <Alert variant="error" size="sm" className="mb-2">
         ✖ Keuring vereist maar geen keuringsdatum vastgelegd (Arbobesluit art. 7.4a)
-      </div>
+      </Alert>
     );
   }
 
@@ -346,17 +331,17 @@ function InspectionBadge({ eq }: { eq: SoundEquipment }) {
 
     if (daysLeft < 0) {
       return (
-        <div className="mb-2 rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-700 dark:bg-red-900/15 dark:text-red-400">
+        <Alert variant="error" size="sm" className="mb-2">
           ✖ Keuring verlopen op {new Date(eq.inspectionExpiry + 'T12:00:00').toLocaleDateString('nl-NL')} — arbeidsmiddel mag niet worden gebruikt (art. 7.4a Arbobesluit)
-        </div>
+        </Alert>
       );
     }
 
     if (daysLeft <= 30) {
       return (
-        <div className="mb-2 rounded-lg bg-amber-50 px-3 py-1.5 text-xs text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning" size="sm" className="mb-2">
           ⚠ Keuring verloopt over {daysLeft} dag{daysLeft === 1 ? '' : 'en'} ({new Date(eq.inspectionExpiry + 'T12:00:00').toLocaleDateString('nl-NL')}) — plan herkeuring in
-        </div>
+        </Alert>
       );
     }
   }
@@ -842,12 +827,9 @@ function HEGPPESection({
           </p>
         </div>
         {configured ? (
-          <button
-            onClick={() => onUpdateHEG(clearPPE())}
-            className="rounded border border-zinc-200 px-2 py-1 text-xs text-zinc-500 hover:bg-red-50 hover:text-red-500 dark:border-zinc-700 dark:hover:bg-red-900/10 dark:hover:text-red-400"
-          >
+          <Button variant="danger" size="xs" onClick={() => onUpdateHEG(clearPPE())}>
             Verwijderen
-          </button>
+          </Button>
         ) : (
           <button
             onClick={() => onUpdateHEG({ ppeMethod: 'snr' })}
@@ -1020,7 +1002,7 @@ export default function SoundStep4b_Equipment({ investigation, onUpdate, onGoToS
                 onCancel={() => setEditingId(null)}
               />
             ) : (
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/30">
+              <Card>
                 <InspectionBadge eq={eq} />
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -1067,21 +1049,15 @@ export default function SoundStep4b_Equipment({ investigation, onUpdate, onGoToS
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => setEditingId(eq.id)}
-                      className="rounded border border-zinc-200 px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-700"
-                    >
+                    <Button variant="ghost" size="xs" onClick={() => setEditingId(eq.id)}>
                       Bewerken
-                    </button>
-                    <button
-                      onClick={() => removeEquipment(eq.id)}
-                      className="rounded border border-zinc-200 px-2 py-1 text-xs text-zinc-500 hover:bg-red-50 hover:text-red-500 dark:border-zinc-700"
-                    >
+                    </Button>
+                    <Button variant="danger" size="xs" onClick={() => removeEquipment(eq.id)}>
                       Verwijderen
-                    </button>
+                    </Button>
                   </div>
                 </div>
-              </div>
+              </Card>
             )}
           </div>
         ))}
@@ -1094,15 +1070,14 @@ export default function SoundStep4b_Equipment({ investigation, onUpdate, onGoToS
           onCancel={() => setShowNew(false)}
         />
       ) : (
-        <button
+        <Button
+          variant="dashed"
           onClick={() => setShowNew(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 py-4 text-sm text-zinc-500 transition hover:border-orange-400 hover:text-orange-600 dark:border-zinc-600 dark:text-zinc-400 dark:hover:border-orange-500 dark:hover:text-orange-400"
+          className="py-4"
+          leftIcon={<Icon name="plus" size="sm" />}
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
           Arbeidsmiddel toevoegen
-        </button>
+        </Button>
       )}
 
       {/* ── Gehoorbescherming per HEG ── */}

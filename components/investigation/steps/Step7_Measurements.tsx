@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { Investigation, MeasurementSeries, SingleMeasurement } from '@/lib/investigation-types';
 import { newId } from '@/lib/investigation-storage';
+import { Button, Input, Alert, Icon } from '@/components/ui';
 
 interface Props {
   investigation: Investigation;
@@ -114,20 +115,20 @@ function SeriesPanel({
               Meetwaarden — komma- of spatiescheiding (zelfde eenheid als OELV)
             </label>
             <div className="flex gap-2">
-              <input
+              <Input
                 type="text"
                 value={bulkText}
                 onChange={(e) => setBulkText(e.target.value)}
                 placeholder="Bijv. 0.12, 0.34, 0.28, 0.45, 0.19, 0.31"
-                className="flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+                className="flex-1"
               />
-              <button
+              <Button
+                variant="primary"
                 onClick={parseBulk}
                 disabled={!parseValues(bulkText).length}
-                className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-40"
               >
                 Importeren
-              </button>
+              </Button>
             </div>
             <p className="mt-1 text-xs text-zinc-400">
               Of voer meetwaarden handmatig in per rij:
@@ -181,21 +182,22 @@ function SeriesPanel({
                     <tr key={r.id} className={r.excluded ? 'opacity-50' : ''}>
                       <td className="px-3 py-2 text-xs text-zinc-400">{i + 1}</td>
                       <td className="px-3 py-2">
-                        <input
+                        <Input
                           type="number"
-                          step="any"
+                          size="xs"
                           value={r.value || ''}
                           onChange={(e) => updateValue(r.id, e.target.value)}
-                          className="w-20 rounded border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+                          className="w-20"
                         />
                       </td>
                       <td className="px-3 py-2">
-                        <input
+                        <Input
                           type="text"
+                          size="xs"
                           value={r.conditions ?? ''}
                           onChange={(e) => updateConditions(r.id, e.target.value)}
                           placeholder="Datum, condities…"
-                          className="w-full rounded border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+                          className="w-full"
                         />
                       </td>
                       <td className="px-3 py-2 text-center">
@@ -212,9 +214,7 @@ function SeriesPanel({
                           onClick={() => removeRow(r.id)}
                           className="text-zinc-400 hover:text-red-500"
                         >
-                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
+                          <Icon name="x" size="xs" />
                         </button>
                       </td>
                     </tr>
@@ -224,15 +224,14 @@ function SeriesPanel({
             </div>
 
             <div className="flex items-center justify-between">
-              <button
+              <Button
+                variant="dashed"
+                size="sm"
                 onClick={addRow}
-                className="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-300 px-4 py-2 text-sm text-zinc-500 transition hover:border-orange-400 hover:text-orange-600 dark:border-zinc-600 dark:text-zinc-400 dark:hover:border-orange-500 dark:hover:text-orange-400"
+                leftIcon={<Icon name="plus" size="xs" />}
               >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
                 Meting toevoegen
-              </button>
+              </Button>
               <button
                 onClick={() => { setUseRowMode(false); setBulkText(rows.filter(r => !r.excluded).map(r => r.value).join(', ')); }}
                 className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
@@ -272,9 +271,9 @@ export default function Step7_Measurements({ investigation, onUpdate }: Props) {
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           Stap 7 — Metingen uitvoeren en vastleggen
         </h2>
-        <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning">
           Stel eerst meetplannen op in stap 6 (per SEG × stof), dan kunt u hier de meetwaarden invoeren.
-        </div>
+        </Alert>
       </div>
     );
   }

@@ -15,6 +15,7 @@ import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
 import { SectionRef } from '@/components/SectionRef';
 import { InfoBox } from '@/components/InfoBox';
+import { Alert, Button, Card, Icon, Input, Select } from '@/components/ui';
 
 interface Props {
   investigation: SoundInvestigation;
@@ -140,10 +141,8 @@ function SeriesForm({
   const postVal = parseFloat(state.postValue);
   const drift   = !isNaN(preVal) && !isNaN(postVal) ? Math.abs(postVal - preVal) : null;
 
-  const INPUT = 'rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100';
-
   return (
-    <div className="space-y-4 rounded-xl border border-orange-200 bg-orange-50/40 p-5 dark:border-orange-800/50 dark:bg-orange-900/10">
+    <Card variant="form">
       <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Meetserie vastleggen</h4>
 
       {/* Instrument */}
@@ -154,19 +153,20 @@ function SeriesForm({
         {instrumentOptions.length === 0 ? (
           <p className="text-xs text-amber-600 dark:text-amber-400">
             Voeg eerst meetapparatuur toe in{' '}
-            <button type="button" onClick={() => onGoToStep(4)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 5</button>.
+            <Button variant="link" type="button" onClick={() => onGoToStep(4)}>stap 5</Button>.
           </p>
         ) : (
-          <select
+          <Select
             value={state.instrumentId}
             onChange={(e) => upd({ instrumentId: e.target.value })}
-            className={`w-full ${INPUT}`}
+            size="sm"
+            className="w-full"
           >
             <option value="">— selecteer instrument —</option>
             {instrumentOptions.map((opt) => (
               <option key={opt.id} value={opt.id}>{opt.label}</option>
             ))}
-          </select>
+          </Select>
         )}
       </div>
 
@@ -178,22 +178,24 @@ function SeriesForm({
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5">
             <label className="text-xs text-zinc-500">Waarde:</label>
-            <input
+            <Input
               type="number" step="0.1" min={80} max={120}
               value={state.preValue}
               onChange={(e) => upd({ preValue: e.target.value })}
               placeholder="94.0"
-              className={`w-20 ${INPUT}`}
+              size="sm"
+              className="w-20"
             />
             <span className="text-xs text-zinc-400">dB</span>
           </div>
           <div className="flex items-center gap-1.5">
             <label className="text-xs text-zinc-500">Tijdstip:</label>
-            <input
+            <Input
               type="time"
               value={state.preTime}
               onChange={(e) => upd({ preTime: e.target.value })}
-              className={`w-28 ${INPUT}`}
+              size="sm"
+              className="w-28"
             />
           </div>
         </div>
@@ -209,9 +211,7 @@ function SeriesForm({
             onClick={addMid}
             className="flex items-center gap-1 rounded border border-dashed border-zinc-300 px-2 py-0.5 text-xs text-zinc-500 hover:border-orange-400 hover:text-orange-600 dark:border-zinc-600"
           >
-            <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
+            <Icon name="plus" size="xs" />
             Toevoegen
           </button>
         </div>
@@ -249,9 +249,7 @@ function SeriesForm({
                 />
               </div>
               <button onClick={() => removeMid(mid.id)} className="text-zinc-400 hover:text-red-500">
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <Icon name="x" size="sm" />
               </button>
             </div>
           ))}
@@ -266,22 +264,24 @@ function SeriesForm({
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5">
             <label className="text-xs text-zinc-500">Waarde:</label>
-            <input
+            <Input
               type="number" step="0.1" min={80} max={120}
               value={state.postValue}
               onChange={(e) => upd({ postValue: e.target.value })}
               placeholder="94.1"
-              className={`w-20 ${INPUT}`}
+              size="sm"
+              className="w-20"
             />
             <span className="text-xs text-zinc-400">dB</span>
           </div>
           <div className="flex items-center gap-1.5">
             <label className="text-xs text-zinc-500">Tijdstip:</label>
-            <input
+            <Input
               type="time"
               value={state.postTime}
               onChange={(e) => upd({ postTime: e.target.value })}
-              className={`w-28 ${INPUT}`}
+              size="sm"
+              className="w-28"
             />
           </div>
           {drift !== null && (
@@ -295,30 +295,31 @@ function SeriesForm({
       {/* Notes */}
       <div>
         <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">Opmerking</label>
-        <input
+        <Input
           type="text"
           value={state.notes}
           onChange={(e) => upd({ notes: e.target.value })}
           placeholder="Bijv. winderige omstandigheden, meetlocatie beschrijving"
-          className={`w-full ${INPUT}`}
+          size="sm"
+          className="w-full"
         />
       </div>
 
       <div className="flex gap-2">
-        <button
+        <Button
+          variant="primary"
           onClick={() => onSave(stateToSeries(state, initial))}
-          className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
         >
           Opslaan
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="secondary"
           onClick={onCancel}
-          className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
         >
           Annuleren
-        </button>
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -393,9 +394,9 @@ function SeriesCard({
 
           {/* Drift warning */}
           {drift !== null && drift > 0.5 && (
-            <div className="mt-2 rounded-lg bg-red-50 px-2.5 py-1.5 text-xs text-red-700 dark:bg-red-900/20 dark:text-red-300">
+            <Alert variant="error" size="sm" className="mt-2">
               ✖ Kalibratiefout Δ {drift.toFixed(2)} dB &gt; 0,5 dB — alle metingen van deze reeks zijn automatisch uitgesloten (§12.2 <Abbr id="NEN9612">NEN-EN-ISO 9612</Abbr>:2025)
-            </div>
+            </Alert>
           )}
 
           {series.notes && (
@@ -404,18 +405,12 @@ function SeriesCard({
         </div>
 
         <div className="flex shrink-0 gap-2">
-          <button
-            onClick={onEdit}
-            className="rounded border border-zinc-200 px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-700"
-          >
+          <Button variant="ghost" size="xs" onClick={onEdit}>
             Bewerken
-          </button>
-          <button
-            onClick={onRemove}
-            className="rounded border border-zinc-200 px-2 py-1 text-xs text-zinc-500 hover:bg-red-50 hover:text-red-500 dark:border-zinc-700"
-          >
+          </Button>
+          <Button variant="danger" size="xs" onClick={onRemove}>
             Verwijderen
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -505,15 +500,14 @@ function SeriesPanel({
 
   if (contextSeries.length === 0 && !showNew) {
     return (
-      <button
+      <Button
+        variant="dashed"
+        size="sm"
         onClick={() => setShowNew(true)}
-        className="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-300 px-3 py-2 text-xs text-zinc-500 transition hover:border-orange-400 hover:text-orange-600 dark:border-zinc-600 dark:text-zinc-400"
       >
-        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
+        <Icon name="plus" size="xs" />
         Meetserie + kalibratie toevoegen
-      </button>
+      </Button>
     );
   }
 
@@ -551,15 +545,14 @@ function SeriesPanel({
           onGoToStep={onGoToStep}
         />
       ) : (
-        <button
+        <Button
+          variant="dashed"
+          size="sm"
           onClick={() => setShowNew(true)}
-          className="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-300 px-3 py-2 text-xs text-zinc-500 transition hover:border-orange-400 hover:text-orange-600 dark:border-zinc-600 dark:text-zinc-400"
         >
-          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
+          <Icon name="plus" size="xs" />
           Meetserie toevoegen
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -653,20 +646,21 @@ function TaskMeasurements({
               <Formula math="L_{p,A,eqT_m}" /> waarden in dB — komma- of spatiescheiding (<SectionRef id="§9.3.4">§9.3.4</SectionRef> Formule 3)
             </label>
             <div className="flex gap-2">
-              <input
+              <Input
                 type="text"
                 value={bulkText}
                 onChange={(e) => setBulkText(e.target.value)}
                 placeholder="Bijv. 88.2, 91.4, 86.7, 90.1, 89.3"
-                className="flex-1 rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                size="md"
+                className="flex-1"
               />
-              <button
+              <Button
+                variant="primary"
                 onClick={parseBulk}
                 disabled={!parseValues(bulkText).length}
-                className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-40"
               >
                 Importeren
-              </button>
+              </Button>
             </div>
             <button
               onClick={() => setRowMode(true)}
@@ -706,43 +700,47 @@ function TaskMeasurements({
                         <tr className={m.excluded ? 'opacity-50' : ''}>
                           <td className="px-3 py-2 text-xs text-zinc-400">{i + 1}</td>
                           <td className="px-3 py-2">
-                            <input
+                            <Input
                               type="number" step="0.1"
                               value={m.lpa_eqT || ''}
                               onChange={(e) => updateMeas({ ...m, lpa_eqT: parseFloat(e.target.value) || 0 })}
-                              className="w-20 rounded border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                              size="xs"
+                              className="w-20"
                             />
                           </td>
                           <td className="px-3 py-2">
-                            <input
+                            <Input
                               type="number" step="0.1"
                               value={m.lpCpeak ?? ''}
                               onChange={(e) => updateMeas({ ...m, lpCpeak: parseFloat(e.target.value) || undefined })}
                               placeholder="—"
-                              className="w-20 rounded border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                              size="xs"
+                              className="w-20"
                             />
                           </td>
                           <td className="px-3 py-2">
-                            <input
+                            <Input
                               type="text"
                               value={m.workerLabel ?? ''}
                               onChange={(e) => updateMeas({ ...m, workerLabel: e.target.value })}
                               placeholder="Naam / datum"
-                              className="w-full rounded border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                              size="xs"
+                              className="w-full"
                             />
                           </td>
                           {hasSeriesCol && (
                             <td className="px-3 py-2">
-                              <select
+                              <Select
                                 value={m.seriesId ?? ''}
                                 onChange={(e) => updateMeas({ ...m, seriesId: e.target.value || undefined })}
-                                className={`rounded border border-zinc-200 px-1.5 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 ${mSeries ? seriesBadgeColor(mSeries, allSeries) + ' border-transparent' : ''}`}
+                                size="xs"
+                                className={mSeries ? seriesBadgeColor(mSeries, allSeries) + ' border-transparent' : ''}
                               >
                                 <option value="">—</option>
                                 {contextSeries.map((s) => (
                                   <option key={s.id} value={s.id}>{seriesLabel(s, allSeries)}</option>
                                 ))}
-                              </select>
+                              </Select>
                             </td>
                           )}
                           <td className="px-3 py-2">
@@ -795,9 +793,7 @@ function TaskMeasurements({
                           </td>
                           <td className="px-2 py-2">
                             <button onClick={() => removeRow(m.id)} className="text-zinc-400 hover:text-red-500">
-                              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                              </svg>
+                              <Icon name="x" size="sm" />
                             </button>
                           </td>
                         </tr>
@@ -861,15 +857,15 @@ function TaskMeasurements({
             </div>
 
             <div className="flex items-center justify-between">
-              <button
+              <Button
+                variant="dashed"
+                size="sm"
                 onClick={addRow}
-                className="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-300 px-3 py-1.5 text-xs text-zinc-500 transition hover:border-orange-400 hover:text-orange-600 dark:border-zinc-600"
+                className="w-auto"
               >
-                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
+                <Icon name="plus" size="xs" />
                 Meting toevoegen
-              </button>
+              </Button>
               <button
                 onClick={() => { setRowMode(false); setBulkText(measurements.filter((m) => !m.excluded).map((m) => m.lpa_eqT).join(', ')); }}
                 className="text-xs text-zinc-400 hover:text-zinc-600"
@@ -930,10 +926,10 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
     return (
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 8 — Meetresultaten</h2>
-        <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning" size="md">
           Definieer eerst <Abbr id="HEG">HEG</Abbr>&apos;s in{' '}
           <button type="button" onClick={() => onGoToStep(2)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 3</button>.
-        </div>
+        </Alert>
       </div>
     );
   }
@@ -951,16 +947,14 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
             <Abbr id="HEG">HEG</Abbr>. <Formula math="L_{p,Cpeak}" /> is optioneel.
           </p>
         </div>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           onClick={() => downloadMeasurementPlanPDF(investigation)}
-          className="shrink-0 flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+          leftIcon={<Icon name="printer" size="sm" />}
+          className="shrink-0"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-          </svg>
           Meetplan PDF
-        </button>
+        </Button>
       </div>
 
       <InfoBox title="§9.2 / §9.3 / §12.2 / §15.d — Meetprocedure & eisen (NEN-EN-ISO 9612)">
@@ -1031,9 +1025,7 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
           <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
             Meetduur-vereisten per HEG — <SectionRef id="§9.3.2">§9.3.2</SectionRef> / <SectionRef id="§10.4">§10.4</SectionRef> / <SectionRef id="§11.4">§11.4</SectionRef> NEN-EN-ISO 9612
           </span>
-          <svg className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform ${durOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
+          <Icon name="chevron-down" size="md" className={`shrink-0 text-zinc-400 transition-transform ${durOpen ? 'rotate-180' : ''}`} />
         </button>
         {durOpen && <table className="w-full text-xs border-t border-zinc-100 dark:border-zinc-800">
           <thead>
@@ -1158,12 +1150,11 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
                     {' · '}{hegMeas.length} meting{hegMeas.length !== 1 ? 'en' : ''} ingevoerd
                   </p>
                 </div>
-                <svg
-                  className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
+                <Icon
+                  name="chevron-down"
+                  size="md"
+                  className={`shrink-0 text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                />
               </button>
 
               {isOpen && (
@@ -1264,52 +1255,59 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
                                         <tr key={m.id} className={m.excluded ? 'opacity-50' : ''}>
                                           <td className="px-3 py-2 text-xs text-zinc-400">{i + 1}</td>
                                           <td className="px-3 py-2">
-                                            <input type="number" step="0.1"
+                                            <Input
+                                              type="number" step="0.1"
                                               value={m.lpa_eqT || ''}
                                               onChange={(e) => {
                                                 const newList = measurements.map((x) => x.id === m.id ? { ...x, lpa_eqT: parseFloat(e.target.value) || 0 } : x);
                                                 handleMeasUpdate(newList);
                                               }}
-                                              className="w-20 rounded border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                                              size="xs"
+                                              className="w-20"
                                             />
                                           </td>
                                           <td className="px-3 py-2">
-                                            <input type="number" step="0.1"
+                                            <Input
+                                              type="number" step="0.1"
                                               value={m.lpCpeak ?? ''}
                                               onChange={(e) => {
                                                 const newList = measurements.map((x) => x.id === m.id ? { ...x, lpCpeak: parseFloat(e.target.value) || undefined } : x);
                                                 handleMeasUpdate(newList);
                                               }}
                                               placeholder="—"
-                                              className="w-20 rounded border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                                              size="xs"
+                                              className="w-20"
                                             />
                                           </td>
                                           <td className="px-3 py-2">
-                                            <input type="text"
+                                            <Input
+                                              type="text"
                                               value={m.workerLabel ?? ''}
                                               onChange={(e) => {
                                                 const newList = measurements.map((x) => x.id === m.id ? { ...x, workerLabel: e.target.value } : x);
                                                 handleMeasUpdate(newList);
                                               }}
                                               placeholder="Naam / datum"
-                                              className="w-full rounded border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                                              size="xs"
+                                              className="w-full"
                                             />
                                           </td>
                                           {hasSeriesCol && (
                                             <td className="px-3 py-2">
-                                              <select
+                                              <Select
                                                 value={m.seriesId ?? ''}
                                                 onChange={(e) => {
                                                   const newList = measurements.map((x) => x.id === m.id ? { ...x, seriesId: e.target.value || undefined } : x);
                                                   handleMeasUpdate(newList);
                                                 }}
-                                                className={`rounded border border-zinc-200 px-1.5 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 ${mSeries ? seriesBadgeColor(mSeries, measurementSeries) + ' border-transparent' : ''}`}
+                                                size="xs"
+                                                className={mSeries ? seriesBadgeColor(mSeries, measurementSeries) + ' border-transparent' : ''}
                                               >
                                                 <option value="">—</option>
                                                 {contextSeries.map((s) => (
                                                   <option key={s.id} value={s.id}>{seriesLabel(s, measurementSeries)}</option>
                                                 ))}
-                                              </select>
+                                              </Select>
                                             </td>
                                           )}
                                           <td className="px-3 py-2">
@@ -1339,9 +1337,7 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
                                               onClick={() => handleMeasUpdate(measurements.filter((x) => x.id !== m.id))}
                                               className="text-zinc-400 hover:text-red-500"
                                             >
-                                              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                              </svg>
+                                              <Icon name="x" size="sm" />
                                             </button>
                                           </td>
                                         </tr>
@@ -1350,18 +1346,18 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
                                   </tbody>
                                 </table>
                               </div>
-                              <button
+                              <Button
+                                variant="dashed"
+                                size="sm"
                                 onClick={() => {
                                   const defaultSeriesId = contextSeries[contextSeries.length - 1]?.id;
                                   handleMeasUpdate([...measurements, { id: newSoundId(), hegId: heg.id, lpa_eqT: 0, seriesId: defaultSeriesId }]);
                                 }}
-                                className="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-300 px-3 py-1.5 text-xs text-zinc-500 transition hover:border-orange-400 hover:text-orange-600 dark:border-zinc-600"
+                                className="w-auto"
                               >
-                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                                </svg>
+                                <Icon name="plus" size="xs" />
                                 Meting toevoegen
-                              </button>
+                              </Button>
                               {hegFlatMeas.filter((m) => !m.excluded && m.lpa_eqT > 0).length >= 3 && (
                                 <p className="text-xs text-emerald-600 dark:text-emerald-400">
                                   ✓ {hegFlatMeas.filter((m) => !m.excluded && m.lpa_eqT > 0).length} geldige metingen — <Formula math="L_{EX,8h}" /> berekend in{' '}

@@ -1,3 +1,5 @@
+import type { BasePerson, CommonScopeFields } from '@/lib/shared-investigation-types';
+
 // ─── Core enums ───────────────────────────────────────────────────────────────
 
 export type AggregateState = 'gas' | 'vapor-liquid' | 'liquid' | 'solid-powder' | 'aerosol';
@@ -190,28 +192,50 @@ export interface ControlMeasure {
 
 // ─── Person entries ───────────────────────────────────────────────────────────
 
-export interface PersonEntry {
-  id: string;
-  name: string;
-  role?: string;
-  organization?: string;
-  address?: string;   // adres werkgever/opdrachtgever — §6(b) NEN-EN 689
-  email?: string;
-  phone?: string;
-  anonymous?: boolean;
+export interface PersonEntry extends BasePerson {
+  name: string; // expliciet required (overschrijft optioneel BasePerson.name)
+  /** Arbowet art. 14 — beroepsprofiel onderzoeker */
+  qualification?: 'AH' | 'HVK' | 'toxicoloog' | 'bedrijfsarts' | 'other';
+  /** Gecertificeerd Arbokerndeskundige (SZW-register) */
+  isAKD?: boolean;
+  /** AKD-registratienummer */
+  akdNumber?: string;
+  /** Toelichting bij kwalificatie 'other' */
+  qualificationNote?: string;
+}
+
+// ─── Pre-investigation survey (voorverkenning gevaarlijke stoffen) ─────────────
+
+export type HazardousPreSurveyAnswer = 'yes' | 'no' | 'unknown';
+export type HazardousRecommendation = 'full' | 'targeted' | 'none';
+
+export interface HazardousPreSurveyResponse {
+  answer?: HazardousPreSurveyAnswer;
+  notes?: string;
+}
+
+export interface HazardousPreSurvey {
+  respondentName?: string;
+  /** ISO date — datum voorverkenning */
+  completedAt?: string;
+  /** Keyed by question id: A1–E3 */
+  responses: Record<string, HazardousPreSurveyResponse>;
+  /** Handmatige override van de automatische aanbeveling */
+  recommendationOverride?: HazardousRecommendation;
+  conclusionNotes?: string;
 }
 
 // ─── Top-level investigation object ──────────────────────────────────────────
 
-export interface InvestigationScope {
+export interface InvestigationScope extends CommonScopeFields {
   question: 'current' | 'historical' | 'both' | '';
   departments: string;
-  workplaceAddress?: string; // §6(b) NEN-EN 689 — naam en adres werklocatie (≠ adres werkgever)
+  // workplaceAddress is inherited from CommonScopeFields (§6(b) NEN-EN 689)
   isPartOfRIE: boolean;
   atexApplicable: boolean;
   arieApplicable: boolean;
   applicableNorms: string[]; // 'nen-en-689' | 'nen-en-482' | 'reach' | 'clp' | 'nla'
-  notes?: string;
+  // notes is inherited from CommonScopeFields
 }
 
 export interface InvestigationReport {
@@ -231,7 +255,12 @@ export interface Investigation {
   respondents: PersonEntry[];
   createdAt: string;
   updatedAt: string;
-  currentStep: number; // 0–9
+  currentStep: number; // 0–10
+
+  /** Voorverkenning gevaarlijke stoffen (stap 0 — optioneel) */
+  preSurvey?: HazardousPreSurvey;
+  /** Aanbeveling uit voorverkenning (auto of handmatig) */
+  preSurveyRecommendation?: HazardousRecommendation;
 
   scope: InvestigationScope;
   substances: Substance[];

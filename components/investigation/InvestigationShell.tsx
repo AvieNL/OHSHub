@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Investigation } from '@/lib/investigation-types';
+import Step0_PreSurvey from './steps/Step0_PreSurvey';
 import Step1_Scope from './steps/Step1_Scope';
 import Step2_Substances from './steps/Step2_Substances';
 import Step3_Tasks from './steps/Step3_Tasks';
@@ -16,16 +17,17 @@ import Step10_Report from './steps/Step10_Report';
 // ─── Step definitions ─────────────────────────────────────────────────────────
 
 const STEPS = [
-  { number: 1, title: 'Opdracht & kaders', short: 'Kaders' },
-  { number: 2, title: 'Stoffeninventarisatie', short: 'Stoffen' },
-  { number: 3, title: 'Werkzaamheden & blootstelling', short: 'Taken' },
-  { number: 4, title: 'Eerste risicobeoordeling', short: 'Beoordeling' },
-  { number: 5, title: 'SEG-vorming', short: "SEG's" },
-  { number: 6, title: 'Meetstrategie', short: 'Meetplan' },
-  { number: 7, title: 'Metingen uitvoeren', short: 'Metingen' },
-  { number: 8, title: 'Kwantitatieve beoordeling', short: 'Statistieken' },
-  { number: 9, title: 'Maatregelen (AHS)', short: 'Maatregelen' },
-  { number: 10, title: 'Borging & rapport', short: 'Rapport' },
+  { number: 1,  title: 'Voorverkenning', short: 'Voorverkenning' },
+  { number: 2,  title: 'Opdracht & kaders', short: 'Kaders' },
+  { number: 3,  title: 'Stoffeninventarisatie', short: 'Stoffen' },
+  { number: 4,  title: 'Werkzaamheden & blootstelling', short: 'Taken' },
+  { number: 5,  title: 'Eerste risicobeoordeling', short: 'Beoordeling' },
+  { number: 6,  title: 'SEG-vorming', short: "SEG's" },
+  { number: 7,  title: 'Meetstrategie', short: 'Meetplan' },
+  { number: 8,  title: 'Metingen uitvoeren', short: 'Metingen' },
+  { number: 9,  title: 'Kwantitatieve beoordeling', short: 'Statistieken' },
+  { number: 10, title: 'Maatregelen (AHS)', short: 'Maatregelen' },
+  { number: 11, title: 'Borging & rapport', short: 'Rapport' },
 ];
 
 // ─── Save indicator ───────────────────────────────────────────────────────────
@@ -93,7 +95,7 @@ export default function InvestigationShell({ investigation, onUpdate, onClose }:
   }
 
   function handleNext() {
-    if (inv.currentStep < 9) goToStep(inv.currentStep + 1);
+    if (inv.currentStep < 10) goToStep(inv.currentStep + 1);
   }
 
   function handlePrev() {
@@ -131,6 +133,7 @@ export default function InvestigationShell({ investigation, onUpdate, onClose }:
   };
 
   const CurrentStep = [
+    Step0_PreSurvey,
     Step1_Scope,
     Step2_Substances,
     Step3_Tasks,
@@ -258,7 +261,7 @@ export default function InvestigationShell({ investigation, onUpdate, onClose }:
                 </span>
                 <div>
                   <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500">
-                    Stap {inv.currentStep + 1} van 10
+                    Stap {inv.currentStep + 1} van 11
                   </p>
                   <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
                     {STEPS[inv.currentStep].title}
@@ -270,10 +273,10 @@ export default function InvestigationShell({ investigation, onUpdate, onClose }:
                 <div className="h-1.5 w-32 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
                   <div
                     className="h-full rounded-full bg-orange-500 transition-all duration-500"
-                    style={{ width: `${((inv.currentStep + 1) / 10) * 100}%` }}
+                    style={{ width: `${((inv.currentStep + 1) / 11) * 100}%` }}
                   />
                 </div>
-                <span className="text-xs text-zinc-400">{Math.round(((inv.currentStep + 1) / 10) * 100)}%</span>
+                <span className="text-xs text-zinc-400">{Math.round(((inv.currentStep + 1) / 11) * 100)}%</span>
               </div>
             </div>
           </div>
@@ -296,7 +299,7 @@ export default function InvestigationShell({ investigation, onUpdate, onClose }:
               Vorige stap
             </button>
 
-            {inv.currentStep < 9 ? (
+            {inv.currentStep < 10 ? (
               <button
                 onClick={handleNext}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"

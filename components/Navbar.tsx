@@ -18,39 +18,35 @@ export default function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef     = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const [user, setUser]       = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [user, setUser]             = useState<User | null>(null);
+  const [isAdmin, setIsAdmin]       = useState(false);
+  const [firstName, setFirstName]   = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
 
+    function loadUserData(userId: string) {
+      Promise.all([
+        supabase.from('user_roles').select('role').eq('user_id', userId).single(),
+        supabase.from('profiles').select('first_name').eq('user_id', userId).single(),
+      ]).then(([roleRes, profileRes]) => {
+        setIsAdmin(roleRes.data?.role === 'admin');
+        setFirstName(profileRes.data?.first_name ?? null);
+      });
+    }
+
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user ?? null);
-      if (data.user) {
-        supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', data.user.id)
-          .single()
-          .then(({ data: roleData }) => {
-            setIsAdmin(roleData?.role === 'admin');
-          });
-      }
+      if (data.user) loadUserData(data.user.id);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (!session?.user) {
         setIsAdmin(false);
+        setFirstName(null);
       } else {
-        supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .single()
-          .then(({ data: roleData }) => {
-            setIsAdmin(roleData?.role === 'admin');
-          });
+        loadUserData(session.user.id);
       }
     });
 
@@ -86,9 +82,12 @@ export default function Navbar() {
   const iconBtn =
     'flex items-center justify-center rounded-lg p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50';
 
-  const displayEmail = user?.email
-    ? user.email.length > 22 ? user.email.slice(0, 20) + '…' : user.email
-    : '';
+  const displayName = firstName
+    ? firstName
+    : user?.email
+      ? user.email.length > 22 ? user.email.slice(0, 20) + '…' : user.email
+      : '';
+  const avatarLetter = (firstName?.[0] ?? user?.email?.[0] ?? '?').toUpperCase();
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
@@ -149,9 +148,9 @@ export default function Navbar() {
                 aria-expanded={userMenuOpen}
               >
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100 text-xs font-semibold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
-                  {(user.email?.[0] ?? '?').toUpperCase()}
+                  {avatarLetter}
                 </span>
-                <span className="hidden sm:block">{displayEmail}</span>
+                <span className="hidden sm:block">{displayName}</span>
                 <Icon name="chevron-down" size="sm" className={`transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
               </button>
 
@@ -161,6 +160,14 @@ export default function Navbar() {
                     <p className="text-xs text-zinc-400 dark:text-zinc-500">Ingelogd als</p>
                     <p className="truncate text-sm font-medium text-zinc-700 dark:text-zinc-300">{user.email}</p>
                   </div>
+                  <Link
+                    href="/account"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  >
+                    <Icon name="info" size="md" className="text-zinc-400" />
+                    Mijn gegevens
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
@@ -229,14 +236,16 @@ export default function Navbar() {
 
                 <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
 
-                <button
-                  disabled
-                  className="flex w-full cursor-not-allowed items-center gap-2.5 px-4 py-2 text-sm text-zinc-400 dark:text-zinc-600"
-                >
-                  <Icon name="sun" size="md" className="text-zinc-300 dark:text-zinc-700" />
-                  Instellingen
-                  <span className="ml-auto rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-400 dark:bg-zinc-800">binnenkort</span>
-                </button>
+                {user && (
+                  <Link
+                    href="/account"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  >
+                    <Icon name="info" size="md" className="text-zinc-400" />
+                    Mijn gegevens
+                  </Link>
+                )}
               </div>
             )}
           </div>

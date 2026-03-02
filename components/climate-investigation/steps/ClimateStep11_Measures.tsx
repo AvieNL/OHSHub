@@ -10,6 +10,7 @@ import type {
 import { newClimateId } from '@/lib/climate-investigation-storage';
 import { computeAllClimateStatistics } from '@/lib/climate-stats';
 import { Abbr } from '@/components/Abbr';
+import { Alert, Button, Card, FieldLabel, Icon, Input, Select, Textarea } from '@/components/ui';
 
 interface Props {
   investigation: ClimateInvestigation;
@@ -153,12 +154,10 @@ function MeasureForm({
   }
 
   return (
-    <div className="space-y-4 rounded-xl border border-orange-200 bg-orange-50/50 p-5 dark:border-orange-800/50 dark:bg-orange-900/10">
+    <Card variant="form">
       {/* Type */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Type maatregel (Arbeidshygiënische Strategie)
-        </label>
+        <FieldLabel>Type maatregel (Arbeidshygiënische Strategie)</FieldLabel>
         <div className="space-y-1.5">
           {(Object.keys(TYPE_META) as ClimateMeasureType[]).map((t) => (
             <label key={t} className="flex cursor-pointer items-center gap-2 text-sm">
@@ -179,24 +178,19 @@ function MeasureForm({
 
       {/* Description */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Omschrijving maatregel
-        </label>
-        <textarea
+        <FieldLabel>Omschrijving maatregel</FieldLabel>
+        <Textarea
           rows={3}
           value={form.description}
           onChange={(e) => upd({ description: e.target.value })}
           placeholder="Beschrijf de concrete maatregel…"
-          className="w-full resize-none rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
         />
       </div>
 
       {/* BGs */}
       {bgs.length > 0 && (
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Van toepassing op blootstellingsgroepen
-          </label>
+          <FieldLabel>Van toepassing op blootstellingsgroepen</FieldLabel>
           <div className="flex flex-wrap gap-2">
             {bgs.map((bg) => (
               <label key={bg.id} className="flex cursor-pointer items-center gap-1.5 text-xs">
@@ -216,64 +210,57 @@ function MeasureForm({
       {/* Status / responsible / deadline / notes */}
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Status</label>
-          <select
+          <FieldLabel>Status</FieldLabel>
+          <Select
             value={form.status}
             onChange={(e) => upd({ status: e.target.value as ClimateMeasureStatus })}
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
           >
             {(Object.keys(STATUS_META) as ClimateMeasureStatus[]).map((s) => (
               <option key={s} value={s}>{STATUS_META[s].label}</option>
             ))}
-          </select>
+          </Select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Verantwoordelijke</label>
-          <input
+          <FieldLabel>Verantwoordelijke</FieldLabel>
+          <Input
             type="text"
             value={form.responsible ?? ''}
             onChange={(e) => upd({ responsible: e.target.value })}
             placeholder="Naam / functie"
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Streefdatum</label>
-          <input
+          <FieldLabel>Streefdatum</FieldLabel>
+          <Input
             type="date"
             value={form.deadline ?? ''}
             onChange={(e) => upd({ deadline: e.target.value })}
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Notities</label>
-          <input
+          <FieldLabel>Notities</FieldLabel>
+          <Input
             type="text"
             value={form.notes ?? ''}
             onChange={(e) => upd({ notes: e.target.value })}
             placeholder="Aanvullende opmerkingen…"
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
           />
         </div>
       </div>
 
       <div className="flex gap-2">
-        <button
+        <Button
+          variant="primary"
           onClick={() => onSave(form)}
           disabled={!form.description.trim()}
-          className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-40"
         >
           Opslaan
-        </button>
-        <button
-          onClick={onCancel}
-          className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
-        >
+        </Button>
+        <Button variant="secondary" onClick={onCancel}>
           Annuleren
-        </button>
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -338,13 +325,14 @@ export default function ClimateStep11_Measures({ investigation, onUpdate }: Prop
             <Abbr id="PBM">PBM</Abbr>). Pas de omschrijving, verantwoordelijke en deadline aan.
           </p>
         </div>
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => applyGenerated(investigation)}
           title="Verwijder huidige maatregelen en genereer opnieuw op basis van meetresultaten"
-          className="shrink-0 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 transition hover:border-orange-400 hover:text-orange-600 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-orange-500 dark:hover:text-orange-400"
         >
           ↺ Opnieuw genereren
-        </button>
+        </Button>
       </div>
 
       {/* Legenda */}
@@ -398,18 +386,12 @@ export default function ClimateStep11_Measures({ investigation, onUpdate }: Prop
                       </div>
                     </div>
                     <div className="flex shrink-0 gap-2">
-                      <button
-                        onClick={() => setEditingId(m.id)}
-                        className="rounded border border-zinc-200 px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-700"
-                      >
+                      <Button variant="ghost" size="xs" onClick={() => setEditingId(m.id)} leftIcon={<Icon name="pencil" size="xs" />}>
                         Bewerken
-                      </button>
-                      <button
-                        onClick={() => removeMeasure(m.id)}
-                        className="rounded border border-zinc-200 px-2 py-1 text-xs text-zinc-500 hover:bg-red-50 hover:text-red-500 dark:border-zinc-700"
-                      >
+                      </Button>
+                      <Button variant="danger" size="xs" onClick={() => removeMeasure(m.id)} leftIcon={<Icon name="trash" size="xs" />}>
                         Verwijderen
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -435,23 +417,22 @@ export default function ClimateStep11_Measures({ investigation, onUpdate }: Prop
           onCancel={() => setShowNew(false)}
         />
       ) : (
-        <button
+        <Button
+          variant="dashed"
+          className="w-full justify-center py-4"
           onClick={() => setShowNew(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 py-4 text-sm text-zinc-500 transition hover:border-orange-400 hover:text-orange-600 dark:border-zinc-600 dark:text-zinc-400 dark:hover:border-orange-500 dark:hover:text-orange-400"
+          leftIcon={<Icon name="plus" size="sm" />}
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
           Maatregel toevoegen
-        </button>
+        </Button>
       )}
 
       {measures.length === 0 && !showNew && (
         noStatsWarning ? (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/20 dark:text-amber-300">
+          <Alert variant="warning">
             Geen meetresultaten beschikbaar. Voer eerst meetwaarden in (stap 6) en doorloop de
             berekende stappen (7–11) voordat maatregelen kunnen worden gegenereerd.
-          </div>
+          </Alert>
         ) : (
           <p className="text-center text-xs text-zinc-400">
             Geen maatregelen. Gebruik ↺ Opnieuw genereren of voeg handmatig een maatregel toe.

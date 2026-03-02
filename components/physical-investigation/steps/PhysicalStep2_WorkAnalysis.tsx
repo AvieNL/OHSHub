@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { PhysicalInvestigation, PhysicalBG } from '@/lib/physical-investigation-types';
 import { newPhysicalId } from '@/lib/physical-investigation-storage';
 import { InfoBox } from '@/components/InfoBox';
+import { Button, Card, FieldLabel, FormGrid, Icon, Input, Select, Textarea } from '@/components/ui';
 
 interface Props {
   investigation: PhysicalInvestigation;
@@ -20,7 +21,6 @@ function BGForm({
   onCancel: () => void;
 }) {
   const [draft, setDraft] = useState<Partial<PhysicalBG>>(bg);
-  const INPUT = 'w-full rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400';
 
   function handleSave() {
     if (!draft.name?.trim()) return;
@@ -37,108 +37,96 @@ function BGForm({
   }
 
   return (
-    <div className="rounded-xl border border-orange-200 bg-orange-50/50 px-5 py-4 dark:border-orange-800/30 dark:bg-orange-900/10">
+    <Card variant="form">
       <h4 className="mb-4 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
         {draft.id ? 'Belastingsgroep bewerken' : 'Nieuwe belastingsgroep'}
       </h4>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+          <FieldLabel>
             Naam belastingsgroep <span className="text-red-500">*</span>
-          </label>
-          <input
+          </FieldLabel>
+          <Input
             type="text"
             value={draft.name ?? ''}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
             placeholder="Bijv. Magazijnmedewerkers tillen, Productiemedewerkers assemblage"
-            className={INPUT}
             autoFocus
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Functietitel</label>
-          <input
+          <FieldLabel>Functietitel</FieldLabel>
+          <Input
             type="text"
             value={draft.jobTitle ?? ''}
             onChange={(e) => setDraft({ ...draft, jobTitle: e.target.value })}
             placeholder="Bijv. Orderpicker, Montagemedewerker"
-            className={INPUT}
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Aantal medewerkers</label>
-          <input
+          <FieldLabel>Aantal medewerkers</FieldLabel>
+          <Input
             type="number"
             min={1}
             value={draft.workerCount ?? ''}
             onChange={(e) => setDraft({ ...draft, workerCount: parseInt(e.target.value) || 1 })}
-            className={INPUT}
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Effectieve werkdag (uren)</label>
-          <input
+          <FieldLabel>Effectieve werkdag (uren)</FieldLabel>
+          <Input
             type="number"
             min={1}
             max={12}
             step={0.5}
             value={draft.workHoursPerDay ?? ''}
             onChange={(e) => setDraft({ ...draft, workHoursPerDay: parseFloat(e.target.value) || 8 })}
-            className={INPUT}
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Geslachtssamenstelling</label>
-          <select
+          <FieldLabel>Geslachtssamenstelling</FieldLabel>
+          <Select
             value={draft.gender ?? ''}
             onChange={(e) => setDraft({ ...draft, gender: (e.target.value || undefined) as PhysicalBG['gender'] })}
-            className={INPUT}
           >
             <option value="">Onbekend / gemengd</option>
             <option value="mixed">Gemengd (man &amp; vrouw)</option>
             <option value="male">Overwegend mannen</option>
             <option value="female">Overwegend vrouwen</option>
-          </select>
+          </Select>
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Beschrijving taken</label>
-          <textarea
+          <FieldLabel>Beschrijving taken</FieldLabel>
+          <Textarea
             rows={2}
             value={draft.description ?? ''}
             onChange={(e) => setDraft({ ...draft, description: e.target.value })}
             placeholder="Beschrijf de taken en werksituatie van deze groep"
-            className={`${INPUT} resize-none`}
           />
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Opmerkingen</label>
-          <input
+          <FieldLabel>Opmerkingen</FieldLabel>
+          <Input
             type="text"
             value={draft.notes ?? ''}
             onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
             placeholder="Aanvullende informatie"
-            className={INPUT}
           />
         </div>
       </div>
       <div className="mt-4 flex gap-2">
-        <button
-          type="button"
+        <Button
+          variant="primary"
           onClick={handleSave}
           disabled={!draft.name?.trim()}
-          className="rounded-lg bg-orange-500 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-40"
         >
           Opslaan
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-lg border border-zinc-200 px-4 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
-        >
+        </Button>
+        <Button variant="secondary" onClick={onCancel}>
           Annuleren
-        </button>
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -229,18 +217,22 @@ export default function PhysicalStep2_WorkAnalysis({ investigation, onUpdate }: 
                       )}
                     </div>
                     <div className="flex shrink-0 gap-2">
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="xs"
+                        leftIcon={<Icon name="pencil" size="xs" />}
                         onClick={() => setEditingId(bg.id)}
-                        className="text-xs text-zinc-400 hover:text-orange-600 dark:hover:text-orange-400"
                       >
                         Bewerken
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="xs"
+                        leftIcon={<Icon name="trash" size="xs" />}
                         onClick={() => removeBG(bg.id)}
-                        className="text-xs text-zinc-400 hover:text-red-500"
                       >
                         Verwijderen
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -258,16 +250,14 @@ export default function PhysicalStep2_WorkAnalysis({ investigation, onUpdate }: 
           onCancel={() => setShowNewForm(false)}
         />
       ) : (
-        <button
-          type="button"
+        <Button
+          variant="dashed"
+          className="w-full"
           onClick={() => setShowNewForm(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 py-4 text-sm font-medium text-zinc-500 transition hover:border-orange-400 hover:text-orange-600 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-orange-500 dark:hover:text-orange-400"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
+          <Icon name="plus" size="sm" />
           Belastingsgroep toevoegen
-        </button>
+        </Button>
       )}
 
       {bgs.length === 0 && !showNewForm && (

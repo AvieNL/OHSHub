@@ -8,6 +8,7 @@ import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
 import { SectionRef } from '@/components/SectionRef';
 import { InfoBox } from '@/components/InfoBox';
+import { Alert, Button, Card, FieldLabel, FormGrid, Icon, Input } from '@/components/ui';
 
 interface Props {
   investigation: SoundInvestigation;
@@ -39,15 +40,15 @@ function InstrumentForm({
   const u2 = u2FromInstrumentType(form.type);
 
   return (
-    <div className="space-y-4 rounded-xl border border-orange-200 bg-orange-50/50 p-5 dark:border-orange-800/50 dark:bg-orange-900/10">
+    <Card variant="form">
       <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
         Meetapparaat opgeven
       </h4>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <FieldLabel>
           Type instrument (<SectionRef id="§5.1">§5.1</SectionRef>, <SectionRef id="Bijlage C">Tabel C.5</SectionRef>)
-        </label>
+        </FieldLabel>
         <div className="space-y-2">
           {INSTRUMENT_TYPES.map((it) => (
             <label key={it.value} className="flex cursor-pointer items-start gap-3">
@@ -71,63 +72,61 @@ function InstrumentForm({
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <FormGrid>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Fabrikant</label>
-          <input
+          <FieldLabel>Fabrikant</FieldLabel>
+          <Input
             type="text"
             value={form.manufacturer ?? ''}
             onChange={(e) => upd({ manufacturer: e.target.value })}
             placeholder="Bijv. Brüel & Kjær"
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-full"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Model / type</label>
-          <input
+          <FieldLabel>Model / type</FieldLabel>
+          <Input
             type="text"
             value={form.model ?? ''}
             onChange={(e) => upd({ model: e.target.value })}
             placeholder="Bijv. 2250"
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-full"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          <FieldLabel>
             Serienummer (<SectionRef id="§15.c.1">§15.c.1</SectionRef>)
-          </label>
-          <input
+          </FieldLabel>
+          <Input
             type="text"
             value={form.serialNumber ?? ''}
             onChange={(e) => upd({ serialNumber: e.target.value })}
             placeholder="Serienummer"
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-full"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          <FieldLabel>
             Datum laatste labkalibratie (<SectionRef id="§15.c.3">§15.c.3</SectionRef>)
-          </label>
-          <input
+          </FieldLabel>
+          <Input
             type="date"
             value={form.lastLabCalibration ?? ''}
             onChange={(e) => upd({ lastLabCalibration: e.target.value })}
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-full"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Kalibratiecertificaatnummer
-          </label>
-          <input
+          <FieldLabel>Kalibratiecertificaatnummer</FieldLabel>
+          <Input
             type="text"
             value={form.calibrationRef ?? ''}
             onChange={(e) => upd({ calibrationRef: e.target.value })}
             placeholder="Cert. nr."
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-full"
           />
         </div>
-      </div>
+      </FormGrid>
 
       <div className="flex gap-4">
         <label className="flex cursor-pointer items-center gap-2 text-sm">
@@ -151,31 +150,21 @@ function InstrumentForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Opmerkingen</label>
-        <input
+        <FieldLabel>Opmerkingen</FieldLabel>
+        <Input
           type="text"
           value={form.notes ?? ''}
           onChange={(e) => upd({ notes: e.target.value })}
           placeholder="Bijv. microfoon type 4189, windkap UA 0237"
-          className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+          className="w-full"
         />
       </div>
 
       <div className="flex gap-2">
-        <button
-          onClick={() => onSave(form)}
-          className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
-        >
-          Opslaan
-        </button>
-        <button
-          onClick={onCancel}
-          className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
-        >
-          Annuleren
-        </button>
+        <Button variant="primary" onClick={() => onSave(form)}>Opslaan</Button>
+        <Button variant="secondary" onClick={onCancel}>Annuleren</Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -229,7 +218,7 @@ export default function SoundStep4_Instruments({ investigation, onUpdate }: Prop
                 onCancel={() => setEditingId(null)}
               />
             ) : (
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/30">
+              <Card>
                 {(() => {
                   const today = new Date();
                   const calDate = inst.lastLabCalibration ? new Date(inst.lastLabCalibration) : null;
@@ -239,11 +228,11 @@ export default function SoundStep4_Instruments({ investigation, onUpdate }: Prop
                   const calOutdated = calAgeMonths !== null && calAgeMonths > 12;
                   const calMissing = !inst.lastLabCalibration;
                   return (calOutdated || calMissing) ? (
-                    <div className="mb-2 rounded-lg bg-amber-50 px-3 py-1.5 text-xs text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
-                      ⚠ {calMissing
+                    <Alert variant="warning" className="mb-2">
+                      {calMissing
                         ? 'Geen labkalibratie geregistreerd — vereist voor rapportage (§15.c.3 NEN-EN-ISO 9612:2025)'
                         : `Labkalibratie verouderd (${Math.round(calAgeMonths!)} maanden geleden) — herkeuring aanbevolen (jaarlijks, §12.1)`}
-                    </div>
+                    </Alert>
                   ) : null;
                 })()}
                 <div className="flex items-start justify-between gap-4">
@@ -266,21 +255,15 @@ export default function SoundStep4_Instruments({ investigation, onUpdate }: Prop
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => setEditingId(inst.id)}
-                      className="rounded border border-zinc-200 px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-700"
-                    >
+                    <Button variant="ghost" size="xs" onClick={() => setEditingId(inst.id)}>
                       Bewerken
-                    </button>
-                    <button
-                      onClick={() => removeInstrument(inst.id)}
-                      className="rounded border border-zinc-200 px-2 py-1 text-xs text-zinc-500 hover:bg-red-50 hover:text-red-500 dark:border-zinc-700"
-                    >
+                    </Button>
+                    <Button variant="danger" size="xs" onClick={() => removeInstrument(inst.id)}>
                       Verwijderen
-                    </button>
+                    </Button>
                   </div>
                 </div>
-              </div>
+              </Card>
             )}
           </div>
         ))}
@@ -293,25 +276,24 @@ export default function SoundStep4_Instruments({ investigation, onUpdate }: Prop
           onCancel={() => setShowNew(false)}
         />
       ) : (
-        <button
+        <Button
+          variant="dashed"
           onClick={() => setShowNew(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 py-4 text-sm text-zinc-500 transition hover:border-orange-400 hover:text-orange-600 dark:border-zinc-600 dark:text-zinc-400 dark:hover:border-orange-500 dark:hover:text-orange-400"
+          className="py-4"
+          leftIcon={<Icon name="plus" size="sm" />}
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
           Meetapparaat toevoegen
-        </button>
+        </Button>
       )}
 
       {/* u3 reminder */}
-      <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-xs text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-400">
+      <Alert variant="neutral">
         <p><strong>Vaste onzekerheden (Bijlage C):</strong></p>
         <ul className="mt-1 space-y-0.5">
           <li><Formula math="u_3" /> = 1,0 dB — onzekerheid door microfoonplaatsing (§C.6)</li>
           <li>Uitgebreide onzekerheid <Formula math="U" /> = 1,65 × <Formula math="u" /> (eenzijdig 95% betrouwbaarheidsinterval, k=1,65)</li>
         </ul>
-      </div>
+      </Alert>
     </div>
   );
 }

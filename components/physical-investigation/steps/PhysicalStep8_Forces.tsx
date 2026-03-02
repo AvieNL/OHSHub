@@ -5,6 +5,7 @@ import type { PhysicalInvestigation, ForceTask } from '@/lib/physical-investigat
 import { newPhysicalId } from '@/lib/physical-investigation-storage';
 import { computeForceResult } from '@/lib/physical-stats';
 import { InfoBox } from '@/components/InfoBox';
+import { Alert, Button, Card, FieldLabel, Icon, Input, Select } from '@/components/ui';
 
 interface Props {
   investigation: PhysicalInvestigation;
@@ -61,7 +62,6 @@ function ForceForm({
   onCancel: () => void;
 }) {
   const [d, setD] = useState<Partial<ForceTask>>(task);
-  const INPUT = 'w-full rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400';
 
   const preview = d.measuredForce != null && d.referenceForce && d.speedMultiplier && d.freqMultiplier && d.durationMultiplier
     ? computeForceResult(d as ForceTask)
@@ -87,47 +87,46 @@ function ForceForm({
     : null;
 
   return (
-    <div className="rounded-xl border border-orange-200 bg-orange-50/50 px-5 py-4 dark:border-orange-800/30 dark:bg-orange-900/10">
+    <Card variant="form">
       <h4 className="mb-4 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
         {d.id ? 'Krachttaak bewerken' : `Nieuwe krachttaak — ${bgName}`}
       </h4>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Naam taak / bediening *</label>
-          <input type="text" value={d.taskName ?? ''} onChange={(e) => setD({ ...d, taskName: e.target.value })} placeholder="Bijv. Bedienen startknop persmachine" className={INPUT} />
+          <FieldLabel>Naam taak / bediening *</FieldLabel>
+          <Input type="text" value={d.taskName ?? ''} onChange={(e) => setD({ ...d, taskName: e.target.value })} placeholder="Bijv. Bedienen startknop persmachine" />
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Type bewerking / referentiekracht F_B (N)</label>
-          <select
+          <FieldLabel>Type bewerking / referentiekracht F_B (N)</FieldLabel>
+          <Select
             value={d.referenceForce ?? ''}
             onChange={(e) => setD({ ...d, referenceForce: parseFloat(e.target.value) })}
-            className={INPUT}
           >
             <option value="">— Selecteer type —</option>
             {REFERENCE_FORCES.map((r) => (
               <option key={r.value + r.label} value={r.value}>{r.label} — {r.value} N</option>
             ))}
-          </select>
+          </Select>
           <p className="mt-1 text-xs text-zinc-400">Of voer een aangepaste F_B in:</p>
-          <input type="number" min={1} value={d.referenceForce ?? ''} onChange={(e) => setD({ ...d, referenceForce: parseFloat(e.target.value) || 0 })} placeholder="F_B in Newton" className={`${INPUT} mt-1`} />
+          <Input type="number" min={1} value={d.referenceForce ?? ''} onChange={(e) => setD({ ...d, referenceForce: parseFloat(e.target.value) || 0 })} placeholder="F_B in Newton" className="mt-1" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Snelheidsmultiplier m_v</label>
-          <select value={d.speedMultiplier ?? 1.00} onChange={(e) => setD({ ...d, speedMultiplier: parseFloat(e.target.value) })} className={INPUT}>
+          <FieldLabel>Snelheidsmultiplier m_v</FieldLabel>
+          <Select value={d.speedMultiplier ?? 1.00} onChange={(e) => setD({ ...d, speedMultiplier: parseFloat(e.target.value) })}>
             {SPEED_MULTIPLIERS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+          </Select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Frequentiemultiplier m_f</label>
-          <select value={d.freqMultiplier ?? 1.00} onChange={(e) => setD({ ...d, freqMultiplier: parseFloat(e.target.value) })} className={INPUT}>
+          <FieldLabel>Frequentiemultiplier m_f</FieldLabel>
+          <Select value={d.freqMultiplier ?? 1.00} onChange={(e) => setD({ ...d, freqMultiplier: parseFloat(e.target.value) })}>
             {FREQ_MULTIPLIERS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+          </Select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Duurmultiplier m_d</label>
-          <select value={d.durationMultiplier ?? 1.00} onChange={(e) => setD({ ...d, durationMultiplier: parseFloat(e.target.value) })} className={INPUT}>
+          <FieldLabel>Duurmultiplier m_d</FieldLabel>
+          <Select value={d.durationMultiplier ?? 1.00} onChange={(e) => setD({ ...d, durationMultiplier: parseFloat(e.target.value) })}>
             {DUR_MULTIPLIERS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+          </Select>
         </div>
         {fBr != null && (
           <div className="flex items-center rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-700 dark:bg-blue-900/10 dark:text-blue-400">
@@ -135,12 +134,12 @@ function ForceForm({
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Gemeten kracht F (N)</label>
-          <input type="number" min={0} value={d.measuredForce ?? ''} onChange={(e) => setD({ ...d, measuredForce: parseFloat(e.target.value) || 0 })} placeholder="Gemeten waarde" className={INPUT} />
+          <FieldLabel>Gemeten kracht F (N)</FieldLabel>
+          <Input type="number" min={0} value={d.measuredForce ?? ''} onChange={(e) => setD({ ...d, measuredForce: parseFloat(e.target.value) || 0 })} placeholder="Gemeten waarde" />
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">Opmerkingen</label>
-          <input type="text" value={d.notes ?? ''} onChange={(e) => setD({ ...d, notes: e.target.value })} placeholder="Aanvullende informatie" className={INPUT} />
+          <FieldLabel>Opmerkingen</FieldLabel>
+          <Input type="text" value={d.notes ?? ''} onChange={(e) => setD({ ...d, notes: e.target.value })} placeholder="Aanvullende informatie" />
         </div>
       </div>
 
@@ -159,10 +158,10 @@ function ForceForm({
       )}
 
       <div className="mt-4 flex gap-2">
-        <button type="button" onClick={save} disabled={!d.taskName?.trim()} className="rounded-lg bg-orange-500 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-40">Opslaan</button>
-        <button type="button" onClick={onCancel} className="rounded-lg border border-zinc-200 px-4 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800">Annuleren</button>
+        <Button variant="primary" onClick={save} disabled={!d.taskName?.trim()}>Opslaan</Button>
+        <Button variant="secondary" onClick={onCancel}>Annuleren</Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -186,9 +185,9 @@ export default function PhysicalStep8_Forces({ investigation, onUpdate }: Props)
     return (
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 9 — Krachten (EN 1005-3)</h2>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-800/30 dark:bg-amber-900/10 dark:text-amber-400">
-          ⚠ Definieer eerst belastingsgroepen in stap 3.
-        </div>
+        <Alert variant="warning" size="md">
+          Definieer eerst belastingsgroepen in stap 3.
+        </Alert>
       </div>
     );
   }
@@ -252,8 +251,8 @@ export default function PhysicalStep8_Forces({ investigation, onUpdate }: Props)
                           }`}>
                             {result.verdict === 'high' ? 'Niet acceptabel' : result.verdict === 'moderate' ? 'Grensgebied' : 'Acceptabel'}
                           </span>
-                          <button onClick={() => setEditingId(task.id)} className="text-xs text-zinc-400 hover:text-orange-600">Bewerken</button>
-                          <button onClick={() => onUpdate({ forceTasks: forceTasks.filter((t) => t.id !== task.id) })} className="text-xs text-zinc-400 hover:text-red-500">Verwijderen</button>
+                          <Button variant="ghost" size="xs" leftIcon={<Icon name="pencil" size="xs" />} onClick={() => setEditingId(task.id)}>Bewerken</Button>
+                          <Button variant="danger" size="xs" leftIcon={<Icon name="trash" size="xs" />} onClick={() => onUpdate({ forceTasks: forceTasks.filter((t) => t.id !== task.id) })}>Verwijderen</Button>
                         </div>
                       </div>
                     )}
@@ -267,16 +266,14 @@ export default function PhysicalStep8_Forces({ investigation, onUpdate }: Props)
                 </div>
               ) : (
                 <div className="px-4 py-3">
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    leftIcon={<Icon name="plus" size="xs" />}
                     onClick={() => setAddingBg(bg.id)}
-                    className="flex items-center gap-1.5 text-xs text-orange-600 hover:text-orange-700 dark:text-orange-400"
                   >
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
                     Krachttaak toevoegen
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>

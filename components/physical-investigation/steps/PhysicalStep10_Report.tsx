@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { PhysicalInvestigation } from '@/lib/physical-investigation-types';
 import { computeAllPhysicalStatistics, computeLiftingResult, computePushPullResult, computeRepetitiveResult, computeForceResult } from '@/lib/physical-stats';
 import { InfoBox } from '@/components/InfoBox';
+import { Button, FieldLabel, Icon, Input, Textarea } from '@/components/ui';
 
 interface Props {
   investigation: PhysicalInvestigation;
@@ -119,9 +120,6 @@ export default function PhysicalStep10_Report({ investigation, onUpdate }: Props
 
   const overallWorst = highRiskBGs.length > 0 ? 'high' : moderateBGs.length > 0 ? 'moderate' : 'acceptable';
 
-  const INPUT = 'w-full rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400';
-  const TEXTAREA = `${INPUT} resize-none`;
-
   function toggleTrigger(t: string) {
     const current = report.reviewTriggers ?? [];
     const updated = current.includes(t) ? current.filter((x) => x !== t) : [...current, t];
@@ -224,25 +222,23 @@ export default function PhysicalStep10_Report({ investigation, onUpdate }: Props
 
       {/* Conclusion */}
       <div>
-        <label className="mb-1 block text-sm font-semibold text-zinc-700 dark:text-zinc-300">Conclusie</label>
-        <textarea
+        <FieldLabel>Conclusie</FieldLabel>
+        <Textarea
           rows={4}
           value={report.conclusion ?? ''}
           onChange={(e) => onUpdate({ report: { ...report, conclusion: e.target.value } })}
           placeholder="Vat de bevindingen samen: welke belastingen zijn onderzocht, welke risico's zijn geïdentificeerd en wat zijn de aanbevelingen?"
-          className={TEXTAREA}
         />
       </div>
 
       {/* Compliance statement */}
       <div>
-        <label className="mb-1 block text-sm font-semibold text-zinc-700 dark:text-zinc-300">Complianceverklaring</label>
-        <textarea
+        <FieldLabel>Complianceverklaring</FieldLabel>
+        <Textarea
           rows={2}
           value={report.complianceStatement ?? ''}
           onChange={(e) => onUpdate({ report: { ...report, complianceStatement: e.target.value } })}
           placeholder="Bijv. 'Op basis van dit onderzoek wordt geconcludeerd dat de fysieke belasting voor belastingsgroep X voldoet aan Arbobesluit art. 5.1.'"
-          className={TEXTAREA}
         />
       </div>
 
@@ -272,27 +268,23 @@ export default function PhysicalStep10_Report({ investigation, onUpdate }: Props
       {/* Next review date */}
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-            Datum volgende herbeoordeling
-          </label>
-          <input
+          <FieldLabel>Datum volgende herbeoordeling</FieldLabel>
+          <Input
             type="date"
             value={report.nextReviewDate ?? ''}
             onChange={(e) => onUpdate({ report: { ...report, nextReviewDate: e.target.value } })}
-            className={INPUT}
           />
         </div>
       </div>
 
       {/* Notes */}
       <div>
-        <label className="mb-1 block text-sm font-semibold text-zinc-700 dark:text-zinc-300">Opmerkingen</label>
-        <textarea
+        <FieldLabel>Opmerkingen</FieldLabel>
+        <Textarea
           rows={2}
           value={report.notes ?? ''}
           onChange={(e) => onUpdate({ report: { ...report, notes: e.target.value } })}
           placeholder="Aanvullende opmerkingen bij het rapport"
-          className={TEXTAREA}
         />
       </div>
 
@@ -300,20 +292,17 @@ export default function PhysicalStep10_Report({ investigation, onUpdate }: Props
       <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 dark:border-zinc-700 dark:bg-zinc-800/30">
         <h3 className="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Rapport exporteren</h3>
         <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            leftIcon={<Icon name="check" size="sm" />}
             onClick={() => {
               navigator.clipboard.writeText(buildReportText(investigation));
               setCopied(true);
               setTimeout(() => setCopied(false), 2000);
             }}
-            className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.905.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
-            </svg>
-            {copied ? '✓ Gekopieerd' : 'Kopieer als tekst'}
-          </button>
+            {copied ? 'Gekopieerd' : 'Kopieer als tekst'}
+          </Button>
         </div>
         <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">
           Gebruik &ldquo;Exporteer als JSON&rdquo; in het onderzoekenoverzicht voor een volledige back-up.

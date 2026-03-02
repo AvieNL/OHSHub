@@ -7,6 +7,7 @@ import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
 import { SectionRef } from '@/components/SectionRef';
 import { InfoBox } from '@/components/InfoBox';
+import { Alert, Badge, Button, Card, FieldLabel, FormGrid, Icon, Input, Select, Textarea } from '@/components/ui';
 
 interface Props {
   investigation: SoundInvestigation;
@@ -47,85 +48,78 @@ function HEGForm({
   }
 
   return (
-    <div className="space-y-4 rounded-xl border border-orange-200 bg-orange-50/50 p-5 dark:border-orange-800/50 dark:bg-orange-900/10">
+    <Card variant="form">
       <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
         {form.id && heg.name ? `HEG bewerken: ${heg.name}` : 'Nieuwe HEG toevoegen'}
       </h4>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <FormGrid>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Naam HEG <span className="text-red-500">*</span>
-          </label>
-          <input
+          <FieldLabel>Naam HEG <span className="text-red-500">*</span></FieldLabel>
+          <Input
             type="text"
             value={form.name}
             onChange={(e) => upd({ name: e.target.value })}
             placeholder="Bijv. Lassers hal 3"
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-full"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Functie / beroepsprofiel
-          </label>
-          <input
+          <FieldLabel>Functie / beroepsprofiel</FieldLabel>
+          <Input
             type="text"
             value={form.jobTitle ?? ''}
             onChange={(e) => upd({ jobTitle: e.target.value })}
             placeholder="Bijv. Constructielasser MIG/MAG"
-            className="w-full rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-full"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Aantal medewerkers in de HEG
-          </label>
-          <input
+          <FieldLabel>Aantal medewerkers in de HEG</FieldLabel>
+          <Input
             type="number"
             min={1}
             value={form.workerCount || ''}
             onChange={(e) => upd({ workerCount: parseInt(e.target.value) || 1 })}
-            className="w-24 rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-24"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          <FieldLabel>
             Effectieve werkdag <Formula math="T_e" /> (uur)
-          </label>
-          <input
+          </FieldLabel>
+          <Input
             type="number"
             min={0.25}
             max={16}
             step={0.25}
             value={form.effectiveDayHours || ''}
             onChange={(e) => upd({ effectiveDayHours: parseFloat(e.target.value) || 8 })}
-            className="w-24 rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="w-24"
           />
           <p className="mt-0.5 text-xs text-zinc-400"><Formula math="T_0" /> = 8 uur (referentieduur)</p>
         </div>
-      </div>
+      </FormGrid>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <FieldLabel>
           Werkpatroon (<SectionRef id="§8">§8</SectionRef>, <SectionRef id="Bijlage B">Bijlage B</SectionRef> Tabel B.1)
-        </label>
-        <select
+        </FieldLabel>
+        <Select
           value={form.workPattern ?? 'unspecified'}
           onChange={(e) => upd({ workPattern: e.target.value as WorkPattern })}
-          className="rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
         >
           {WORK_PATTERNS.map((wp) => (
             <option key={wp.value} value={wp.value}>{wp.label}</option>
           ))}
-        </select>
+        </Select>
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <FieldLabel>
           Voorkeursstrategie (kan worden gewijzigd in{' '}
           <button type="button" onClick={() => onGoToStep(3)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 4</button>)
-        </label>
+        </FieldLabel>
         <div className="flex flex-wrap gap-2">
           {(['task-based', 'job-based', 'full-day'] as SoundStrategy[]).map((s) => (
             <button
@@ -159,34 +153,27 @@ function HEGForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Geluidsbronnen & werkomschrijving
-        </label>
-        <textarea
+        <FieldLabel>Geluidsbronnen & werkomschrijving</FieldLabel>
+        <Textarea
           rows={2}
           value={form.noiseSources ?? ''}
           onChange={(e) => upd({ noiseSources: e.target.value })}
           placeholder="Beschrijf de aanwezige geluidsbronnen en werksituatie…"
-          className="w-full resize-none rounded-lg border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+          className="w-full"
         />
       </div>
 
       <div className="flex gap-2">
-        <button
+        <Button
+          variant="primary"
           onClick={() => { if (form.name.trim()) onSave(form); }}
           disabled={!form.name.trim()}
-          className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-40"
         >
           Opslaan
-        </button>
-        <button
-          onClick={onCancel}
-          className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
-        >
-          Annuleren
-        </button>
+        </Button>
+        <Button variant="secondary" onClick={onCancel}>Annuleren</Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -256,7 +243,7 @@ export default function SoundStep2_WorkAnalysis({ investigation, onUpdate, onGoT
             {editingId === heg.id ? (
               <HEGForm heg={heg} onSave={saveHEG} onCancel={() => setEditingId(null)} onGoToStep={onGoToStep} />
             ) : (
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/30">
+              <Card>
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-zinc-900 dark:text-zinc-50">{heg.name}</p>
@@ -270,36 +257,26 @@ export default function SoundStep2_WorkAnalysis({ investigation, onUpdate, onGoT
                       {heg.tinnitusReported && (
                         <>
                           <span>·</span>
-                          <span className="rounded bg-purple-100 px-1.5 py-0.5 font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
-                            ⚕ Tinnitus/gehoorklachten
-                          </span>
+                          <Badge variant="purple">⚕ Tinnitus/gehoorklachten</Badge>
                         </>
                       )}
                       <span>·</span>
-                      <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-medium dark:bg-zinc-700">
-                        {STRATEGY_LABELS[heg.strategy]}
-                      </span>
+                      <Badge variant="zinc" shape="square">{STRATEGY_LABELS[heg.strategy]}</Badge>
                     </div>
                     {heg.noiseSources && (
                       <p className="mt-1.5 text-xs text-zinc-400">{heg.noiseSources}</p>
                     )}
                   </div>
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => setEditingId(heg.id)}
-                      className="rounded border border-zinc-200 px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-700"
-                    >
+                    <Button variant="ghost" size="xs" onClick={() => setEditingId(heg.id)}>
                       Bewerken
-                    </button>
-                    <button
-                      onClick={() => removeHEG(heg.id)}
-                      className="rounded border border-zinc-200 px-2 py-1 text-xs text-zinc-500 hover:bg-red-50 hover:text-red-500 dark:border-zinc-700"
-                    >
+                    </Button>
+                    <Button variant="danger" size="xs" onClick={() => removeHEG(heg.id)}>
                       Verwijderen
-                    </button>
+                    </Button>
                   </div>
                 </div>
-              </div>
+              </Card>
             )}
           </div>
         ))}
@@ -314,15 +291,14 @@ export default function SoundStep2_WorkAnalysis({ investigation, onUpdate, onGoT
           onGoToStep={onGoToStep}
         />
       ) : (
-        <button
+        <Button
+          variant="dashed"
           onClick={startNew}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 py-4 text-sm text-zinc-500 transition hover:border-orange-400 hover:text-orange-600 dark:border-zinc-600 dark:text-zinc-400 dark:hover:border-orange-500 dark:hover:text-orange-400"
+          className="py-4"
+          leftIcon={<Icon name="plus" size="sm" />}
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
           <Abbr id="HEG">HEG</Abbr> (Homogene Blootstellingsgroep) toevoegen
-        </button>
+        </Button>
       )}
 
       {hegs.length === 0 && !isAddingNew && (

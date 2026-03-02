@@ -1,12 +1,18 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import PhysicalInvestigationApp from '@/components/physical-investigation/PhysicalInvestigationApp';
+import ThemeLegalInfo from '@/components/ThemeLegalInfo';
+import { THEME_LEGAL_INFO } from '@/lib/theme-legal-info';
+import { themes } from '@/lib/themes';
 
 export const metadata: Metadata = {
   title: 'Fysieke belasting — OHSHub',
   description:
     'Volledig onderzoeksinstrument voor fysieke arbeidsbelasting conform ISO 11228-1 (NIOSH tillen/dragen), ISO 11228-2 (duwen/trekken), ISO 11228-3 (OCRA repetitieve handelingen) en Arbobesluit art. 5.1–5.6.',
 };
+
+const theme = themes.find((t) => t.slug === 'physical-load')!;
+const legalInfo = THEME_LEGAL_INFO['physical-load'];
 
 export default function PhysicalLoadPage() {
   return (
@@ -30,9 +36,22 @@ export default function PhysicalLoadPage() {
 
       {/* Header */}
       <div className="mb-3 h-1 w-10 rounded-full bg-orange-500" />
-      <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-        Fysieke belasting
-      </h1>
+      <div className="flex items-center gap-3">
+        <svg
+          className={`h-8 w-8 ${theme.iconClass}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.5}
+        >
+          {theme.iconPaths.map((d, i) => (
+            <path key={i} strokeLinecap="round" strokeLinejoin="round" d={d} />
+          ))}
+        </svg>
+        <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+          Fysieke belasting
+        </h1>
+      </div>
       <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
         Volledig onderzoeksinstrument voor fysieke arbeidsbelasting — van
         voorverkenning en belastingsgroepen tot NIOSH-tilanalyse, duwen &amp; trekken,
@@ -42,8 +61,16 @@ export default function PhysicalLoadPage() {
         en Arbobesluit art. 5.1–5.6.
       </p>
 
+      {/* Legal info */}
+      <ThemeLegalInfo
+        {...legalInfo}
+        className="mt-8"
+      />
+
       {/* App */}
-      <PhysicalInvestigationApp />
+      <div className="mt-10">
+        <PhysicalInvestigationApp />
+      </div>
     </main>
   );
 }

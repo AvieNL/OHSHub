@@ -25,12 +25,19 @@ export async function GET() {
   const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
   if (usersError) return NextResponse.json({ error: usersError.message }, { status: 500 });
 
-  // Get all roles
+  // Get all roles + privacy consent
   const { data: roles } = await supabaseAdmin
     .from('user_roles')
-    .select('user_id, role');
+    .select('user_id, role, privacy_version_accepted, privacy_accepted_at');
 
-  const roleMap = new Map((roles ?? []).map((r: { user_id: string; role: string }) => [r.user_id, r.role]));
+  const roleMap = new Map((roles ?? []).map((r: { user_id: string; role: string; privacy_version_accepted: string | null; privacy_accepted_at: string | null }) => [r.user_id, r]));
+
+  // Get all profiles
+  const { data: profiles } = await supabaseAdmin
+    .from('profiles')
+    .select('user_id, first_name, tussenvoegsel, last_name, company');
+
+  const profileMap = new Map((profiles ?? []).map((p: { user_id: string; first_name: string | null; tussenvoegsel: string | null; last_name: string | null; company: string | null }) => [p.user_id, p]));
 
   // Get investigation counts per user
   const { data: invCounts } = await supabaseAdmin
@@ -42,14 +49,24 @@ export async function GET() {
     countMap.set(inv.user_id, (countMap.get(inv.user_id) ?? 0) + 1);
   }
 
-  const result = users.map((u) => ({
-    id: u.id,
-    email: u.email,
-    role: roleMap.get(u.id) ?? 'gebruiker',
-    created_at: u.created_at,
-    last_sign_in_at: u.last_sign_in_at,
-    investigation_count: countMap.get(u.id) ?? 0,
-  }));
+  const result = users.map((u) => {
+    const roleRow = roleMap.get(u.id);
+    const profileRow = profileMap.get(u.id);
+    return {
+      id: u.id,
+      email: u.email,
+      role: roleRow?.role ?? 'gebruiker',
+      privacy_version_accepted: roleRow?.privacy_version_accepted ?? null,
+      privacy_accepted_at: roleRow?.privacy_accepted_at ?? null,
+      first_name: profileRow?.first_name ?? null,
+      tussenvoegsel: profileRow?.tussenvoegsel ?? null,
+      last_name: profileRow?.last_name ?? null,
+      company: profileRow?.company ?? null,
+      created_at: u.created_at,
+      last_sign_in_at: u.last_sign_in_at,
+      investigation_count: countMap.get(u.id) ?? 0,
+    };
+  });
 
   return NextResponse.json(result);
 }

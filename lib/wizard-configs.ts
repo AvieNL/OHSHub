@@ -8,6 +8,7 @@ import { STEPS as lightingSteps, WIZARD_CONFIG as lightingConfig } from '@/data/
 import { STEPS as physicalLoadSteps, WIZARD_CONFIG as physicalLoadConfig } from '@/data/wizards/physicalLoadWizard';
 import { STEPS as climateSteps, WIZARD_CONFIG as climateConfig } from '@/data/wizards/climateWizard';
 import { STEPS as vibrationSteps, WIZARD_CONFIG as vibrationConfig } from '@/data/wizards/vibrationWizard';
+import { STEPS as radiationSteps, WIZARD_CONFIG as radiationConfig } from '@/data/wizards/radiationWizard';
 
 // Backwards-compatible shim used by legacy code
 export const wizardConfigs: Record<ThemeSlug, WizardStep[]> = {
@@ -18,6 +19,7 @@ export const wizardConfigs: Record<ThemeSlug, WizardStep[]> = {
   'physical-load': physicalLoadSteps,
   climate: climateSteps,
   vibration: vibrationSteps,
+  radiation: radiationSteps,
 };
 
 const configs: Record<ThemeSlug, WizardConfig> = {
@@ -28,6 +30,7 @@ const configs: Record<ThemeSlug, WizardConfig> = {
   'physical-load': physicalLoadConfig,
   climate: climateConfig,
   vibration: vibrationConfig,
+  radiation: radiationConfig,
 };
 
 export function getWizardConfig(slug: ThemeSlug): WizardConfig {

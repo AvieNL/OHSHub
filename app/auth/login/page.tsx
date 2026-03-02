@@ -69,9 +69,14 @@ function LoginForm() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Wachtwoord
-            </label>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                Wachtwoord
+              </label>
+              <Link href="/auth/forgot-password" className="text-xs text-zinc-400 hover:text-orange-500 dark:hover:text-orange-400">
+                Wachtwoord vergeten?
+              </Link>
+            </div>
             <input
               type="password"
               autoComplete="current-password"

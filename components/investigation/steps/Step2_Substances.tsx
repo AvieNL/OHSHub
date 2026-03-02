@@ -6,6 +6,7 @@ import type { Investigation, Substance, OELValue, OELType, OELPeriod, OELRoute, 
 import { newId } from '@/lib/investigation-storage';
 import { Abbr, ABBR_TITLES } from '@/components/Abbr';
 import { lookupOELByCAS, SZW_VERSION, SZW_SOURCE, EU_OEL_VERSION, EU_OEL_SOURCE } from '@/data/oels';
+import { Button, Input, Select, Textarea, Icon } from '@/components/ui';
 
 interface Props {
   investigation: Investigation;
@@ -379,39 +380,37 @@ function OELRow({
       {/* Row 1: type + value + unit + remove */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center">
-          <select
+          <Select
             value={oel.type}
             onChange={(e) => handleTypeChange(e.target.value as OELType)}
-            className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-800 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
           >
             {OEL_TYPES.map((t) => (
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
-          </select>
+          </Select>
           <FieldHint sources={typeHints} />
         </div>
 
         {oel.type !== 'none' && (
           <>
-            <input
+            <Input
               type="number"
               step="any"
               min="0"
               value={oel.value ?? ''}
               onChange={(e) => onChange({ ...oel, value: e.target.value ? parseFloat(e.target.value) : undefined })}
               placeholder="Waarde"
-              className="w-24 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-800 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+              className="w-24"
             />
-            <select
+            <Select
               value={oel.unit}
               onChange={(e) => handleUnitChange(e.target.value as OELValue['unit'])}
-              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-800 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
             >
               <option value="mg/m³">mg/m³</option>
               <option value="ppm">ppm</option>
               <option value="f/cm³">f/cm³</option>
               <option value="mg/kg/d">mg/kg/d</option>
-            </select>
+            </Select>
           </>
         )}
 
@@ -470,12 +469,12 @@ function OELRow({
       {/* Row 3: bronvermelding */}
       {oel.type !== 'none' && (
         <div className="mt-2.5">
-          <input
+          <Input
             type="text"
             value={oel.source ?? ''}
             onChange={(e) => onChange({ ...oel, source: e.target.value || undefined })}
             placeholder="Bronvermelding (bijv. VIB/SDS rubriek 8, ECHA-dossier, intern rapport)"
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-600 placeholder:text-zinc-400 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:placeholder:text-zinc-500 dark:focus:border-orange-400"
+            className="w-full"
           />
         </div>
       )}
@@ -1155,34 +1154,34 @@ function SubstanceForm({
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <FieldLabel hint={H.productName} required>Productnaam</FieldLabel>
-              <input
+              <Input
                 type="text"
                 value={s.productName}
                 onChange={(e) => field({ productName: e.target.value })}
                 placeholder="Bijv. Tolueen, Kwartsstof, Isocyanaat"
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+                className="w-full"
               />
             </div>
             <div>
               <FieldLabel hint={H.iupacName} showPubChem={pubchemFields.has('iupacName')}><Abbr id="IUPAC">IUPAC</Abbr>-naam</FieldLabel>
-              <input
+              <Input
                 type="text"
                 value={s.iupacName ?? ''}
                 onChange={(e) => field({ iupacName: e.target.value })}
                 placeholder="Systematische naam"
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+                className="w-full"
               />
               {overrideWarn('iupacName', s.iupacName ?? '')}
             </div>
             <div>
               <FieldLabel hint={H.casNr}>CAS-nummer</FieldLabel>
               <div className="flex gap-2">
-                <input
+                <Input
                   type="text"
                   value={s.casNr ?? ''}
                   onChange={(e) => field({ casNr: e.target.value })}
                   placeholder="Bijv. 108-88-3"
-                  className="min-w-0 flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+                  className="min-w-0 flex-1"
                 />
                 <button
                   type="button"
@@ -1207,23 +1206,23 @@ function SubstanceForm({
             </div>
             <div>
               <FieldLabel hint={H.egNr} showPubChem={pubchemFields.has('egNr')}><abbr title="Europees gemeenschapsnummer (EINECS/ELINCS)">EG</abbr>-nummer</FieldLabel>
-              <input
+              <Input
                 type="text"
                 value={s.egNr ?? ''}
                 onChange={(e) => field({ egNr: e.target.value })}
                 placeholder="Bijv. 203-625-9"
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+                className="w-full"
               />
               {overrideWarn('egNr', s.egNr ?? '')}
             </div>
             <div>
               <FieldLabel hint={H.reachNr}><Abbr id="REACH">REACH</Abbr>-registratienummer</FieldLabel>
-              <input
+              <Input
                 type="text"
                 value={s.reachNr ?? ''}
                 onChange={(e) => field({ reachNr: e.target.value })}
                 placeholder="01-XXXXXXXXXXXXXXXX-XX"
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+                className="w-full"
               />
             </div>
             <div className="flex items-center">
@@ -1313,28 +1312,28 @@ function SubstanceForm({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <FieldLabel hint={H.hStatements} showPubChem={pubchemFields.has('hStatements')}>H-zinnen (kommagescheiden)</FieldLabel>
-              <input
+              <Input
                 type="text"
                 value={s.hStatements}
                 onChange={(e) => handleHStatementsChange(e.target.value)}
                 placeholder="Bijv. H225, H315, H319, H336"
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+                className="w-full"
               />
               {overrideWarn('hStatements', s.hStatements)}
             </div>
 
             <div>
               <FieldLabel hint={H.cmrCategory} showPubChem={pubchemFields.has('cmrCategory')}>CMR-categorie</FieldLabel>
-              <select
+              <Select
                 value={s.cmrCategory}
                 onChange={(e) => field({ cmrCategory: e.target.value as CMRCategory })}
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+                className="w-full"
               >
                 <option value="none">Geen CMR</option>
                 <option value="1A">Cat. 1A — bewezen (H340/H350/H360)</option>
                 <option value="1B">Cat. 1B — vermoedelijk (H341/H351/H361)</option>
                 <option value="2">Cat. 2 — verdacht</option>
-              </select>
+              </Select>
               {overrideWarn('cmrCategory', s.cmrCategory)}
             </div>
 
@@ -1384,43 +1383,42 @@ function SubstanceForm({
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <FieldLabel hint={H.aggregateState} showPubChem={pubchemFields.has('aggregateState')}>Aggregatietoestand</FieldLabel>
-              <select
+              <Select
                 value={s.aggregateState}
                 onChange={(e) => field({ aggregateState: e.target.value as AggregateState })}
-                className="w-full h-10 rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+                className="w-full h-10"
               >
                 <option value="gas">Gas</option>
                 <option value="vapor-liquid">Damp / vloeistof (hoge dampdruk)</option>
                 <option value="liquid">Vloeistof (lage dampdruk)</option>
                 <option value="solid-powder">Vaste stof / poeder</option>
                 <option value="aerosol">Aerosol / nevel</option>
-              </select>
+              </Select>
               {overrideWarn('aggregateState', s.aggregateState)}
             </div>
             {isLiquidOrGas && (
               <div>
                 <FieldLabel hint={H.vapourPressure} showPubChem={pubchemFields.has('vapourPressure')}>Damspanning bij 20°C</FieldLabel>
                 <div className="flex gap-2">
-                  <input
+                  <Input
                     type="number"
                     step="any"
                     min="0"
                     value={s.vapourPressure ?? ''}
                     onChange={(e) => field({ vapourPressure: e.target.value ? parseFloat(e.target.value) : undefined })}
                     placeholder="Waarde"
-                    className="min-w-0 flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+                    className="min-w-0 flex-1"
                   />
-                  <select
+                  <Select
                     value={s.vapourPressureUnit ?? 'kPa'}
                     onChange={(e) => field({ vapourPressureUnit: e.target.value as Substance['vapourPressureUnit'] })}
-                    className="rounded-lg border border-zinc-200 px-2 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
                   >
                     <option value="Pa">Pa</option>
                     <option value="kPa">kPa</option>
                     <option value="bar">bar</option>
                     <option value="mbar">mbar</option>
                     <option value="mmHg">mmHg</option>
-                  </select>
+                  </Select>
                 </div>
                 {overrideWarn('vapourPressure', s.vapourPressure !== undefined ? `${s.vapourPressure} ${s.vapourPressureUnit ?? 'kPa'}` : '')}
               </div>
@@ -1428,13 +1426,13 @@ function SubstanceForm({
             {isLiquidOrGas && (
               <div>
                 <FieldLabel hint={H.boilingPoint} showPubChem={pubchemFields.has('boilingPoint')}>Kookpunt (°C)</FieldLabel>
-                <input
+                <Input
                   type="number"
                   step="any"
                   value={s.boilingPoint ?? ''}
                   onChange={(e) => field({ boilingPoint: e.target.value ? parseFloat(e.target.value) : undefined })}
                   placeholder="Bijv. 110"
-                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+                  className="w-full"
                 />
                 {overrideWarn('boilingPoint', s.boilingPoint !== undefined ? `${s.boilingPoint} °C` : '')}
               </div>
@@ -1442,16 +1440,16 @@ function SubstanceForm({
             {isPowder && (
               <div>
                 <FieldLabel hint={H.dustiness}>Stuifpotentieel</FieldLabel>
-                <select
+                <Select
                   value={s.dustiness ?? ''}
                   onChange={(e) => field({ dustiness: (e.target.value as Substance['dustiness']) || undefined })}
-                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+                  className="w-full"
                 >
                   <option value="">Onbekend</option>
                   <option value="low">Laag (korrelig, weinig stof)</option>
                   <option value="medium">Middel (fijn poeder)</option>
                   <option value="high">Hoog (licht poeder, sterk verstuivend)</option>
-                </select>
+                </Select>
               </div>
             )}
           </div>
@@ -1481,15 +1479,13 @@ function SubstanceForm({
                 showRemove={s.oels.length > 1}
               />
             ))}
-            <button
+            <Button
+              variant="dashed"
               onClick={addOEL}
-              className="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-300 px-4 py-2 text-sm text-zinc-500 transition hover:border-orange-400 hover:text-orange-600 dark:border-zinc-600 dark:text-zinc-400 dark:hover:border-orange-500 dark:hover:text-orange-400"
+              leftIcon={<Icon name="plus" size="xs" />}
             >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
               Grenswaarde toevoegen
-            </button>
+            </Button>
           </div>
         </section>
 
@@ -1584,19 +1580,19 @@ function SubstanceForm({
               <div className="grid gap-4 sm:grid-cols-3">
                 <div>
                   <FieldLabel hint={H.flashPoint} showPubChem={pubchemFields.has('flashPoint')}>Vlampunt (°C)</FieldLabel>
-                  <input
+                  <Input
                     type="number"
                     step="any"
                     value={s.flashPoint ?? ''}
                     onChange={(e) => field({ flashPoint: e.target.value ? parseFloat(e.target.value) : undefined })}
                     placeholder="Bijv. 23"
-                    className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+                    className="w-full"
                   />
                   {overrideWarn('flashPoint', s.flashPoint !== undefined ? `${s.flashPoint} °C` : '')}
                 </div>
                 <div>
                   <FieldLabel hint={H.lel} showPubChem={pubchemFields.has('lel')}><Abbr id="LEL">LEL</Abbr> (% vol)</FieldLabel>
-                  <input
+                  <Input
                     type="number"
                     step="0.1"
                     min="0"
@@ -1604,13 +1600,13 @@ function SubstanceForm({
                     value={s.lel ?? ''}
                     onChange={(e) => field({ lel: e.target.value ? parseFloat(e.target.value) : undefined })}
                     placeholder="Bijv. 1.0"
-                    className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+                    className="w-full"
                   />
                   {overrideWarn('lel', s.lel !== undefined ? `${s.lel} % vol` : '')}
                 </div>
                 <div>
                   <FieldLabel hint={H.uel} showPubChem={pubchemFields.has('uel')}><Abbr id="UEL">UEL</Abbr> (% vol)</FieldLabel>
-                  <input
+                  <Input
                     type="number"
                     step="0.1"
                     min="0"
@@ -1618,7 +1614,7 @@ function SubstanceForm({
                     value={s.uel ?? ''}
                     onChange={(e) => field({ uel: e.target.value ? parseFloat(e.target.value) : undefined })}
                     placeholder="Bijv. 7.0"
-                    className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
+                    className="w-full"
                   />
                   {overrideWarn('uel', s.uel !== undefined ? `${s.uel} % vol` : '')}
                 </div>
@@ -1630,30 +1626,22 @@ function SubstanceForm({
         {/* ── Opmerkingen ──────────────────────────────────────────────── */}
         <div>
           <FieldLabel hint={H.notes}>Opmerkingen</FieldLabel>
-          <textarea
+          <Textarea
             rows={2}
             value={s.notes ?? ''}
             onChange={(e) => field({ notes: e.target.value })}
             placeholder="Toxicologische bijzonderheden, historische context, links naar ECHA-dossier…"
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-orange-400"
           />
         </div>
 
         {/* ── Actions ───────────────────────────────────────────────────── */}
         <div className="flex justify-end gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-          <button
-            onClick={onCancel}
-            className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
-          >
+          <Button variant="secondary" onClick={onCancel}>
             Annuleren
-          </button>
-          <button
-            onClick={onSave}
-            disabled={!s.productName.trim()}
-            className="rounded-lg bg-orange-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-40"
-          >
+          </Button>
+          <Button variant="primary" onClick={onSave} disabled={!s.productName.trim()}>
             Stof opslaan
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -1767,18 +1755,22 @@ export default function Step2_Substances({ investigation, onUpdate }: Props) {
                     </div>
                   </div>
                   <div className="flex shrink-0 gap-2">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="xs"
                       onClick={() => startEdit(s)}
-                      className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 transition hover:bg-white dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                      leftIcon={<Icon name="pencil" size="xs" />}
                     >
                       Bewerken
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="xs"
                       onClick={() => deleteSubstance(s.id)}
-                      className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-red-500 transition hover:bg-red-50 dark:border-zinc-600 dark:hover:bg-red-900/20"
+                      leftIcon={<Icon name="trash" size="xs" />}
                     >
                       Verwijderen
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -1797,15 +1789,14 @@ export default function Step2_Substances({ investigation, onUpdate }: Props) {
       )}
 
       {editingId === null && (
-        <button
+        <Button
+          variant="dashed"
+          className="w-full justify-center py-4"
           onClick={startAdd}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 py-4 text-sm font-medium text-zinc-500 transition hover:border-orange-400 hover:bg-orange-50 hover:text-orange-600 dark:border-zinc-700 dark:hover:border-orange-600 dark:hover:bg-orange-900/10 dark:hover:text-orange-400"
+          leftIcon={<Icon name="plus" size="sm" />}
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
           Stof toevoegen
-        </button>
+        </Button>
       )}
 
       {substances.length === 0 && editingId === null && (

@@ -5,6 +5,7 @@ import { METABOLIC_CLASSES } from '@/lib/climate-investigation-types';
 import { computeAllClimateStatistics, verdictBadgeClass, getMetabolicRate } from '@/lib/climate-stats';
 import { Abbr } from '@/components/Abbr';
 import { InfoBox } from '@/components/InfoBox';
+import { Alert } from '@/components/ui';
 
 interface Props {
   investigation: ClimateInvestigation;
@@ -30,9 +31,9 @@ export default function ClimateStep8_PHS({ investigation, onUpdate: _onUpdate }:
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           Stap 9 — Hittestress gedetailleerd (<Abbr id="PHS">PHS</Abbr>)
         </h2>
-        <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800/30 dark:text-zinc-400">
+        <Alert variant="neutral">
           Dit scenario is niet geselecteerd. Selecteer &ldquo;Warmtestress&rdquo; in stap 4 om de PHS-analyse in te schakelen.
-        </div>
+        </Alert>
       </div>
     );
   }
@@ -41,9 +42,9 @@ export default function ClimateStep8_PHS({ investigation, onUpdate: _onUpdate }:
     return (
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 9 — Hittestress gedetailleerd (PHS)</h2>
-        <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning">
           Definieer eerst blootstellingsgroepen in stap 3.
-        </div>
+        </Alert>
       </div>
     );
   }
@@ -190,38 +191,24 @@ export default function ClimateStep8_PHS({ investigation, onUpdate: _onUpdate }:
 
                     {/* Gevaar: D_lim < 60 min */}
                     {stat.phsVerdict === 'danger' && (
-                      <div className="flex items-start gap-3 rounded-lg bg-red-50 px-4 py-3 text-sm dark:bg-red-900/15">
-                        <svg className="mt-0.5 h-4 w-4 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                        </svg>
-                        <div>
-                          <p className="font-semibold text-red-800 dark:text-red-300">
-                            Acuut risico op hitteletsel — D_lim &lt; 60 minuten
-                          </p>
-                          <p className="mt-0.5 text-xs text-red-700 dark:text-red-400">
-                            De maximale blootstellingstijd is minder dan 60 minuten. Onmiddellijk technische
-                            en organisatorische maatregelen treffen. Zie stap 12 (maatregelen).
-                          </p>
-                        </div>
-                      </div>
+                      <Alert variant="error">
+                        <p className="font-semibold">Acuut risico op hitteletsel — D_lim &lt; 60 minuten</p>
+                        <p className="mt-0.5 text-xs">
+                          De maximale blootstellingstijd is minder dan 60 minuten. Onmiddellijk technische
+                          en organisatorische maatregelen treffen. Zie stap 12 (maatregelen).
+                        </p>
+                      </Alert>
                     )}
 
                     {/* Beperkt: S_Wreq > S_Wmax */}
                     {stat.phsVerdict === 'limited' && stat.phsDlimMin != null && (
-                      <div className="flex items-start gap-3 rounded-lg bg-orange-50 px-4 py-3 text-sm dark:bg-orange-900/15">
-                        <svg className="mt-0.5 h-4 w-4 shrink-0 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                        </svg>
-                        <div>
-                          <p className="font-semibold text-orange-800 dark:text-orange-300">
-                            Beperkte blootstelling — roulatie vereist (D_lim = {stat.phsDlimMin} min)
-                          </p>
-                          <p className="mt-0.5 text-xs text-orange-700 dark:text-orange-400">
-                            De zweetsecretiecapaciteit is overschreden. Blootstelling beperken via roulatieschema&apos;s
-                            met voldoende herstelperiodes in koele omgeving.
-                          </p>
-                        </div>
-                      </div>
+                      <Alert variant="warning">
+                        <p className="font-semibold">Beperkte blootstelling — roulatie vereist (D_lim = {stat.phsDlimMin} min)</p>
+                        <p className="mt-0.5 text-xs">
+                          De zweetsecretiecapaciteit is overschreden. Blootstelling beperken via roulatieschema&apos;s
+                          met voldoende herstelperiodes in koele omgeving.
+                        </p>
+                      </Alert>
                     )}
                   </div>
                 )}

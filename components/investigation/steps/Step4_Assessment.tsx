@@ -9,6 +9,7 @@ import type {
   ExposureDecision,
   ExposureBand,
 } from '@/lib/investigation-types';
+import { Alert, Textarea } from '@/components/ui';
 
 interface Props {
   investigation: Investigation;
@@ -501,12 +502,12 @@ function PairCard({
           ))}
         </div>
         {estimate.decision && (
-          <textarea
+          <Textarea
             rows={2}
             value={estimate.decisionNotes ?? ''}
             onChange={(e) => onNotesChange(e.target.value)}
             placeholder="Onderbouwing / aanvullende notitie (aanbevolen voor dossier)…"
-            className="mt-2 w-full rounded-lg border border-zinc-200 bg-white/70 px-3 py-2 text-sm text-zinc-800 placeholder-zinc-400 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:border-orange-400"
+            className="mt-2"
           />
         )}
       </div>
@@ -566,9 +567,9 @@ export default function Step4_Assessment({ investigation, onUpdate }: Props) {
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           Stap 4 — Eerste risicobeoordeling
         </h2>
-        <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning">
           Voeg eerst taken toe in stap 3 en koppel stoffen daaraan, dan verschijnen hier de tier-1 beoordelingen.
-        </div>
+        </Alert>
       </div>
     );
   }
@@ -579,9 +580,9 @@ export default function Step4_Assessment({ investigation, onUpdate }: Props) {
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           Stap 4 — Eerste risicobeoordeling
         </h2>
-        <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-700 dark:bg-amber-900/15 dark:text-amber-400">
+        <Alert variant="warning">
           Koppel in stap 3 stoffen aan de taken. Dan berekent het tier-1 model hier de blootstellingsband per taak-stof combinatie.
-        </div>
+        </Alert>
       </div>
     );
   }

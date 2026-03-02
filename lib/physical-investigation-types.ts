@@ -1,3 +1,5 @@
+import type { BasePerson, CommonScopeFields } from '@/lib/shared-investigation-types';
+
 // ─── Enums & literal types ────────────────────────────────────────────────────
 
 /** Welke belastingtypen zijn onderzocht */
@@ -21,24 +23,12 @@ export type PhysicalMeasureType =
   | 'training';       // Voorlichting & training
 
 /** Kwalificatie onderzoeker (Arbowet / NEN-ISO 11228) */
-export type PhysicalPersonQualification = 'AH' | 'HVK' | 'ergonoom' | 'other';
+export type PhysicalPersonQualification = 'AH' | 'HVK' | 'ergonoom' | 'bedrijfsarts' | 'other';
 
 // ─── Personeel ────────────────────────────────────────────────────────────────
 
-export interface PhysicalPerson {
-  id: string;
-  name?: string;
-  role?: string;
-  organization?: string;
-  address?: string;
-  email?: string;
-  phone?: string;
-  anonymous?: boolean;
-  investigationRole?: string;
+export interface PhysicalPerson extends BasePerson {
   qualification?: PhysicalPersonQualification;
-  isAKD?: boolean;
-  akdNumber?: string;
-  qualificationNote?: string;
 }
 
 // ─── Belastingsgroep (BG) — vergelijkbaar met HEG/BG in andere modules ────────
@@ -346,14 +336,15 @@ export interface PhysicalMeasure {
 
 // ─── Onderzoekskader ──────────────────────────────────────────────────────────
 
-export interface PhysicalInvestigationScope {
+export interface PhysicalInvestigationScope extends CommonScopeFields {
   companyName?: string;
   workplaceName?: string;
   workplaceAddress?: string;
   workerDescription?: string;
   purpose?: string;
   investigationPeriod?: string;
-  referenceDocument?: string; // RI&E, arbobeleid, MHI
+  /** RI&E-rapportage, arbobeleid of MHI-document */
+  referenceDocument?: string;
   notes?: string;
 }
 
