@@ -6,8 +6,9 @@
  */
 
 import { useState } from 'react';
-import { Alert, Badge, Button, Card, FieldLabel, FormGrid, Input, Select, Textarea } from '@/components/ui';
-import type { AlertVariant, BadgeVariant, ButtonVariant, ButtonSize } from '@/components/ui';
+import { Alert, Badge, Button, Card, FieldLabel, FormGrid, Icon, Input, Select, Textarea } from '@/components/ui';
+import type { AlertVariant, BadgeVariant, ButtonVariant, ButtonSize, IconName } from '@/components/ui';
+import { Formula } from '@/components/Formula';
 
 // ─── Hulpcomponenten voor de demo ─────────────────────────────────────────────
 
@@ -50,6 +51,12 @@ export default function UiDemoPage() {
   const badgeVariants: BadgeVariant[]  = ['emerald', 'amber', 'orange', 'red', 'blue', 'zinc', 'purple', 'violet'];
   const buttonVariants: ButtonVariant[] = ['primary', 'secondary', 'ghost', 'danger', 'dashed', 'link'];
   const buttonSizes: ButtonSize[] = ['md', 'sm', 'xs'];
+  const allIcons: IconName[] = [
+    'plus', 'x', 'check', 'chevron-down', 'chevron-up', 'chevron-left', 'chevron-right',
+    'pencil', 'trash', 'arrow-up-tray', 'arrow-down-tray', 'printer', 'menu',
+    'warning', 'note', 'refresh', 'sun', 'moon', 'info',
+    'document', 'folder', 'user', 'lock', 'logout',
+  ];
 
   return (
     <div className="mx-auto max-w-3xl space-y-12 px-4 py-10">
@@ -99,7 +106,7 @@ export default function UiDemoPage() {
                 <strong>{v.charAt(0).toUpperCase() + v.slice(1)}:</strong>{' '}
                 {v === 'warning' && 'Blootstelling boven actiewaarde — beheersmaatregelen vereist.'}
                 {v === 'error'   && 'Grenswaarde van 87 dB(A) overschreden — directe actie vereist.'}
-                {v === 'success' && 'Berekening geslaagd — L_EX,8h ligt onder de lagere actiewaarde.'}
+                {v === 'success' && <span>Berekening geslaagd — <Formula math="L_{EX,8h}" /> ligt onder de lagere actiewaarde.</span>}
                 {v === 'info'    && 'NEN-EN-ISO 9612:2025 vereist een uitgebreide onzekerheidsanalyse.'}
                 {v === 'orange'  && 'Dubbele gehoorbescherming: maximum 35 dB(A) door botgeleiding.'}
                 {v === 'neutral' && 'Geen HEGs gedefinieerd — voeg eerst groepen toe in stap 3.'}
@@ -153,9 +160,7 @@ export default function UiDemoPage() {
               <Button variant="link">Ga naar stap 5</Button>
             ) : v === 'dashed' ? (
               <Button variant="dashed" size="sm" className="max-w-xs py-3">
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
+                <Icon name="plus" size="sm" />
                 Meetpunt toevoegen
               </Button>
             ) : (
@@ -171,8 +176,28 @@ export default function UiDemoPage() {
           </Row>
         ))}
 
+        <Row label="met leftIcon">
+          <Button variant="primary"   leftIcon={<Icon name="check"  size="sm" />}>Opslaan</Button>
+          <Button variant="secondary" leftIcon={<Icon name="x"      size="sm" />}>Annuleren</Button>
+          <Button variant="ghost"  size="xs" leftIcon={<Icon name="pencil" size="xs" />}>Bewerken</Button>
+          <Button variant="danger" size="xs" leftIcon={<Icon name="trash"  size="xs" />}>Verwijderen</Button>
+          <Button variant="primary"   leftIcon={<Icon name="arrow-up-tray"   size="sm" />}>Exporteren</Button>
+          <Button variant="secondary" leftIcon={<Icon name="arrow-down-tray" size="sm" />}>Importeren</Button>
+        </Row>
+
+        <Row label="met rightIcon">
+          <Button variant="secondary" rightIcon={<Icon name="chevron-right" size="sm" />}>Volgende stap</Button>
+          <Button variant="secondary" rightIcon={<Icon name="printer" size="sm" />}>Afdrukken</Button>
+        </Row>
+
+        <Row label="icon-only">
+          <Button variant="ghost"  size="xs" aria-label="Bewerken"><Icon name="pencil" size="xs" /></Button>
+          <Button variant="danger" size="xs" aria-label="Verwijderen"><Icon name="trash" size="xs" /></Button>
+          <Button variant="secondary" size="sm" aria-label="Vernieuwen"><Icon name="refresh" size="sm" /></Button>
+        </Row>
+
         <Row label="disabled">
-          <Button variant="primary" disabled>Opslaan (disabled)</Button>
+          <Button variant="primary"   leftIcon={<Icon name="check" size="sm" />} disabled>Opslaan (disabled)</Button>
           <Button variant="secondary" disabled>Annuleren (disabled)</Button>
         </Row>
       </Section>
@@ -377,10 +402,82 @@ export default function UiDemoPage() {
           </Alert>
 
           <div className="flex gap-2">
-            <Button variant="primary">Opslaan</Button>
-            <Button variant="secondary">Annuleren</Button>
+            <Button variant="primary"   leftIcon={<Icon name="check" size="sm" />}>Opslaan</Button>
+            <Button variant="secondary" leftIcon={<Icon name="x"     size="sm" />}>Annuleren</Button>
           </div>
         </Card>
+      </Section>
+
+      {/* ── Icon ───────────────────────────────────────────────────────────── */}
+      <Section title="Icon — Heroicons v2 outline">
+        <p className="text-xs text-zinc-400">
+          <Code>{'<Icon name="..." size="xs|sm|md|lg|xl" className="..." />'}</Code>
+          {' '}— gebruik altijd via <Code>@/components/ui</Code>
+        </p>
+
+        <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+          {allIcons.map((name) => (
+            <div
+              key={name}
+              className="flex flex-col items-center gap-1.5 rounded-lg border border-zinc-100 p-3 dark:border-zinc-700"
+            >
+              <Icon name={name} size="md" className="text-zinc-600 dark:text-zinc-400" />
+              <span className="text-center font-mono text-[10px] leading-tight text-zinc-400 dark:text-zinc-500">
+                {name}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Groottes (xs → xl)</p>
+          <Row label="sizes">
+            {(['xs', 'sm', 'md', 'lg', 'xl'] as const).map((s) => (
+              <div key={s} className="flex flex-col items-center gap-1">
+                <Icon name="plus" size={s} className="text-zinc-600 dark:text-zinc-400" />
+                <span className="font-mono text-[10px] text-zinc-400">{s}</span>
+              </div>
+            ))}
+          </Row>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">In context</p>
+          <Row label="met kleur">
+            <Icon name="check"   size="md" className="text-emerald-500" />
+            <Icon name="warning" size="md" className="text-amber-500" />
+            <Icon name="x"       size="md" className="text-red-500" />
+            <Icon name="info"    size="md" className="text-blue-500" />
+            <Icon name="refresh" size="md" className="text-orange-500" />
+          </Row>
+        </div>
+      </Section>
+
+      {/* ── Formula ────────────────────────────────────────────────────────── */}
+      <Section title="Formula — wiskundige notatie (KaTeX)">
+        <p className="text-xs text-zinc-400">
+          <Code>{'<Formula math="L_{EX,8h}" />'}</Code>{' '}of{' '}
+          <Code>{'<Formula math="..." display />'}</Code>{' '}voor blokweergave
+        </p>
+
+        <Row label="inline">
+          <span className="text-sm text-zinc-700 dark:text-zinc-300">
+            Dagelijkse blootstelling <Formula math="L_{EX,8h}" /> mag de grenswaarde van 87 dB(A) niet overschrijden.
+          </span>
+        </Row>
+        <Row label="inline mix">
+          <span className="text-sm text-zinc-700 dark:text-zinc-300">
+            Gecombineerde onzekerheid{' '}
+            <Formula math="u = \sqrt{u_1^2 + u_2^2 + u_3^2}" />{' '}
+            met uitgebreide onzekerheid <Formula math="U = 1{,}65 \cdot u" />.
+          </span>
+        </Row>
+        <Row label="display">
+          <Formula
+            math="L_{EX,8h} = 10 \log\!\left(\frac{1}{T_0}\sum_{i=1}^{n} T_{e,i} \cdot 10^{0.1 L_{p,A,eqT,i}}\right)"
+            display
+          />
+        </Row>
       </Section>
 
       {/* Footer */}

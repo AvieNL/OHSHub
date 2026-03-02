@@ -15,6 +15,9 @@ export type { CardVariant } from './Card';
 
 export { FieldLabel } from './FieldLabel';
 
+export { Icon } from './Icon';
+export type { IconName, IconSize } from './Icon';
+
 export { FormGrid }  from './FormGrid';
 
 export { Input }     from './Input';

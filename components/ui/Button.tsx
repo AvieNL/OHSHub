@@ -25,32 +25,39 @@ const VARIANTS: Record<ButtonVariant, string> = {
 };
 
 const SIZES: Record<ButtonSize, string> = {
-  md: 'px-4 py-2 text-sm',
-  sm: 'px-3 py-1.5 text-xs',
-  xs: 'px-2 py-1 text-xs',
+  md: 'px-4 py-2 text-sm gap-2',
+  sm: 'px-3 py-1.5 text-xs gap-1.5',
+  xs: 'px-2 py-1 text-xs gap-1.5',
 };
 
 /** Varianten waarvoor het size-systeem niet van toepassing is */
 const NO_SIZE: ButtonVariant[] = ['link'];
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant;
-  size?:    ButtonSize;
-  children: ReactNode;
+  variant?:   ButtonVariant;
+  size?:      ButtonSize;
+  /** Icoon vóór de tekst */
+  leftIcon?:  ReactNode;
+  /** Icoon ná de tekst */
+  rightIcon?: ReactNode;
+  children?:  ReactNode;
 }
 
 /**
- * Knop met vaste stijlvarianten.
+ * Knop met vaste stijlvarianten en optionele iconen.
  *
  * @example
- * <Button variant="primary" onClick={save}>Opslaan</Button>
- * <Button variant="danger" size="xs" onClick={() => remove(id)}>Verwijderen</Button>
+ * <Button variant="primary" leftIcon={<Icon name="plus" size="sm" />}>Toevoegen</Button>
+ * <Button variant="danger" size="xs" leftIcon={<Icon name="trash" size="xs" />}>Verwijderen</Button>
+ * <Button variant="ghost" size="xs" leftIcon={<Icon name="pencil" size="xs" />}>Bewerken</Button>
  * <Button variant="link" onClick={() => onGoToStep(4)}>stap 5</Button>
- * <Button variant="dashed" size="sm">+ Meting toevoegen</Button>
+ * <Button variant="dashed"><Icon name="plus" size="sm" />Meting toevoegen</Button>
  */
 export function Button({
-  variant  = 'secondary',
-  size     = 'md',
+  variant   = 'secondary',
+  size      = 'md',
+  leftIcon,
+  rightIcon,
   className = '',
   children,
   ...props
@@ -62,7 +69,9 @@ export function Button({
       className={`${VARIANTS[variant]} ${sizeClass} ${className}`.trim()}
       {...props}
     >
+      {leftIcon}
       {children}
+      {rightIcon}
     </button>
   );
 }
