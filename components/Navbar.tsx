@@ -104,6 +104,10 @@ export default function Navbar() {
             Home
           </Link>
 
+          <Link href="/kennisportaal" className="text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50">
+            Kennisportaal
+          </Link>
+
           {/* Thema's dropdown (CSS hover) */}
           <div className="group relative">
             <button className="flex items-center gap-1 text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50">

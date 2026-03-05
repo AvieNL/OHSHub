@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: 'Versiehistorie en informatie over OHSHub.',
 };
 
-const HARDCODED_VERSION = '0.20.4';
+const HARDCODED_VERSION = '0.21.0';
 
 const CHANGELOG: {
   version: string;
@@ -20,6 +20,24 @@ const CHANGELOG: {
   modules: string[];
   changes: string[];
 }[] = [
+  {
+    version: '0.21.0',
+    date: '2026-03-05',
+    type: 'minor',
+    title: 'Kennisportaal — theoretische achtergrond, normen en FAQ per thema',
+    modules: ['Platform'],
+    changes: [
+      'Nieuw: /kennisportaal — openbare sectie met theoretische kennisbladen per arbeidshygiënisch thema.',
+      'Kennisblad per thema (/kennisportaal/[slug]): introductie, CMS-secties (normen, methoden, wetgeving, praktijk) inline bewerkbaar voor admins, thema-FAQ en CTA naar het onderzoeksinstrument.',
+      'FAQ-overzicht (/kennisportaal/faq): alle gepubliceerde vragen gegroepeerd per thema.',
+      'Kennisportaal-landing: themakaarten + teaser met 5 algemene FAQ-vragen.',
+      'DB: faq_items-tabel met RLS (public read voor gepubliceerde items, admin schrijf) — migration 007.',
+      'API: GET /api/faq (publiek), GET+POST /api/admin/faq, PATCH+DELETE /api/admin/faq/[id].',
+      'Admin FAQ-beheer (/admin/faq): items toevoegen, bewerken, verwijderen, volgorde instellen en publicatiestatus togglen.',
+      'Navbar: "Kennisportaal"-link toegevoegd tussen Home en Thema\'s.',
+      'AdminNav: "FAQ"-tab toegevoegd.',
+    ],
+  },
   {
     version: '0.20.4',
     date: '2026-03-05',
