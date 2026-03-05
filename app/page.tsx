@@ -161,46 +161,30 @@ export default async function Home() {
           <HomeThemesGrid items={themedItems} />
         ) : (
           <>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
               {themedItems.map((theme) => (
                 <div
                   key={theme.slug}
-                  className={`flex flex-col gap-3 rounded-xl border-l-4 bg-white p-6 opacity-50 shadow-sm ring-1 ring-zinc-100 dark:bg-zinc-900 dark:ring-zinc-800 ${theme.borderClass}`}
+                  className={`flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border-l-4 bg-white p-3 opacity-50 shadow-sm ring-1 ring-zinc-100 dark:bg-zinc-900 dark:ring-zinc-800 ${theme.borderClass}`}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <svg
-                        className={`h-5 w-5 flex-shrink-0 ${theme.iconClass}`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={1.5}
-                      >
-                        {theme.iconPaths.map((d, i) => (
-                          <path key={i} strokeLinecap="round" strokeLinejoin="round" d={d} />
-                        ))}
-                      </svg>
-                      <span className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
-                        {theme.name}
-                      </span>
-                    </div>
-                    <svg
-                      className="h-4 w-4 flex-shrink-0 text-zinc-300 dark:text-zinc-600"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                    </svg>
-                  </div>
-                  <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                    {theme.description}
-                  </p>
+                  <svg
+                    className={`h-6 w-6 shrink-0 ${theme.iconClass}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                  >
+                    {theme.iconPaths.map((d, i) => (
+                      <path key={i} strokeLinecap="round" strokeLinejoin="round" d={d} />
+                    ))}
+                  </svg>
+                  <span className="text-center text-xs font-medium text-zinc-900 dark:text-zinc-50">
+                    {theme.name}
+                  </span>
                 </div>
               ))}
             </div>
-            <p className="mt-6 text-center text-sm text-zinc-400 dark:text-zinc-500">
+            <p className="mt-4 text-center text-sm text-zinc-400 dark:text-zinc-500">
               <Link href="/auth/login" className="text-orange-500 hover:underline">Log in</Link>
               {' '}of{' '}
               <Link href="/auth/register" className="text-orange-500 hover:underline">maak een account aan</Link>
