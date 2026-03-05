@@ -96,6 +96,16 @@ export default function MarkdownContent({ children, className }: Props) {
     em: ({ children: c }) => <em className="italic">{withFormulas(c)}</em>,
     blockquote: ({ children }) => <blockquote className="my-4 border-l-4 border-zinc-300 pl-4 text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">{children}</blockquote>,
     hr: () => <hr className="my-8 border-zinc-200 dark:border-zinc-800" />,
+    table: ({ children }) => (
+      <div className="my-4 overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
+        <table className="min-w-full border-collapse text-sm">{children}</table>
+      </div>
+    ),
+    thead: ({ children }) => <thead className="bg-zinc-50 dark:bg-zinc-800/60">{children}</thead>,
+    tbody: ({ children }) => <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">{children}</tbody>,
+    tr: ({ children }) => <tr className="transition-colors hover:bg-zinc-50/60 dark:hover:bg-zinc-800/30">{children}</tr>,
+    th: ({ children: c }) => <th className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{withFormulas(c)}</th>,
+    td: ({ children: c }) => <td className="px-4 py-2.5 align-top text-zinc-700 dark:text-zinc-300">{withFormulas(c)}</td>,
   };
 
   return (
