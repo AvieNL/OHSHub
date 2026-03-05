@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import MarkdownContent from '@/components/MarkdownContent';
+import { renderWithFormulas } from '@/lib/render-with-formulas';
 
 export type FaqItem = {
   id: string;
@@ -24,7 +25,7 @@ export default function FaqAccordion({ items }: { items: FaqItem[] }) {
             onClick={() => setOpen(open === item.id ? null : item.id)}
             aria-expanded={open === item.id}
           >
-            <span>{item.question}</span>
+            <span>{renderWithFormulas(item.question)}</span>
             <svg
               className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform ${open === item.id ? 'rotate-180' : ''}`}
               fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}

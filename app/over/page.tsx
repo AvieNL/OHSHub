@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: 'Versiehistorie en informatie over OHSHub.',
 };
 
-const HARDCODED_VERSION = '0.21.0';
+const HARDCODED_VERSION = '0.21.1';
 
 const CHANGELOG: {
   version: string;
@@ -20,6 +20,16 @@ const CHANGELOG: {
   modules: string[];
   changes: string[];
 }[] = [
+  {
+    version: '0.21.1',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'Fix: [[formule]]-markers renderen nu correct in FAQ-vraagkoppen',
+    modules: ['Platform'],
+    changes: [
+      'FaqAccordion + FaqInlineManager: vraagkop doorgestuurd via renderWithFormulas zodat [[L_{EX,8h}]] als KaTeX-formule verschijnt.',
+    ],
+  },
   {
     version: '0.21.0',
     date: '2026-03-05',
