@@ -37,10 +37,10 @@ export default async function Home() {
   });
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-16">
+    <main className="mx-auto max-w-6xl px-6 py-20">
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
-      <div className="mb-16">
+      <div className="mb-24">
         <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
           OHS<span className="text-orange-500">Hub</span>
         </h1>
@@ -83,8 +83,8 @@ export default async function Home() {
       </div>
 
       {/* ── Feature pillars ──────────────────────────────────────────────────── */}
-      <section className="mb-16">
-        <h2 className="mb-5 text-sm font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+      <section className="mb-24">
+        <h2 className="mb-6 text-sm font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
           Mogelijkheden
         </h2>
         <div className="grid gap-5 sm:grid-cols-3">
