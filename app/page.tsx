@@ -161,7 +161,7 @@ export default async function Home() {
           <HomeThemesGrid items={themedItems} />
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+            <div className="grid grid-cols-4 gap-3">
               {themedItems.map((theme) => (
                 <div
                   key={theme.slug}
