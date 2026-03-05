@@ -114,7 +114,7 @@ export default async function KennisThemePage({ params }: Props) {
         if (!value && !isAdmin) return null;
         return (
           <section key={key} className="mb-10">
-            <h2 className="mb-3 text-base font-semibold text-zinc-900 dark:text-zinc-50">
+            <h2 className={`mb-3 text-base font-semibold ${theme.iconClass}`}>
               {label}
             </h2>
             <InlineEdit
@@ -142,7 +142,7 @@ export default async function KennisThemePage({ params }: Props) {
       {/* FAQ voor dit thema */}
       {(isAdmin || (faqItems && faqItems.length > 0)) && (
         <section className="mb-10">
-          <h2 className="mb-4 text-base font-semibold text-zinc-900 dark:text-zinc-50">
+          <h2 className={`mb-4 text-base font-semibold ${theme.iconClass}`}>
             Veelgestelde vragen
           </h2>
           <div className="rounded-xl border border-zinc-200 px-6 dark:border-zinc-800">
