@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: 'Versiehistorie en informatie over OHSHub.',
 };
 
-const HARDCODED_VERSION = '0.20.2';
+const HARDCODED_VERSION = '0.20.3';
 
 const CHANGELOG: {
   version: string;
@@ -20,6 +20,17 @@ const CHANGELOG: {
   modules: string[];
   changes: string[];
 }[] = [
+  {
+    version: '0.20.3',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'Admin gebruikersoverzicht: responsieve opmaak',
+    modules: ['Platform'],
+    changes: [
+      'Beheerderspaneel: tabel is nu horizontaal scrollbaar op smalle schermen (overflow-x-auto + min-breedte).',
+      'Mobiele weergave (< 768px): kaartweergave per gebruiker met alle velden overzichtelijk gestapeld.',
+    ],
+  },
   {
     version: '0.20.2',
     date: '2026-03-05',
