@@ -7,7 +7,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import MarkdownContent from '@/components/MarkdownContent';
 import InlineEdit from '@/components/InlineEdit';
-import FaqAccordion from '@/components/kennisportaal/FaqAccordion';
+import FaqInlineManager from '@/components/kennisportaal/FaqInlineManager';
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -140,13 +140,13 @@ export default async function KennisThemePage({ params }: Props) {
       })}
 
       {/* FAQ voor dit thema */}
-      {faqItems && faqItems.length > 0 && (
+      {(isAdmin || (faqItems && faqItems.length > 0)) && (
         <section className="mb-10">
           <h2 className="mb-4 text-base font-semibold text-zinc-900 dark:text-zinc-50">
             Veelgestelde vragen
           </h2>
           <div className="rounded-xl border border-zinc-200 px-6 dark:border-zinc-800">
-            <FaqAccordion items={faqItems} />
+            <FaqInlineManager items={faqItems ?? []} themeSlug={theme.slug} />
           </div>
         </section>
       )}

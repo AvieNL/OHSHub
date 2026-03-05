@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { themes } from '@/lib/themes';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import FaqAccordion from '@/components/kennisportaal/FaqAccordion';
+import FaqInlineManager from '@/components/kennisportaal/FaqInlineManager';
 
 export const metadata: Metadata = {
   title: 'Kennisportaal — OHSHub',
@@ -76,7 +76,7 @@ export default async function KennisportaalPage() {
       </section>
 
       {/* FAQ teaser */}
-      <section className="mb-12">
+      <section className="mb-12 mt-8">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
             Veelgestelde vragen
@@ -90,7 +90,7 @@ export default async function KennisportaalPage() {
         </div>
         {items.length > 0 ? (
           <div className="rounded-xl border border-zinc-200 px-6 dark:border-zinc-800">
-            <FaqAccordion items={items} />
+            <FaqInlineManager items={items} themeSlug={null} />
           </div>
         ) : (
           <p className="text-sm text-zinc-400 dark:text-zinc-500">

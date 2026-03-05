@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { themes } from '@/lib/themes';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import FaqAccordion from '@/components/kennisportaal/FaqAccordion';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
+import FaqInlineManager from '@/components/kennisportaal/FaqInlineManager';
 import type { FaqItem } from '@/components/kennisportaal/FaqAccordion';
 
 export const metadata: Metadata = {
@@ -11,6 +12,17 @@ export const metadata: Metadata = {
 };
 
 export default async function FaqPage() {
+  // Admin-check: admins zien ook lege themabalkjes zodat ze vragen kunnen toevoegen
+  let isAdmin = false;
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single();
+      isAdmin = data?.role === 'admin';
+    }
+  } catch { /* niet kritiek */ }
+
   const { data } = await supabaseAdmin
     .from('faq_items')
     .select('id, question, answer, theme_slug')
@@ -27,7 +39,8 @@ export default async function FaqPage() {
       theme: t,
       items: items.filter((i) => i.theme_slug === t.slug),
     }))
-    .filter((g) => g.items.length > 0);
+    // Admins zien alle thema's (ook leeg), bezoekers alleen gevulde
+    .filter((g) => isAdmin || g.items.length > 0);
 
   const total = items.length;
 
@@ -57,20 +70,14 @@ export default async function FaqPage() {
         </p>
       </div>
 
-      {total === 0 && (
-        <p className="text-sm text-zinc-400 dark:text-zinc-500">
-          Er zijn nog geen FAQ-items gepubliceerd.
-        </p>
-      )}
-
-      {/* Algemene vragen */}
-      {general.length > 0 && (
+      {/* Algemene vragen — altijd zichtbaar voor admins */}
+      {(isAdmin || general.length > 0) && (
         <section className="mb-10">
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
             Algemeen
           </h2>
           <div className="rounded-xl border border-zinc-200 px-6 dark:border-zinc-800">
-            <FaqAccordion items={general} />
+            <FaqInlineManager items={general} themeSlug={null} />
           </div>
         </section>
       )}
@@ -98,7 +105,7 @@ export default async function FaqPage() {
             </Link>
           </div>
           <div className="rounded-xl border border-zinc-200 px-6 dark:border-zinc-800">
-            <FaqAccordion items={themeItems} />
+            <FaqInlineManager items={themeItems} themeSlug={theme.slug} />
           </div>
         </section>
       ))}
