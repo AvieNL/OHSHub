@@ -108,10 +108,10 @@ export default function Navbar() {
             Kennisportaal
           </Link>
 
-          {/* Thema's dropdown (CSS hover) */}
+          {/* Onderzoeken dropdown (CSS hover) */}
           <div className="group relative">
             <button className="flex items-center gap-1 text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50">
-              Thema&apos;s
+              Onderzoeken
               <Icon name="chevron-down" size="sm" className="transition-transform group-hover:rotate-180" />
             </button>
 

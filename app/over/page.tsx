@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: 'Versiehistorie en informatie over OHSHub.',
 };
 
-const HARDCODED_VERSION = '0.21.1';
+const HARDCODED_VERSION = '0.22.0';
 
 const CHANGELOG: {
   version: string;
@@ -20,6 +20,17 @@ const CHANGELOG: {
   modules: string[];
   changes: string[];
 }[] = [
+  {
+    version: '0.22.0',
+    date: '2026-03-05',
+    type: 'minor',
+    title: 'Landingspagina + naamwijziging navbar',
+    modules: ['Platform'],
+    changes: [
+      'Home: generieke landingspagina met hero, drie feature-pillars (Kennisportaal, Onderzoeksinstrumenten, Abonnementen/binnenkort) en onderzoekengrid.',
+      'Navbar: "Thema\'s" hernoemd naar "Onderzoeken".',
+    ],
+  },
   {
     version: '0.21.1',
     date: '2026-03-05',
