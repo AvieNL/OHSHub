@@ -30,6 +30,7 @@ const SECTIONS = [
   { key: 'methoden',  label: 'Meetmethoden & strategie' },
   { key: 'wetgeving', label: 'Wetgeving & regelgeving' },
   { key: 'praktijk',  label: 'Praktische tips' },
+  { key: 'bronnen',   label: 'Bronnen' },
 ] as const;
 
 export default async function KennisThemePage({ params }: Props) {
