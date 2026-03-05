@@ -35,37 +35,41 @@ export default async function KennisportaalPage() {
         </p>
       </div>
 
-      {/* Theme grid */}
+      {/* Theme list */}
       <section className="mb-16">
-        <h2 className="mb-6 text-sm font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
           Thema&apos;s
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {themes.map((theme) => (
+        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+          {themes.map((theme, i) => (
             <Link
               key={theme.slug}
               href={`/kennisportaal/${theme.slug}`}
-              className={`group flex flex-col gap-3 rounded-xl border-l-4 bg-white p-6 shadow-sm ring-1 ring-zinc-100 transition hover:shadow-md hover:ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800 dark:hover:ring-zinc-700 ${theme.borderClass}`}
+              className={`group flex items-center gap-4 px-5 py-4 transition hover:bg-zinc-50 dark:hover:bg-zinc-800/60 ${i > 0 ? 'border-t border-zinc-100 dark:border-zinc-800' : ''}`}
             >
-              <div className="flex items-center gap-2.5">
-                <svg
-                  className={`h-5 w-5 shrink-0 ${theme.iconClass}`}
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}
-                >
-                  {theme.iconPaths.map((d, i) => (
-                    <path key={i} strokeLinecap="round" strokeLinejoin="round" d={d} />
-                  ))}
-                </svg>
-                <span className="font-semibold text-zinc-900 dark:text-zinc-50">
+              <svg
+                className={`h-5 w-5 shrink-0 ${theme.iconClass}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}
+              >
+                {theme.iconPaths.map((d, i) => (
+                  <path key={i} strokeLinecap="round" strokeLinejoin="round" d={d} />
+                ))}
+              </svg>
+              <div className="min-w-0 flex-1">
+                <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
                   {theme.name}
                 </span>
+                <span className="mx-2 text-zinc-300 dark:text-zinc-600">·</span>
+                <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                  {theme.description}
+                </span>
               </div>
-              <p className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-                {theme.description}
-              </p>
-              <span className={`self-start text-xs font-medium ${theme.iconClass}`}>
-                Lees meer →
-              </span>
+              <svg
+                className="h-4 w-4 shrink-0 text-zinc-300 transition-transform group-hover:translate-x-0.5 group-hover:text-zinc-400 dark:text-zinc-600 dark:group-hover:text-zinc-500"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
             </Link>
           ))}
         </div>
