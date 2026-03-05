@@ -102,7 +102,11 @@ function NewInvestigationDialog({
   );
 }
 
-export default function SoundInvestigationApp() {
+interface SoundInvestigationAppProps {
+  stepContent?: Record<string, string>;
+}
+
+export default function SoundInvestigationApp({ stepContent }: SoundInvestigationAppProps) {
   const [investigations, setInvestigations] = useState<SoundInvestigation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showNewDialog, setShowNewDialog] = useState(false);
@@ -181,6 +185,7 @@ export default function SoundInvestigationApp() {
         investigation={activeInvestigation}
         onUpdate={handleUpdate}
         onClose={() => setActiveId(null)}
+        stepContent={stepContent}
       />
     );
   }

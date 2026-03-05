@@ -6,10 +6,21 @@ import { computeAllClimateStatistics, verdictBadgeClass, getMetabolicRate } from
 import { Abbr } from '@/components/Abbr';
 import { InfoBox } from '@/components/InfoBox';
 import { Alert } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.8';
+const NS = 'investigation.climate';
+const FALLBACK_TITLE = 'Stap 9 — Hittestress gedetailleerd (PHS)';
+const FALLBACK_DESC = 'Gedetailleerde hittestressanalyse conform ISO 7933:2023 op basis van de vereiste zweetsecretie (S_Wreq) en maximale zweetsecretiecapaciteit (S_Wmax). De Predicted Heat Strain wordt ingezet wanneer de WBGT-referentiewaarde (stap 8) is overschreden.';
+
+const FALLBACK_IB0_TITLE = 'ISO 7933:2023 — PHS model principes';
 
 interface Props {
   investigation: ClimateInvestigation;
   onUpdate: (partial: Partial<ClimateInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 function fmt0(v: number | undefined | null): string {
@@ -20,17 +31,20 @@ function fmt1(v: number | undefined | null): string {
   return v != null ? v.toFixed(1) : '—';
 }
 
-export default function ClimateStep8_PHS({ investigation, onUpdate: _onUpdate }: Props) {
+export default function ClimateStep8_PHS({ investigation, onUpdate: _onUpdate, contentOverrides }: Props) {
   const { bgs, scenarios } = investigation;
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
 
   const isRelevant = scenarios.includes('heat');
 
   if (!isRelevant) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 9 — Hittestress gedetailleerd (<Abbr id="PHS">PHS</Abbr>)
-        </h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="neutral">
           Dit scenario is niet geselecteerd. Selecteer &ldquo;Warmtestress&rdquo; in stap 4 om de PHS-analyse in te schakelen.
         </Alert>
@@ -41,7 +55,7 @@ export default function ClimateStep8_PHS({ investigation, onUpdate: _onUpdate }:
   if (bgs.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 9 — Hittestress gedetailleerd (PHS)</h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="warning">
           Definieer eerst blootstellingsgroepen in stap 3.
         </Alert>
@@ -60,18 +74,29 @@ export default function ClimateStep8_PHS({ investigation, onUpdate: _onUpdate }:
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 9 — Hittestress gedetailleerd (<Abbr id="PHS">PHS</Abbr>)
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Gedetailleerde hittestressanalyse conform <Abbr id="ISO7933">ISO 7933:2023</Abbr> op basis van
-          de vereiste zweetsecretie (S_Wreq) en maximale zweetsecretiecapaciteit (S_Wmax).
-          De <Abbr id="PHS">Predicted Heat Strain</Abbr> wordt ingezet wanneer de{' '}
-          <Abbr id="WBGT">WBGT</Abbr>-referentiewaarde (stap 8) is overschreden.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Gedetailleerde hittestressanalyse conform <Abbr id="ISO7933">ISO 7933:2023</Abbr> op basis van
+                de vereiste zweetsecretie (S_Wreq) en maximale zweetsecretiecapaciteit (S_Wmax).
+                De <Abbr id="PHS">Predicted Heat Strain</Abbr> wordt ingezet wanneer de{' '}
+                <Abbr id="WBGT">WBGT</Abbr>-referentiewaarde (stap 8) is overschreden.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="ISO 7933:2023 — PHS model principes">
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
         <div className="space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
           <p>
             Het PHS-model berekent de vereiste verdampingskoeling (E_req) vanuit de warmtebalans en vergelijkt

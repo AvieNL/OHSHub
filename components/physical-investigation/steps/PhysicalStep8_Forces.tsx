@@ -6,10 +6,20 @@ import { newPhysicalId } from '@/lib/physical-investigation-storage';
 import { computeForceResult } from '@/lib/physical-stats';
 import { InfoBox } from '@/components/InfoBox';
 import { Alert, Button, Card, FieldLabel, Icon, Input, Select } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.8';
+const NS = 'investigation.physical-load';
+const FALLBACK_TITLE = 'Stap 9 — Krachten op arbeidsmiddelen (EN 1005-3)';
+const FALLBACK_DESC = 'Beoordeel krachten uitgeoefend op machines en arbeidsmiddelen. F_Br = F_B × m_v × m_f × m_d; risicodimensie m_r = F / F_Br. m_r ≤ 0,5 acceptabel; 0,5–0,7 grensgebied; > 0,7 niet acceptabel.';
+const FALLBACK_IB0_TITLE = 'EN 1005-3:2002 — Aanbevolen krachtgrenzen voor machines';
 
 interface Props {
   investigation: PhysicalInvestigation;
   onUpdate: (partial: Partial<PhysicalInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 // EN 1005-3 reference forces F_B (N) for common operations
@@ -165,7 +175,11 @@ function ForceForm({
   );
 }
 
-export default function PhysicalStep8_Forces({ investigation, onUpdate }: Props) {
+export default function PhysicalStep8_Forces({ investigation, onUpdate, contentOverrides }: Props) {
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
   const { bgs, forceTasks } = investigation;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addingBg, setAddingBg] = useState<string | null>(null);
@@ -184,7 +198,7 @@ export default function PhysicalStep8_Forces({ investigation, onUpdate }: Props)
   if (bgs.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 9 — Krachten (EN 1005-3)</h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="warning" size="md">
           Definieer eerst belastingsgroepen in stap 3.
         </Alert>
@@ -195,23 +209,42 @@ export default function PhysicalStep8_Forces({ investigation, onUpdate }: Props)
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 9 — Krachten op arbeidsmiddelen (EN 1005-3)
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Beoordeel krachten uitgeoefend op machines en arbeidsmiddelen.
-          F_Br = F_B × m_v × m_f × m_d; risicodimensie m_r = F / F_Br.
-          m_r ≤ 0,5 acceptabel; 0,5–0,7 grensgebied; &gt; 0,7 niet acceptabel.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Beoordeel krachten uitgeoefend op machines en arbeidsmiddelen.
+                F_Br = F_B × m_v × m_f × m_d; risicodimensie m_r = F / F_Br.
+                m_r ≤ 0,5 acceptabel; 0,5–0,7 grensgebied; &gt; 0,7 niet acceptabel.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="EN 1005-3:2002 — Aanbevolen krachtgrenzen voor machines">
-        De maximale toelaatbare kracht F_Br is gebaseerd op de referentiekracht F_B voor het
-        betreffende type bediening, gecorrigeerd voor bewegingssnelheid (m_v), frequentie (m_f)
-        en duur (m_d). De risicodimensie{' '}
-        <abbr title="Risicodimensie m_r = F / F_Br — verhouding gemeten kracht tot maximale toelaatbare kracht" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">m_r</abbr>{' '}
-        geeft aan hoe dicht de gemeten kracht bij de grens zit. Bij m_r &gt; 0,7:
-        herontwerp van de machine of bediening is noodzakelijk.
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <>
+                De maximale toelaatbare kracht F_Br is gebaseerd op de referentiekracht F_B voor het
+                betreffende type bediening, gecorrigeerd voor bewegingssnelheid (m_v), frequentie (m_f)
+                en duur (m_d). De risicodimensie{' '}
+                <abbr title="Risicodimensie m_r = F / F_Br — verhouding gemeten kracht tot maximale toelaatbare kracht" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">m_r</abbr>{' '}
+                geeft aan hoe dicht de gemeten kracht bij de grens zit. Bij m_r &gt; 0,7:
+                herontwerp van de machine of bediening is noodzakelijk.
+              </>
+          }
+        </InlineEdit>
       </InfoBox>
 
       {bgs.map((bg) => {

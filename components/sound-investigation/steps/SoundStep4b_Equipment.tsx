@@ -19,12 +19,23 @@ import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
 import { InfoBox } from '@/components/InfoBox';
 import { Alert, Button, Card, FieldLabel, FormGrid, Icon, Input } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
   onGoToStep: (step: number) => void;
+  contentOverrides?: Record<string, string>;
 }
+
+const STEP_KEY = 'step.5';
+const NS = 'investigation.sound';
+const FALLBACK_TITLE = 'Stap 6 — Arbeidsmiddelen (art. 7.4a Arbobesluit)';
+const FALLBACK_DESC = 'Registreer voertuigen, machines en gereedschappen die gebruikt worden bij de beoordeelde werkzaamheden.';
+const FALLBACK_IB0_TITLE = 'Wettelijke basis — art. 7.4a Arbobesluit / Machinerichtlijn 2006/42/EG';
+const FALLBACK_IB1_TITLE = 'Wettelijke basis — art. 6.6 lid 1b & 6.9 Arbobesluit / EN 458:2016';
 
 const CATEGORY_OPTIONS: { value: EquipmentCategory; label: string; short: string }[] = [
   { value: 'voertuig',        label: 'Voertuig (auto, heftruck, tractor)',      short: 'Voertuig' },
@@ -928,10 +939,17 @@ function HEGPPESection({
   );
 }
 
-export default function SoundStep4b_Equipment({ investigation, onUpdate, onGoToStep }: Props) {
+export default function SoundStep4b_Equipment({ investigation, onUpdate, onGoToStep, contentOverrides }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
   const equipment = investigation.equipment ?? [];
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
+  const ib1Title = contentOverrides?.[`${STEP_KEY}.infobox.1.title`] ?? FALLBACK_IB1_TITLE;
+  const ib1Content = contentOverrides?.[`${STEP_KEY}.infobox.1.content`];
 
   function saveEquipment(updated: SoundEquipment) {
     const exists = equipment.some((e) => e.id === updated.id);
@@ -964,31 +982,48 @@ export default function SoundStep4b_Equipment({ investigation, onUpdate, onGoToS
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 6 — Arbeidsmiddelen (art. 7.4a <abbr title="Arbeidsbesluit" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">Arbobesluit</abbr>)
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Registreer voertuigen, machines en gereedschappen die gebruikt worden bij de beoordeelde werkzaamheden.
-          Arbeidsmiddelen kunnen per taak worden geselecteerd in{' '}
-          <button type="button" onClick={() => onGoToStep(6)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 7</button>.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Registreer voertuigen, machines en gereedschappen die gebruikt worden bij de beoordeelde werkzaamheden.
+                Arbeidsmiddelen kunnen per taak worden geselecteerd in{' '}
+                <button type="button" onClick={() => onGoToStep(6)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 7</button>.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
       {/* Infobox */}
-      <InfoBox title="Wettelijke basis — art. 7.4a Arbobesluit / Machinerichtlijn 2006/42/EG">
-        <div className="space-y-1.5">
-          <p>
-            <strong>Art. 7.4a Arbobesluit</strong> — Arbeidsmiddelen die aan bijzondere gevaren onderhevig zijn,
-            worden periodiek gekeurd door een deskundige persoon of instelling.
-          </p>
-          <p>
-            <strong><Abbr id="MRL">Machinerichtlijn</Abbr> 2006/42/<abbr title="Europese Gemeenschap" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">EG</abbr></strong> —
-            De fabrikant vermeldt het gegarandeerde geluidsvermogensniveau{' '}
-            <abbr title="Gegarandeerd geluidsvermogensniveau (A-gewogen)" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">L<sub>WA</sub></abbr> en het{' '}
-            <abbr title="Gewogen geluidsdrukniveau op de werkplek, fabrieksopgave" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">L<sub>pA</sub></abbr> op de werkplek in de handleiding en{' '}
-            <abbr title="CE-conformiteitsverklaring" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">CE</abbr>-verklaring.
-          </p>
-        </div>
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <div className="space-y-1.5">
+                <p>
+                  <strong>Art. 7.4a Arbobesluit</strong> — Arbeidsmiddelen die aan bijzondere gevaren onderhevig zijn,
+                  worden periodiek gekeurd door een deskundige persoon of instelling.
+                </p>
+                <p>
+                  <strong><Abbr id="MRL">Machinerichtlijn</Abbr> 2006/42/<abbr title="Europese Gemeenschap" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">EG</abbr></strong> —
+                  De fabrikant vermeldt het gegarandeerde geluidsvermogensniveau{' '}
+                  <abbr title="Gegarandeerd geluidsvermogensniveau (A-gewogen)" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">L<sub>WA</sub></abbr> en het{' '}
+                  <abbr title="Gewogen geluidsdrukniveau op de werkplek, fabrieksopgave" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">L<sub>pA</sub></abbr> op de werkplek in de handleiding en{' '}
+                  <abbr title="CE-conformiteitsverklaring" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">CE</abbr>-verklaring.
+                </p>
+              </div>
+          }
+        </InlineEdit>
       </InfoBox>
 
       {/* Equipment list */}
@@ -1095,20 +1130,31 @@ export default function SoundStep4b_Equipment({ investigation, onUpdate, onGoToS
             </p>
           </div>
 
-          <InfoBox title="Wettelijke basis — art. 6.6 lid 1b &amp; 6.9 Arbobesluit / EN 458:2016">
-            <div className="space-y-1.5">
-              <p>
-                <strong>Art. 6.6 lid 1b:</strong> Bij de onderste actiewaarde (80 dB(A)) zijn gehoorbeschermers beschikbaar op verzoek.
-                Boven de bovenste actiewaarde (85 dB(A)) is het gebruik verplicht.
-              </p>
-              <p>
-                <strong>Art. 6.9:</strong> Gehoorbescherming moet de blootstelling aan het oor (<Formula math="L_{EX,8h,oor}" />) terugbrengen tot onder de grenswaarde (87 dB(A)).
-              </p>
-              <p>
-                <strong>EN 458:2016:</strong> Drie rekenmethoden, oplopend in nauwkeurigheid:{' '}
-                SNR/2 (methode 1) · HML (methode 2) · octaafband (methode 3).
-              </p>
-            </div>
+          <InfoBox title={
+            <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.1.title`}
+              initialValue={ib1Title} fallback={FALLBACK_IB1_TITLE}>
+              {ib1Title}
+            </InlineEdit>
+          }>
+            <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.1.content`}
+              initialValue={ib1Content ?? ''} fallback="" multiline markdown>
+              {ib1Content
+                ? <MarkdownContent>{ib1Content}</MarkdownContent>
+                : <div className="space-y-1.5">
+                    <p>
+                      <strong>Art. 6.6 lid 1b:</strong> Bij de onderste actiewaarde (80 dB(A)) zijn gehoorbeschermers beschikbaar op verzoek.
+                      Boven de bovenste actiewaarde (85 dB(A)) is het gebruik verplicht.
+                    </p>
+                    <p>
+                      <strong>Art. 6.9:</strong> Gehoorbescherming moet de blootstelling aan het oor (<Formula math="L_{EX,8h,oor}" />) terugbrengen tot onder de grenswaarde (87 dB(A)).
+                    </p>
+                    <p>
+                      <strong>EN 458:2016:</strong> Drie rekenmethoden, oplopend in nauwkeurigheid:{' '}
+                      SNR/2 (methode 1) · HML (methode 2) · octaafband (methode 3).
+                    </p>
+                  </div>
+              }
+            </InlineEdit>
           </InfoBox>
 
           {investigation.hegs.map((heg) => (

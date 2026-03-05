@@ -12,12 +12,21 @@ import { newSoundId } from '@/lib/sound-investigation-storage';
 import { computeAllStatistics } from '@/lib/sound-stats';
 import { Abbr } from '@/components/Abbr';
 import { Alert, Button, Card, FieldLabel, FormGrid, Icon, Input, Select, Textarea } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
   onGoToStep: (step: number) => void;
+  contentOverrides?: Record<string, string>;
 }
+
+const STEP_KEY = 'step.10';
+const NS = 'investigation.sound';
+const FALLBACK_TITLE = 'Stap 11 — Beheersmaatregelen';
+const FALLBACK_DESC = 'Maatregelen zijn automatisch voorgesteld op basis van het beoordelingsresultaat, conform de Arbeidshygiënische Strategie.';
 
 const TYPE_META: Record<SoundMeasureType, { label: string; prio: string }> = {
   substitution:   { label: 'Substitutie',                prio: 'Prioriteit 1' },
@@ -335,12 +344,15 @@ function MeasureForm({
   );
 }
 
-export default function SoundStep9_Measures({ investigation, onUpdate, onGoToStep }: Props) {
+export default function SoundStep9_Measures({ investigation, onUpdate, onGoToStep, contentOverrides }: Props) {
   const { measures, hegs } = investigation;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
   const [noStatsWarning, setNoStatsWarning] = useState(false);
   const autoPopulatedRef = useRef(false);
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
 
   const hegMap = Object.fromEntries(hegs.map((h) => [h.id, h.name]));
   const allHegIds = hegs.map((h) => h.id);
@@ -389,14 +401,20 @@ export default function SoundStep9_Measures({ investigation, onUpdate, onGoToSte
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-            Stap 11 — Beheersmaatregelen
-          </h2>
-          <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-            Maatregelen zijn automatisch voorgesteld op basis van het beoordelingsresultaat, conform de
-            Arbeidshygiënische Strategie (substitutie → technisch → organisatorisch →{' '}
-            <Abbr id="PBM">PBM</Abbr>). Pas de omschrijving, verantwoordelijke en deadline aan.
-          </p>
+          <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+          <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+            initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+            {desc
+              ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  <MarkdownContent>{desc}</MarkdownContent>
+                </p>
+              : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  Maatregelen zijn automatisch voorgesteld op basis van het beoordelingsresultaat, conform de
+                  Arbeidshygiënische Strategie (substitutie → technisch → organisatorisch →{' '}
+                  <Abbr id="PBM">PBM</Abbr>). Pas de omschrijving, verantwoordelijke en deadline aan.
+                </p>
+            }
+          </InlineEdit>
         </div>
         <Button
           variant="secondary"

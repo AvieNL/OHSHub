@@ -1,10 +1,42 @@
 import Link from 'next/link';
 import { themes } from '@/lib/themes';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { getNamespaceContent } from '@/lib/content';
+import HomeThemesGrid from '@/components/HomeThemesGrid';
+import type { HomeThemeItem } from '@/components/HomeThemesGrid';
+import InlineEdit from '@/components/InlineEdit';
+
+const FALLBACK_SUBTITLE =
+  'Kennisplatform voor arbeidshygiënisten, hogere veiligheidskundigen en A&O-deskundigen.';
 
 export default async function Home() {
   const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Load content overrides in parallel
+  const [homeOverrides, ...themeOverrides] = await Promise.all([
+    getNamespaceContent('page.home'),
+    ...themes.map((t) => getNamespaceContent(`theme.${t.slug}`)),
+  ]);
+
+  const pageSubtitle = homeOverrides['subtitle'] ?? FALLBACK_SUBTITLE;
+
+  // Merge overrides with theme data (CSS classes always from lib/themes.ts)
+  const themedItems: HomeThemeItem[] = themes.map((theme, i) => {
+    const ov = themeOverrides[i];
+    return {
+      slug: theme.slug,
+      name: ov['name'] ?? theme.name,
+      description: ov['description'] ?? theme.description,
+      originalName: theme.name,
+      originalDescription: theme.description,
+      iconClass: theme.iconClass,
+      borderClass: theme.borderClass,
+      iconPaths: theme.iconPaths,
+    };
+  });
 
   if (!user) {
     return (
@@ -14,7 +46,7 @@ export default async function Home() {
             OHSHub
           </h1>
           <p className="mt-3 text-lg text-zinc-500 dark:text-zinc-400">
-            Kennisplatform voor arbeidshygiënisten, hogere veiligheidskundigen en A&amp;O-deskundigen.
+            {pageSubtitle}
           </p>
         </div>
 
@@ -38,7 +70,7 @@ export default async function Home() {
             Beschikbare thema&apos;s
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {themes.map((theme) => (
+            {themedItems.map((theme) => (
               <div
                 key={theme.slug}
                 className={`flex flex-col gap-3 rounded-xl border-l-4 bg-white p-6 shadow-sm ring-1 ring-zinc-100 opacity-60 dark:bg-zinc-900 dark:ring-zinc-800 ${theme.borderClass}`}
@@ -84,55 +116,23 @@ export default async function Home() {
         <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
           OHSHub
         </h1>
-        <p className="mt-3 text-lg text-zinc-500 dark:text-zinc-400">
-          Kennisplatform voor arbeidshygiënisten, hogere veiligheidskundigen en A&amp;O-deskundigen.
-        </p>
+        <InlineEdit
+          namespace="page.home"
+          contentKey="subtitle"
+          initialValue={pageSubtitle}
+          fallback={FALLBACK_SUBTITLE}
+        >
+          <p className="mt-3 text-lg text-zinc-500 dark:text-zinc-400">
+            {pageSubtitle}
+          </p>
+        </InlineEdit>
       </div>
 
       <section>
         <h2 className="mb-6 text-sm font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
           Thema&apos;s
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {themes.map((theme) => (
-            <Link
-              key={theme.slug}
-              href={`/themes/${theme.slug}`}
-              className={`group flex flex-col gap-3 rounded-xl border-l-4 bg-white p-6 shadow-sm ring-1 ring-zinc-100 transition hover:shadow-md dark:bg-zinc-900 dark:ring-zinc-800 ${theme.borderClass}`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <svg
-                    className={`h-5 w-5 flex-shrink-0 ${theme.iconClass}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                  >
-                    {theme.iconPaths.map((d, i) => (
-                      <path key={i} strokeLinecap="round" strokeLinejoin="round" d={d} />
-                    ))}
-                  </svg>
-                  <span className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
-                    {theme.name}
-                  </span>
-                </div>
-                <svg
-                  className="h-4 w-4 flex-shrink-0 text-zinc-400 transition-transform group-hover:translate-x-1"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-              <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                {theme.description}
-              </p>
-            </Link>
-          ))}
-        </div>
+        <HomeThemesGrid items={themedItems} />
       </section>
     </main>
   );

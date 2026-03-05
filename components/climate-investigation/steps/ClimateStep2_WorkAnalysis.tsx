@@ -8,10 +8,21 @@ import { getMetabolicRate } from '@/lib/climate-stats';
 import { Abbr } from '@/components/Abbr';
 import { InfoBox } from '@/components/InfoBox';
 import { Button, Card, FieldLabel, Icon, Input, Textarea } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.2';
+const NS = 'investigation.climate';
+const FALLBACK_TITLE = 'Stap 3 — Werkanalyse';
+const FALLBACK_DESC = "Definieer Blootstellingsgroepen (BG's) — groepen medewerkers met vergelijkbare thermische blootstelling. Stel per BG de metabole belasting en kledinginsulatie in.";
+
+const FALLBACK_IB0_TITLE = 'ISO 7243:2017 / ISO 7730:2025 — Werkanalyse';
 
 interface Props {
   investigation: ClimateInvestigation;
   onUpdate: (partial: Partial<ClimateInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 function BGForm({
@@ -228,11 +239,16 @@ function BGForm({
   );
 }
 
-export default function ClimateStep2_WorkAnalysis({ investigation, onUpdate }: Props) {
+export default function ClimateStep2_WorkAnalysis({ investigation, onUpdate, contentOverrides }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftNew, setDraftNew] = useState<ClimateBG | null>(null);
   const { bgs } = investigation;
   const newId = '__new__';
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
 
   function newBG(): ClimateBG {
     return {
@@ -268,20 +284,39 @@ export default function ClimateStep2_WorkAnalysis({ investigation, onUpdate }: P
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 3 — Werkanalyse
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Definieer Blootstellingsgroepen (<Abbr id="BG">BG</Abbr>&apos;s) — groepen medewerkers met vergelijkbare thermische
-          blootstelling. Stel per BG de metabole belasting en kledinginsulatie in.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Definieer Blootstellingsgroepen (<Abbr id="BG">BG</Abbr>&apos;s) — groepen medewerkers met vergelijkbare thermische
+                blootstelling. Stel per BG de metabole belasting en kledinginsulatie in.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="ISO 7243:2017 / ISO 7730:2025 — Werkanalyse">
-        Per blootstellingsgroep worden vastgesteld: de metabole belasting M (W/m²) conform{' '}
-        <Abbr id="ISO7243">ISO 8996</Abbr>, de kledinginsulatie I_cl (clo) conform ISO 9920,
-        het werkrooster en de acclimatisatiestatus. Deze gegevens zijn basis voor alle berekeningen
-        (<Abbr id="PMV">PMV</Abbr>, <Abbr id="WBGT">WBGT</Abbr>, <Abbr id="IREQ">IREQ</Abbr>).
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <>
+                Per blootstellingsgroep worden vastgesteld: de metabole belasting M (W/m²) conform{' '}
+                <Abbr id="ISO7243">ISO 8996</Abbr>, de kledinginsulatie I_cl (clo) conform ISO 9920,
+                het werkrooster en de acclimatisatiestatus. Deze gegevens zijn basis voor alle berekeningen
+                (<Abbr id="PMV">PMV</Abbr>, <Abbr id="WBGT">WBGT</Abbr>, <Abbr id="IREQ">IREQ</Abbr>).
+              </>
+          }
+        </InlineEdit>
       </InfoBox>
 
       {/* BG list */}

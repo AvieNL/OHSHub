@@ -1,21 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireAdmin } from '@/lib/auth';
 
 type Params = { params: Promise<{ id: string }> };
-
-async function requireAdmin() {
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data: roleRow } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', user.id)
-    .single();
-  if (roleRow?.role !== 'admin') return null;
-  return user;
-}
 
 export async function GET(_req: Request, { params }: Params) {
   const { id } = await params;
@@ -26,7 +13,7 @@ export async function GET(_req: Request, { params }: Params) {
   if (authError || !authUser.user) return NextResponse.json({ error: 'Gebruiker niet gevonden' }, { status: 404 });
 
   const [{ data: roleRow }, { data: profileRow }] = await Promise.all([
-    supabaseAdmin.from('user_roles').select('role, privacy_version_accepted, privacy_accepted_at').eq('user_id', id).single(),
+    supabaseAdmin.from('user_roles').select('role, privacy_version_accepted, privacy_accepted_at, privacy_required_version').eq('user_id', id).single(),
     supabaseAdmin.from('profiles').select('first_name, tussenvoegsel, last_name, company').eq('user_id', id).single(),
   ]);
 
@@ -38,6 +25,7 @@ export async function GET(_req: Request, { params }: Params) {
     role: roleRow?.role ?? 'gebruiker',
     privacy_version_accepted: roleRow?.privacy_version_accepted ?? null,
     privacy_accepted_at: roleRow?.privacy_accepted_at ?? null,
+    privacy_required_version: roleRow?.privacy_required_version ?? null,
     first_name: profileRow?.first_name ?? null,
     tussenvoegsel: profileRow?.tussenvoegsel ?? null,
     last_name: profileRow?.last_name ?? null,
@@ -51,8 +39,41 @@ export async function PATCH(request: Request, { params }: Params) {
   if (!admin) return NextResponse.json({ error: 'Geen toegang' }, { status: 403 });
 
   const body = await request.json();
-  const { role } = body;
+  const { role, action } = body;
 
+  // Handle privacy push/clear actions
+  if (action === 'privacy-push') {
+    const { data: latestRow, error: verError } = await supabaseAdmin
+      .from('privacy_versions')
+      .select('version_number')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (verError || !latestRow) {
+      return NextResponse.json({ error: 'Geen privacyversie gevonden' }, { status: 404 });
+    }
+
+    const { error } = await supabaseAdmin
+      .from('user_roles')
+      .update({ privacy_required_version: latestRow.version_number })
+      .eq('user_id', id);
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true, version: latestRow.version_number });
+  }
+
+  if (action === 'privacy-clear') {
+    const { error } = await supabaseAdmin
+      .from('user_roles')
+      .update({ privacy_required_version: null })
+      .eq('user_id', id);
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  // Default: role update
   if (!['admin', 'test-gebruiker', 'gebruiker'].includes(role)) {
     return NextResponse.json({ error: 'Ongeldige rol' }, { status: 400 });
   }

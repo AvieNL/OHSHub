@@ -6,11 +6,20 @@ import { Abbr } from '@/components/Abbr';
 import { Button, Input, Textarea, Alert, Icon } from '@/components/ui';
 import { PersonSection } from '@/components/shared/scope/PersonSection';
 import { ScopeFields } from '@/components/shared/scope/ScopeFields';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: Investigation;
   onUpdate: (partial: Partial<Investigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
+
+const STEP_KEY = 'step.1';
+const NS = 'investigation.hazardous-substances';
+const FALLBACK_TITLE = 'Stap 2 — Opdracht en juridische kaders vaststellen';
+const FALLBACK_DESC = 'Scherpstellen van de onderzoeksvraag, scope, en de toepasselijke wet- en regelgeving. Dit vormt de basis voor de rest van het onderzoek.';
 
 const NORMS: { id: string; label: React.ReactNode }[] = [
   { id: 'nen-en-689', label: 'NEN-EN 689:2018+C1:2019 — Meetstrategie inhalatieblootstelling' },
@@ -38,8 +47,11 @@ function Tip({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function Step1_Scope({ investigation, onUpdate }: Props) {
+export default function Step1_Scope({ investigation, onUpdate, contentOverrides }: Props) {
   const scope = investigation.scope;
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
 
   function updateScope(patch: Partial<InvestigationScope>) {
     onUpdate({ scope: { ...scope, ...patch } });
@@ -59,13 +71,19 @@ export default function Step1_Scope({ investigation, onUpdate }: Props) {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 2 — Opdracht en juridische kaders vaststellen
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Scherpstellen van de onderzoeksvraag, scope, en de toepasselijke wet- en regelgeving.
-          Dit vormt de basis voor de rest van het onderzoek.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Scherpstellen van de onderzoeksvraag, scope, en de toepasselijke wet- en regelgeving.
+                Dit vormt de basis voor de rest van het onderzoek.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
       {/* 1.1 Betrokken personen */}

@@ -7,10 +7,20 @@ import { computeLiftingResult, computeCarryingResult } from '@/lib/physical-stat
 import { InfoBox } from '@/components/InfoBox';
 import { Abbr } from '@/components/Abbr';
 import { Alert, Button, Card, FieldLabel, Icon, Input, Select } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.4';
+const NS = 'investigation.physical-load';
+const FALLBACK_TITLE = 'Stap 5 — Tillen & dragen (NIOSH)';
+const FALLBACK_DESC = 'Voer per belastingsgroep de tiltaken in en bereken de Tillingsindex LI. Formule: RWL = 23 × Hf × Vf × Df × Ff × Af × Cf';
+const FALLBACK_IB0_TITLE = 'NEN-ISO 11228-1:2021 — NIOSH-methode';
 
 interface Props {
   investigation: PhysicalInvestigation;
   onUpdate: (partial: Partial<PhysicalInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 const DURATION_LABELS: Record<NIOSHDuration, string> = {
@@ -208,7 +218,11 @@ function LiftingForm({
   );
 }
 
-export default function PhysicalStep4_Lifting({ investigation, onUpdate }: Props) {
+export default function PhysicalStep4_Lifting({ investigation, onUpdate, contentOverrides }: Props) {
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
   const { bgs, liftingTasks, carryingTasks, methods } = investigation;
   const [editingLiftId, setEditingLiftId] = useState<string | null>(null);
   const [addingLiftBg, setAddingLiftBg] = useState<string | null>(null);
@@ -238,7 +252,7 @@ export default function PhysicalStep4_Lifting({ investigation, onUpdate }: Props
   if (bgs.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 5 — Tillen &amp; dragen (NIOSH)</h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="warning" size="md">
           Definieer eerst belastingsgroepen in stap 3.
         </Alert>
@@ -249,26 +263,45 @@ export default function PhysicalStep4_Lifting({ investigation, onUpdate }: Props
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 5 — Tillen &amp; dragen (<Abbr id="NIOSH">NIOSH</Abbr>)
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Voer per belastingsgroep de tiltaken in en bereken de Tillingsindex{' '}
-          <abbr title="Lifting Index: LI = Gewicht / Recommended Weight Limit" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">LI</abbr>.
-          Formule: <code className="rounded bg-zinc-100 px-1 text-xs dark:bg-zinc-800">RWL = 23 × Hf × Vf × Df × Ff × Af × Cf</code>
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Voer per belastingsgroep de tiltaken in en bereken de Tillingsindex{' '}
+                <abbr title="Lifting Index: LI = Gewicht / Recommended Weight Limit" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">LI</abbr>.
+                Formule: <code className="rounded bg-zinc-100 px-1 text-xs dark:bg-zinc-800">RWL = 23 × Hf × Vf × Df × Ff × Af × Cf</code>
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="NEN-ISO 11228-1:2021 — NIOSH-methode">
-        De{' '}
-        <abbr title="National Institute for Occupational Safety and Health" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">NIOSH</abbr>{' '}
-        Recommended Weight Limit (<abbr title="Recommended Weight Limit" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">RWL</abbr>)
-        is het maximale gewicht dat onder optimale omstandigheden door 90% van de beroepsbevolking
-        kan worden getild zonder risico op lage rugklachten. De Tillingsindex{' '}
-        <abbr title="Lifting Index = Gewicht / RWL" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">LI</abbr>{' '}
-        = G / RWL:
-        LI ≤ 1 acceptabel, 1–2 risicovol, &gt; 2 zeer risicovol.
-        Referentiegewicht = 23 kg (optimale omstandigheden, geen verzwarende factoren).
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <>
+                De{' '}
+                <abbr title="National Institute for Occupational Safety and Health" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">NIOSH</abbr>{' '}
+                Recommended Weight Limit (<abbr title="Recommended Weight Limit" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">RWL</abbr>)
+                is het maximale gewicht dat onder optimale omstandigheden door 90% van de beroepsbevolking
+                kan worden getild zonder risico op lage rugklachten. De Tillingsindex{' '}
+                <abbr title="Lifting Index = Gewicht / RWL" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">LI</abbr>{' '}
+                = G / RWL:
+                LI ≤ 1 acceptabel, 1–2 risicovol, &gt; 2 zeer risicovol.
+                Referentiegewicht = 23 kg (optimale omstandigheden, geen verzwarende factoren).
+              </>
+          }
+        </InlineEdit>
       </InfoBox>
 
       {/* Per BG: lifting tasks */}

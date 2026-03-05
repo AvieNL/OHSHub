@@ -1,21 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireAdmin } from '@/lib/auth';
 
 type Params = { params: Promise<{ id: string }> };
-
-async function requireAdmin() {
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data: roleRow } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', user.id)
-    .single();
-  if (roleRow?.role !== 'admin') return null;
-  return user;
-}
 
 export async function GET(_req: Request, { params }: Params) {
   const { id } = await params;

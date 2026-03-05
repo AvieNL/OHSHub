@@ -1,21 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-
-async function requireAdmin() {
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data: roleRow } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', user.id)
-    .single();
-
-  if (roleRow?.role !== 'admin') return null;
-  return user;
-}
+import { requireAdmin } from '@/lib/auth';
 
 export async function GET() {
   const admin = await requireAdmin();
@@ -28,9 +13,9 @@ export async function GET() {
   // Get all roles + privacy consent
   const { data: roles } = await supabaseAdmin
     .from('user_roles')
-    .select('user_id, role, privacy_version_accepted, privacy_accepted_at');
+    .select('user_id, role, privacy_version_accepted, privacy_accepted_at, privacy_required_version');
 
-  const roleMap = new Map((roles ?? []).map((r: { user_id: string; role: string; privacy_version_accepted: string | null; privacy_accepted_at: string | null }) => [r.user_id, r]));
+  const roleMap = new Map((roles ?? []).map((r: { user_id: string; role: string; privacy_version_accepted: string | null; privacy_accepted_at: string | null; privacy_required_version: string | null }) => [r.user_id, r]));
 
   // Get all profiles
   const { data: profiles } = await supabaseAdmin
@@ -39,10 +24,11 @@ export async function GET() {
 
   const profileMap = new Map((profiles ?? []).map((p: { user_id: string; first_name: string | null; tussenvoegsel: string | null; last_name: string | null; company: string | null }) => [p.user_id, p]));
 
-  // Get investigation counts per user
+  // Get investigation counts per user — fetch user_id only and count in JS
+  // (PostgREST aggregate syntax count:id.count() is not enabled by default on Supabase hosted)
   const { data: invCounts } = await supabaseAdmin
     .from('investigations')
-    .select('user_id, type');
+    .select('user_id');
 
   const countMap = new Map<string, number>();
   for (const inv of invCounts ?? []) {
@@ -58,6 +44,7 @@ export async function GET() {
       role: roleRow?.role ?? 'gebruiker',
       privacy_version_accepted: roleRow?.privacy_version_accepted ?? null,
       privacy_accepted_at: roleRow?.privacy_accepted_at ?? null,
+      privacy_required_version: roleRow?.privacy_required_version ?? null,
       first_name: profileRow?.first_name ?? null,
       tussenvoegsel: profileRow?.tussenvoegsel ?? null,
       last_name: profileRow?.last_name ?? null,

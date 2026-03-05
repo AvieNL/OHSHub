@@ -9,12 +9,22 @@ import { Formula } from '@/components/Formula';
 import { SectionRef } from '@/components/SectionRef';
 import { InfoBox } from '@/components/InfoBox';
 import { Alert, Button, Card, FieldLabel, FormGrid, Icon, Input } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
   onGoToStep: (step: number) => void;
+  contentOverrides?: Record<string, string>;
 }
+
+const STEP_KEY = 'step.4';
+const NS = 'investigation.sound';
+const FALLBACK_TITLE = 'Stap 5 — Meetapparatuur (§5, §12 NEN-EN-ISO 9612:2025)';
+const FALLBACK_DESC = 'Registreer het gebruikte meetapparaat inclusief kalibratiegegevens. Dit is verplicht onderdeel van het meetrapport (§15.c).';
+const FALLBACK_IB0_TITLE = '§12.2 / §12.3 — Veldkalibratie & microfoonplaatsing';
 
 const INSTRUMENT_TYPES: { value: InstrumentType; label: string; u2: number; norm: string }[] = [
   { value: 'slm-class1',  label: 'Geluidniveaumeter klasse 1 (IEC 61672-1)',  u2: 0.7, norm: 'IEC 61672-1, klasse 1' },
@@ -168,10 +178,15 @@ function InstrumentForm({
   );
 }
 
-export default function SoundStep4_Instruments({ investigation, onUpdate }: Props) {
+export default function SoundStep4_Instruments({ investigation, onUpdate, contentOverrides }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
   const { instruments } = investigation;
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
 
   function saveInstrument(updated: SoundInstrument) {
     const exists = instruments.some((i) => i.id === updated.id);
@@ -190,21 +205,38 @@ export default function SoundStep4_Instruments({ investigation, onUpdate }: Prop
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 5 — Meetapparatuur (<SectionRef id="§5">§5</SectionRef>, <SectionRef id="§12">§12</SectionRef> <Abbr id="NEN9612">NEN-EN-ISO 9612</Abbr>:2025)
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Registreer het gebruikte meetapparaat inclusief kalibratiegegevens. Dit is verplicht
-          onderdeel van het meetrapport (<SectionRef id="§15.c">§15.c</SectionRef>).
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Registreer het gebruikte meetapparaat inclusief kalibratiegegevens. Dit is verplicht
+                onderdeel van het meetrapport (<SectionRef id="§15.c">§15.c</SectionRef>).
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="§12.2 / §12.3 — Veldkalibratie & microfoonplaatsing">
-        <div className="space-y-2">
-          <p><SectionRef id="§12.2">§12.2 Veldkalibratie</SectionRef>: Voer voor én na elke meetserie een akoestische kalibratie uit.
-            Als de afwijking voor een bepaalde frequentie meer dan 0,5 dB bedraagt, moeten de meetresultaten worden afgekeurd.</p>
-          <p><SectionRef id="§12.3">§12.3 Microfoonplaatsing</SectionRef>: Draagbaar instrument: microfoon op de schouder, 0,1 m van de gehooropening, ~0,04 m boven de schouder.</p>
-        </div>
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <div className="space-y-2">
+                <p><SectionRef id="§12.2">§12.2 Veldkalibratie</SectionRef>: Voer voor én na elke meetserie een akoestische kalibratie uit.
+                  Als de afwijking voor een bepaalde frequentie meer dan 0,5 dB bedraagt, moeten de meetresultaten worden afgekeurd.</p>
+                <p><SectionRef id="§12.3">§12.3 Microfoonplaatsing</SectionRef>: Draagbaar instrument: microfoon op de schouder, 0,1 m van de gehooropening, ~0,04 m boven de schouder.</p>
+              </div>
+          }
+        </InlineEdit>
       </InfoBox>
 
       {/* Instrument list */}

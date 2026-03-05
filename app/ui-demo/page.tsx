@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { Alert, Badge, Button, Card, FieldLabel, FormGrid, Icon, Input, Select, Textarea } from '@/components/ui';
 import type { AlertVariant, BadgeVariant, ButtonVariant, ButtonSize, IconName } from '@/components/ui';
 import { Formula } from '@/components/Formula';
+import MarkdownContent from '@/components/MarkdownContent';
 
 // ─── Hulpcomponenten voor de demo ─────────────────────────────────────────────
 
@@ -88,7 +89,7 @@ export default function UiDemoPage() {
             <Row key={v} label={v}>
               <Alert variant={v} size="sm">
                 {v === 'warning' && '⚠ Labkalibratie verouderd — herkeuring aanbevolen (§12.1).'}
-                {v === 'error'   && '✕ Kalibratiefout &gt; 0,5 dB — meetserie afgekeurd (§12.2).'}
+                {v === 'error'   && '✕ Kalibratiefout > 0,5 dB — meetserie afgekeurd (§12.2).'}
                 {v === 'success' && '✓ 5 geldige metingen — berekening beschikbaar.'}
                 {v === 'info'    && 'ℹ Strategie 1 vereist minimaal 3 metingen per taak (§9.3.2).'}
                 {v === 'orange'  && 'Gecombineerde APF gebruikt in stap 9 en stap 10.'}
@@ -478,6 +479,102 @@ export default function UiDemoPage() {
             display
           />
         </Row>
+      </Section>
+
+      {/* ── Markdown ──────────────────────────────────────────────────────────── */}
+      <Section title="Markdown — CMS-tekstvelden via MarkdownContent">
+        <p className="text-xs text-zinc-400">
+          <Code>{'<MarkdownContent className="...">{markdownString}</MarkdownContent>'}</Code>{' '}
+          · Ondersteunt koppen, lijsten, links, vet/cursief, citaten, scheidingslijnen en formule-/afkortingsmarkers.
+        </p>
+
+        {/* Koppen */}
+        <div>
+          <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">Koppen — # H1 · ## H2 · ### H3</p>
+          <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+            <MarkdownContent>{`# Kop niveau 1\n## Kop niveau 2\n### Kop niveau 3`}</MarkdownContent>
+          </div>
+        </div>
+
+        {/* Alinea's en nadruk */}
+        <div>
+          <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">Alinea's · **vet** · *cursief* · ~~doorhaling~~</p>
+          <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+            <MarkdownContent>{`Dit is een gewone alinea met **vette tekst**, *cursieve tekst* en ~~doorgestreepte tekst~~.\n\nEen tweede alinea toont de witruimte tussen alinea's.`}</MarkdownContent>
+          </div>
+        </div>
+
+        {/* Ongeordende lijst */}
+        <div>
+          <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">Ongeordende lijst — - item</p>
+          <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+            <MarkdownContent>{`- Eerste item\n- Tweede item\n- Derde item\n  - Genest item A\n  - Genest item B`}</MarkdownContent>
+          </div>
+        </div>
+
+        {/* Geordende lijst */}
+        <div>
+          <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">Geordende lijst — 1. item</p>
+          <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+            <MarkdownContent>{`1. Eerste stap\n2. Tweede stap\n3. Derde stap`}</MarkdownContent>
+          </div>
+        </div>
+
+        {/* Links */}
+        <div>
+          <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">Links — [tekst](url) · automatische URL · e-mail</p>
+          <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+            <MarkdownContent>{`[Klik hier](https://ohshub.nl) voor een expliciete link.\n\nAutomatische URL: https://ohshub.nl\n\nE-mail: info@diversithijs.nl`}</MarkdownContent>
+          </div>
+        </div>
+
+        {/* Citaat */}
+        <div>
+          <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">Citaat — {'> tekst'}</p>
+          <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+            <MarkdownContent>{`> Dit is een citaat of een opvallende toelichting.\n> Meerdere regels zijn mogelijk.`}</MarkdownContent>
+          </div>
+        </div>
+
+        {/* Scheidingslijn */}
+        <div>
+          <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">Scheidingslijn — ---</p>
+          <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+            <MarkdownContent>{`Tekst boven de lijn.\n\n---\n\nTekst onder de lijn.`}</MarkdownContent>
+          </div>
+        </div>
+
+        {/* Formule-markers */}
+        <div>
+          <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">Formule-marker — {`[[LaTeX]]`}</p>
+          <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+            <MarkdownContent>{`De dagblootstellingswaarde [[L_{EX,8h}]] wordt berekend via de energetisch gemiddelde formule.`}</MarkdownContent>
+          </div>
+        </div>
+
+        {/* Afkortingsmarkers */}
+        <div>
+          <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">Afkortings-marker — {`[[abbr:ID]]`} · {`[[abbr:ID:eigen omschrijving]]`}</p>
+          <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+            <MarkdownContent>{`Grenswaarden zijn vastgesteld conform [[abbr:AVG]] art. 6 en de [[abbr:OELV:Occupational Exposure Limit Value]]-systematiek.`}</MarkdownContent>
+          </div>
+        </div>
+
+        {/* HTML (abbr-tag) */}
+        <div>
+          <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">Rauwe HTML — {'<abbr title="...">'}tekst{'</abbr>'}</p>
+          <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+            <MarkdownContent>{`Meting conform <abbr title="Nederlandse Norm — Europese Norm" class="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">NEN-EN</abbr>-ISO 9612:2025.`}</MarkdownContent>
+          </div>
+        </div>
+
+        {/* Volledig voorbeeld */}
+        <div>
+          <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">Volledig voorbeeld — combinatie van elementen</p>
+          <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+            <MarkdownContent>{`## Toepassingsbereik\n\nDeze methode is van toepassing op werkplekken waar de blootstelling aan [[abbr:OELV]] relevant is.\n\n**Stappen:**\n\n1. Identificeer de blootstellingsgroepen.\n2. Voer een meting uit conform [NEN-EN-ISO 9612](https://www.nen.nl).\n3. Bereken [[L_{EX,8h}]] per groep.\n\n> Bij twijfel over de meetstrategie: raadpleeg eerst de norm.\n\nContact: info@diversithijs.nl`}</MarkdownContent>
+          </div>
+        </div>
       </Section>
 
       {/* Footer */}

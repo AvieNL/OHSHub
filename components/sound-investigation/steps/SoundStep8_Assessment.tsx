@@ -8,12 +8,21 @@ import { Formula } from '@/components/Formula';
 import { LegalRef } from '@/components/LegalRef';
 import { InfoBox } from '@/components/InfoBox';
 import { Alert, FormGrid, Input, Select, Textarea } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
   onGoToStep: (step: number) => void;
+  contentOverrides?: Record<string, string>;
 }
+
+const STEP_KEY = 'step.9';
+const NS = 'investigation.sound';
+const FALLBACK_TITLE = 'Stap 10 — Beoordeling actiewaarden (Arbobesluit art. 6.6–6.8)';
+const FALLBACK_DESC = 'Toetsing van L_EX,8h,95% aan de actiewaarden en grenswaarde conform het Arbobesluit.';
 
 function fmt1(n: number): string {
   return isFinite(n) ? n.toFixed(1) : '—';
@@ -928,8 +937,11 @@ function HEGAssessment({
   );
 }
 
-export default function SoundStep8_Assessment({ investigation, onUpdate, onGoToStep }: Props) {
+export default function SoundStep8_Assessment({ investigation, onUpdate, onGoToStep, contentOverrides }: Props) {
   const { hegs, statistics, measurements: allMeasurements } = investigation;
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
 
   function updateHEG(updated: SoundHEG) {
     onUpdate({ hegs: hegs.map((h) => (h.id === updated.id ? updated : h)) });
@@ -944,9 +956,7 @@ export default function SoundStep8_Assessment({ investigation, onUpdate, onGoToS
   if (hegs.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 10 — Beoordeling actiewaarden
-        </h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="warning" size="md">
           Definieer eerst <Abbr id="HEG">HEG</Abbr>&apos;s in{' '}
           <button type="button" onClick={() => onGoToStep(2)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 3</button>.
@@ -958,14 +968,20 @@ export default function SoundStep8_Assessment({ investigation, onUpdate, onGoToS
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 10 — Beoordeling actiewaarden (Arbobesluit art. 6.6–6.8)
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Toetsing van <Formula math="L_{EX,8h,95\%}" /> aan de actiewaarden en grenswaarde conform het Arbobesluit.
-          De invloed van gehoorbescherming (<Abbr id="PBM">PBM</Abbr>) wordt weergegeven op basis van de gegevens uit{' '}
-          <button type="button" onClick={() => onGoToStep(5)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 6 (Arbeidsmiddelen)</button>.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Toetsing van <Formula math="L_{EX,8h,95\%}" /> aan de actiewaarden en grenswaarde conform het Arbobesluit.
+                De invloed van gehoorbescherming (<Abbr id="PBM">PBM</Abbr>) wordt weergegeven op basis van de gegevens uit{' '}
+                <button type="button" onClick={() => onGoToStep(5)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 6 (Arbeidsmiddelen)</button>.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
       {/* Threshold reference */}

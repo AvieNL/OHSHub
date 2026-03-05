@@ -4,11 +4,20 @@ import { useState } from 'react';
 import type { Investigation, WorkTask, ProcessType } from '@/lib/investigation-types';
 import { newId } from '@/lib/investigation-storage';
 import { Button, Input, Textarea, Alert, Icon } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: Investigation;
   onUpdate: (partial: Partial<Investigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
+
+const STEP_KEY = 'step.3';
+const NS = 'investigation.hazardous-substances';
+const FALLBACK_TITLE = 'Stap 3 — Werkzaamheden en blootstellingsroutes';
+const FALLBACK_DESC = 'Breng per afdeling/functie alle werkzaamheden in kaart waarbij blootstelling aan gevaarlijke stoffen optreedt, inclusief procescondities en aanwezige beheersmaatregelen.';
 
 function emptyTask(): WorkTask {
   return {
@@ -372,10 +381,13 @@ function TaskForm({
   );
 }
 
-export default function Step3_Tasks({ investigation, onUpdate }: Props) {
+export default function Step3_Tasks({ investigation, onUpdate, contentOverrides }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<WorkTask | null>(null);
   const { substances, tasks } = investigation;
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
 
   function startAdd() {
     const t = emptyTask();
@@ -416,13 +428,19 @@ export default function Step3_Tasks({ investigation, onUpdate }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 3 — Werkzaamheden en blootstellingsroutes
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Breng per afdeling/functie alle werkzaamheden in kaart waarbij blootstelling aan gevaarlijke
-          stoffen optreedt, inclusief procescondities en aanwezige beheersmaatregelen.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Breng per afdeling/functie alle werkzaamheden in kaart waarbij blootstelling aan gevaarlijke
+                stoffen optreedt, inclusief procescondities en aanwezige beheersmaatregelen.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
       {tasks.length > 0 && (

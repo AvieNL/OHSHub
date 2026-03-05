@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -14,6 +14,15 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [currentPrivacyVersion, setCurrentPrivacyVersion] = useState('1.0');
+
+  // Fetch current live privacy version on mount
+  useEffect(() => {
+    fetch('/api/privacy-version')
+      .then((r) => r.json())
+      .then((data: { version: string }) => setCurrentPrivacyVersion(data.version))
+      .catch(() => { /* keep default '1.0' */ });
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,7 +48,7 @@ export default function RegisterPage() {
       password,
       options: {
         data: {
-          privacy_version_accepted: '1.0',
+          privacy_version_accepted: currentPrivacyVersion,
           privacy_accepted_at: new Date().toISOString(),
         },
       },

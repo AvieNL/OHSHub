@@ -5,15 +5,17 @@ import { themes } from '@/lib/themes';
 import { getWizardConfig } from '@/lib/wizard-configs';
 import ThemeWizard from '@/components/ThemeWizard';
 import type { ThemeSlug } from '@/lib/themes';
+import { getNamespaceContent } from '@/lib/content';
+import InlineEdit from '@/components/InlineEdit';
 
 type Props = {
   params: Promise<{ slug: string }>;
 };
 
 export function generateStaticParams() {
-  return themes
-    .filter((theme) => theme.slug !== 'hazardous-substances')
-    .map((theme) => ({ slug: theme.slug }));
+  // Alle gedefinieerde thema's hebben eigen pagina's; deze route dient
+  // alleen als fallback voor onbekende slugs (→ notFound()).
+  return [];
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -34,6 +36,15 @@ export default async function ThemePage({ params }: Props) {
 
   const themeSlug = theme.slug as ThemeSlug;
   const config = getWizardConfig(themeSlug);
+
+  // Load content overrides in parallel
+  const [themeOverrides, wizardOverrides] = await Promise.all([
+    getNamespaceContent(`theme.${slug}`),
+    getNamespaceContent(`wizard.${slug}`),
+  ]);
+
+  const displayName = themeOverrides['name'] ?? theme.name;
+  const displayIntro = themeOverrides['intro'] ?? theme.intro;
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
@@ -56,18 +67,33 @@ export default async function ThemePage({ params }: Props) {
 
       {/* Theme header */}
       <div className={`mb-3 h-1 w-10 rounded-full ${theme.dotClass}`} />
-      <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-        {theme.name}
-      </h1>
+      <InlineEdit
+        namespace={`theme.${slug}`}
+        contentKey="name"
+        initialValue={displayName}
+        fallback={theme.name}
+      >
+        <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+          {displayName}
+        </h1>
+      </InlineEdit>
 
       {/* Intro */}
-      <div className="mt-4 space-y-3 border-l-2 border-zinc-200 pl-5 dark:border-zinc-700">
-        {theme.intro.split('\n').map((paragraph, i) => (
-          <p key={i} className="text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
-            {paragraph}
-          </p>
-        ))}
-      </div>
+      <InlineEdit
+        namespace={`theme.${slug}`}
+        contentKey="intro"
+        initialValue={displayIntro}
+        fallback={theme.intro}
+        multiline
+      >
+        <div className="mt-4 space-y-3 border-l-2 border-zinc-200 pl-5 dark:border-zinc-700">
+          {displayIntro.split('\n').map((paragraph, i) => (
+            <p key={i} className="text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
+              {paragraph}
+            </p>
+          ))}
+        </div>
+      </InlineEdit>
 
       {/* Step count indicator */}
       <div className="mt-8 flex items-center gap-2">
@@ -80,7 +106,11 @@ export default async function ThemePage({ params }: Props) {
       </div>
 
       {/* Wizard */}
-      <ThemeWizard slug={themeSlug} themeName={theme.name} />
+      <ThemeWizard
+        slug={themeSlug}
+        themeName={displayName}
+        contentOverrides={wizardOverrides}
+      />
     </main>
   );
 }

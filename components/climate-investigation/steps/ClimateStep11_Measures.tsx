@@ -11,10 +11,19 @@ import { newClimateId } from '@/lib/climate-investigation-storage';
 import { computeAllClimateStatistics } from '@/lib/climate-stats';
 import { Abbr } from '@/components/Abbr';
 import { Alert, Button, Card, FieldLabel, Icon, Input, Select, Textarea } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.11';
+const NS = 'investigation.climate';
+const FALLBACK_TITLE = 'Stap 12 — Beheersmaatregelen';
+const FALLBACK_DESC = 'Maatregelen zijn automatisch voorgesteld op basis van het beoordelingsresultaat, conform de Arbeidshygienische Strategie (technisch → organisatorisch → PBM). Pas de omschrijving, verantwoordelijke en deadline aan.';
 
 interface Props {
   investigation: ClimateInvestigation;
   onUpdate: (partial: Partial<ClimateInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 const TYPE_META: Record<ClimateMeasureType, { label: string; prio: string }> = {
@@ -264,7 +273,7 @@ function MeasureForm({
   );
 }
 
-export default function ClimateStep11_Measures({ investigation, onUpdate }: Props) {
+export default function ClimateStep11_Measures({ investigation, onUpdate, contentOverrides }: Props) {
   const { measures, bgs } = investigation;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
@@ -273,6 +282,9 @@ export default function ClimateStep11_Measures({ investigation, onUpdate }: Prop
 
   const bgMap = Object.fromEntries(bgs.map((b) => [b.id, b.name]));
   const allBgIds = bgs.map((b) => b.id);
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
 
   function applyGenerated(inv: ClimateInvestigation) {
     const auto = buildAutoMeasures(inv);
@@ -316,14 +328,20 @@ export default function ClimateStep11_Measures({ investigation, onUpdate }: Prop
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-            Stap 12 — Beheersmaatregelen
-          </h2>
-          <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-            Maatregelen zijn automatisch voorgesteld op basis van het beoordelingsresultaat,
-            conform de Arbeidshygiënische Strategie (technisch → organisatorisch →{' '}
-            <Abbr id="PBM">PBM</Abbr>). Pas de omschrijving, verantwoordelijke en deadline aan.
-          </p>
+          <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+          <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+            initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+            {desc
+              ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  <MarkdownContent>{desc}</MarkdownContent>
+                </p>
+              : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  Maatregelen zijn automatisch voorgesteld op basis van het beoordelingsresultaat,
+                  conform de Arbeidshygiënische Strategie (technisch → organisatorisch →{' '}
+                  <Abbr id="PBM">PBM</Abbr>). Pas de omschrijving, verantwoordelijke en deadline aan.
+                </p>
+            }
+          </InlineEdit>
         </div>
         <Button
           variant="secondary"

@@ -111,7 +111,11 @@ const METHOD_LABELS: Record<string, string> = {
   'forces': 'Krachten',
 };
 
-export default function PhysicalInvestigationApp() {
+interface PhysicalInvestigationAppProps {
+  stepContent?: Record<string, string>;
+}
+
+export default function PhysicalInvestigationApp({ stepContent }: PhysicalInvestigationAppProps) {
   const [investigations, setInvestigations] = useState<PhysicalInvestigation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showNewDialog, setShowNewDialog] = useState(false);
@@ -190,6 +194,7 @@ export default function PhysicalInvestigationApp() {
         investigation={activeInvestigation}
         onUpdate={handleUpdate}
         onClose={() => setActiveId(null)}
+        stepContent={stepContent}
       />
     );
   }

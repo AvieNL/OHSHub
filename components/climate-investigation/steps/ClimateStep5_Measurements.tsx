@@ -8,10 +8,21 @@ import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
 import { InfoBox } from '@/components/InfoBox';
 import { Alert, Button, FieldLabel, Icon, Input } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.5';
+const NS = 'investigation.climate';
+const FALLBACK_TITLE = 'Stap 6 — Meetwaarden';
+const FALLBACK_DESC = 'Voer de klimaatmeetwaarden in per blootstellingsgroep. Minimaal t_a, v_ar en RH zijn vereist. Voor PMV/PPD: ook t_g of t_r. Voor WBGT: ook t_nw en t_g.';
+
+const FALLBACK_IB0_TITLE = 'ISO 7726:1998 — Meetposities en omstandigheden';
 
 interface Props {
   investigation: ClimateInvestigation;
   onUpdate: (partial: Partial<ClimateInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 function fmt1(v: number | undefined): string {
@@ -266,9 +277,14 @@ function BGSection({
   );
 }
 
-export default function ClimateStep5_Measurements({ investigation, onUpdate }: Props) {
+export default function ClimateStep5_Measurements({ investigation, onUpdate, contentOverrides }: Props) {
   const { bgs, measurements, scenarios } = investigation;
   const [addingForBg, setAddingForBg] = useState<string | null>(null);
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
 
   function newMeasurement(bgId: string): ClimateMeasurement {
     return {
@@ -300,7 +316,7 @@ export default function ClimateStep5_Measurements({ investigation, onUpdate }: P
   if (bgs.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 6 — Meetwaarden</h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="warning">
           Definieer eerst blootstellingsgroepen in stap 3, dan kunt u hier meetwaarden invoeren.
         </Alert>
@@ -311,18 +327,39 @@ export default function ClimateStep5_Measurements({ investigation, onUpdate }: P
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 6 — Meetwaarden</h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Voer de klimaatmeetwaarden in per blootstellingsgroep. Minimaal t_a, v_ar en RH zijn vereist.
-          Voor <Abbr id="PMV">PMV</Abbr>/<Abbr id="PPD">PPD</Abbr>: ook t_g of t_r.
-          Voor <Abbr id="WBGT">WBGT</Abbr>: ook t_nw en t_g.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Voer de klimaatmeetwaarden in per blootstellingsgroep. Minimaal t_a, v_ar en RH zijn vereist.
+                Voor <Abbr id="PMV">PMV</Abbr>/<Abbr id="PPD">PPD</Abbr>: ook t_g of t_r.
+                Voor <Abbr id="WBGT">WBGT</Abbr>: ook t_nw en t_g.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="ISO 7726:1998 — Meetposities en omstandigheden">
-        Meet op relevante posities: buikhoogte (1,1 m) voor algemeen klimaat. Voeg metingen toe bij
-        enkels (0,1 m) en hoofd (1,7 m staand / 1,1 m zittend) voor lokaal comfort.
-        Meting minimaal 30 minuten na stabilisering meetapparatuur. Representatieve werkomstandigheden.
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <>
+                Meet op relevante posities: buikhoogte (1,1 m) voor algemeen klimaat. Voeg metingen toe bij
+                enkels (0,1 m) en hoofd (1,7 m staand / 1,1 m zittend) voor lokaal comfort.
+                Meting minimaal 30 minuten na stabilisering meetapparatuur. Representatieve werkomstandigheden.
+              </>
+          }
+        </InlineEdit>
       </InfoBox>
 
       <div className="space-y-4">

@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useCallback } from 'react';
 import Link from 'next/link';
+import { fmtFullName } from '@/lib/utils';
+import PrivacyPushButton from '@/components/admin/PrivacyPushButton';
 
 type UserDetail = {
   id: string;
@@ -11,15 +13,13 @@ type UserDetail = {
   role: string;
   privacy_version_accepted: string | null;
   privacy_accepted_at: string | null;
+  privacy_required_version: string | null;
   first_name: string | null;
   tussenvoegsel: string | null;
   last_name: string | null;
   company: string | null;
 };
 
-function fmtFullName(u: Pick<UserDetail, 'first_name' | 'tussenvoegsel' | 'last_name'>): string {
-  return [u.first_name, u.tussenvoegsel, u.last_name].filter(Boolean).join(' ');
-}
 
 type Investigation = {
   id: string;
@@ -55,15 +55,18 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  const loadDetail = useCallback(() => {
+    return fetch(`/api/admin/users/${id}`).then((r) => r.json()).then(setUserDetail);
+  }, [id]);
+
   useEffect(() => {
     Promise.all([
-      fetch(`/api/admin/users/${id}`).then((r) => r.json()),
+      loadDetail(),
       fetch(`/api/admin/users/${id}/investigations`).then((r) => r.json()),
-    ]).then(([detail, invs]) => {
-      setUserDetail(detail);
+    ]).then(([, invs]) => {
       setInvestigations(invs);
     }).finally(() => setLoading(false));
-  }, [id]);
+  }, [id, loadDetail]);
 
   return (
     <>
@@ -103,13 +106,16 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
             <dt className="text-zinc-400 dark:text-zinc-500">Laatste login</dt>
             <dd className="text-zinc-700 dark:text-zinc-300">{userDetail.last_sign_in_at ? fmtDate(userDetail.last_sign_in_at) : '—'}</dd>
             <dt className="text-zinc-400 dark:text-zinc-500">Privacyverklaring</dt>
-            <dd>
+            <dd className="flex flex-wrap items-center gap-2">
               {userDetail.privacy_version_accepted ? (
                 <span className="inline-flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
                   <svg className="h-3.5 w-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                   </svg>
-                  v{userDetail.privacy_version_accepted} — geaccepteerd op {userDetail.privacy_accepted_at ? fmtDate(userDetail.privacy_accepted_at) : '—'}
+                  <a href="/privacy" className="font-mono text-orange-600 hover:underline dark:text-orange-400">
+                    v{userDetail.privacy_version_accepted}
+                  </a>
+                  {' — geaccepteerd op '}{userDetail.privacy_accepted_at ? fmtDate(userDetail.privacy_accepted_at) : '—'}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
@@ -119,6 +125,17 @@ export default function AdminUserDetailPage({ params }: { params: Promise<{ id: 
                   Niet geregistreerd (account aangemaakt voor implementatie)
                 </span>
               )}
+              {userDetail.privacy_required_version && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                  Herbevestiging vereist v{userDetail.privacy_required_version}
+                </span>
+              )}
+              <PrivacyPushButton
+                userId={userDetail.id}
+                hasPending={!!userDetail.privacy_required_version}
+                pendingVersion={userDetail.privacy_required_version}
+                onDone={loadDetail}
+              />
             </dd>
           </dl>
         </div>

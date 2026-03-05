@@ -3,10 +3,20 @@
 import type { PhysicalInvestigation, PhysicalLoadMethod } from '@/lib/physical-investigation-types';
 import { InfoBox } from '@/components/InfoBox';
 import { Alert } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.3';
+const NS = 'investigation.physical-load';
+const FALLBACK_TITLE = 'Stap 4 — Meetstrategie';
+const FALLBACK_DESC = 'Selecteer welke belastingtypen in dit onderzoek worden beoordeeld. De geselecteerde methoden bepalen welke stappen actief zijn.';
+const FALLBACK_IB0_TITLE = 'Arbeidshygiënische Strategie — keuze meetmethoden';
 
 interface Props {
   investigation: PhysicalInvestigation;
   onUpdate: (partial: Partial<PhysicalInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 interface MethodOption {
@@ -62,7 +72,11 @@ const METHOD_OPTIONS: MethodOption[] = [
   },
 ];
 
-export default function PhysicalStep3_Strategy({ investigation, onUpdate }: Props) {
+export default function PhysicalStep3_Strategy({ investigation, onUpdate, contentOverrides }: Props) {
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
   const { methods, bgs } = investigation;
 
   function toggleMethod(m: PhysicalLoadMethod) {
@@ -76,24 +90,43 @@ export default function PhysicalStep3_Strategy({ investigation, onUpdate }: Prop
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 4 — Meetstrategie
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Selecteer welke belastingtypen in dit onderzoek worden beoordeeld.
-          De geselecteerde methoden bepalen welke stappen actief zijn.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Selecteer welke belastingtypen in dit onderzoek worden beoordeeld.
+                De geselecteerde methoden bepalen welke stappen actief zijn.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="Arbeidshygiënische Strategie — keuze meetmethoden">
-        Kies de meetmethode op basis van de dominante belasting in de functie.
-        De{' '}
-        <abbr title="Arbeidshygiënische Strategie: van bronmaatregelen naar persoonlijke bescherming" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">
-          Arbeidshygiënische Strategie
-        </abbr>{' '}
-        geldt ook voor ergonomie: technische oplossingen (mechanisatie, hulpmiddelen)
-        gaan altijd vóór organisatorische maatregelen (roulatie, pauzes) en persoonlijke
-        beschermingsmiddelen (rugsteun, polsbraces). Meerdere methoden kunnen worden gecombineerd.
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <>
+                Kies de meetmethode op basis van de dominante belasting in de functie.
+                De{' '}
+                <abbr title="Arbeidshygiënische Strategie: van bronmaatregelen naar persoonlijke bescherming" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">
+                  Arbeidshygiënische Strategie
+                </abbr>{' '}
+                geldt ook voor ergonomie: technische oplossingen (mechanisatie, hulpmiddelen)
+                gaan altijd vóór organisatorische maatregelen (roulatie, pauzes) en persoonlijke
+                beschermingsmiddelen (rugsteun, polsbraces). Meerdere methoden kunnen worden gecombineerd.
+              </>
+          }
+        </InlineEdit>
       </InfoBox>
 
       {bgs.length === 0 && (

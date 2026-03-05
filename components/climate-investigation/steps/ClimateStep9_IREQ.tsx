@@ -6,10 +6,21 @@ import { computeAllClimateStatistics, verdictBadgeClass, getMetabolicRate } from
 import { Abbr } from '@/components/Abbr';
 import { InfoBox } from '@/components/InfoBox';
 import { Alert } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.9';
+const NS = 'investigation.climate';
+const FALLBACK_TITLE = 'Stap 10 — Koudestress (IREQ)';
+const FALLBACK_DESC = 'Koudestressanalyse conform ISO 11079:2007. De Insulation REQuired bepaalt de benodigde kledinginsulatie voor thermisch neutraal (IREQneutral) en thermisch evenwicht (IREQmin). Als de beschikbare kleding onvoldoende is, wordt de maximale blootstellingstijd D_lim berekend.';
+
+const FALLBACK_IB0_TITLE = 'ISO 11079:2007 — IREQ begrippen';
 
 interface Props {
   investigation: ClimateInvestigation;
   onUpdate: (partial: Partial<ClimateInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 function fmt2(v: number | undefined | null): string {
@@ -20,17 +31,20 @@ function fmt0(v: number | undefined | null): string {
   return v != null ? Math.round(v).toString() : '—';
 }
 
-export default function ClimateStep9_IREQ({ investigation, onUpdate: _onUpdate }: Props) {
+export default function ClimateStep9_IREQ({ investigation, onUpdate: _onUpdate, contentOverrides }: Props) {
   const { bgs, scenarios } = investigation;
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
 
   const isRelevant = scenarios.includes('cold');
 
   if (!isRelevant) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 10 — Koudestress (<Abbr id="IREQ">IREQ</Abbr>)
-        </h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="neutral">
           Dit scenario is niet geselecteerd. Selecteer &ldquo;Koudestress&rdquo; in stap 4 om de IREQ-analyse in te schakelen.
         </Alert>
@@ -41,7 +55,7 @@ export default function ClimateStep9_IREQ({ investigation, onUpdate: _onUpdate }
   if (bgs.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 10 — Koudestress (IREQ)</h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="warning">
           Definieer eerst blootstellingsgroepen in stap 3.
         </Alert>
@@ -60,18 +74,29 @@ export default function ClimateStep9_IREQ({ investigation, onUpdate: _onUpdate }
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 10 — Koudestress (<Abbr id="IREQ">IREQ</Abbr>)
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Koudestressanalyse conform <Abbr id="ISO11079">ISO 11079:2007</Abbr>. De{' '}
-          <Abbr id="IREQ">Insulation REQuired</Abbr> bepaalt de benodigde kledinginsulatie voor
-          thermisch neutraal (IREQneutral) en thermisch evenwicht (IREQmin). Als de beschikbare
-          kleding onvoldoende is, wordt de maximale blootstellingstijd D_lim berekend.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Koudestressanalyse conform <Abbr id="ISO11079">ISO 11079:2007</Abbr>. De{' '}
+                <Abbr id="IREQ">Insulation REQuired</Abbr> bepaalt de benodigde kledinginsulatie voor
+                thermisch neutraal (IREQneutral) en thermisch evenwicht (IREQmin). Als de beschikbare
+                kleding onvoldoende is, wordt de maximale blootstellingstijd D_lim berekend.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="ISO 11079:2007 — IREQ begrippen">
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
         <div className="space-y-1.5 text-xs text-zinc-600 dark:text-zinc-400">
           <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
             <div className="rounded bg-zinc-100 px-2 py-1.5 dark:bg-zinc-800">

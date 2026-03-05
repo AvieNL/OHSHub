@@ -6,10 +6,21 @@ import { newClimateId } from '@/lib/climate-investigation-storage';
 import { Abbr } from '@/components/Abbr';
 import { InfoBox } from '@/components/InfoBox';
 import { Button, FieldLabel, Icon, Input, Select } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.4';
+const NS = 'investigation.climate';
+const FALLBACK_TITLE = 'Stap 5 — Meetapparatuur';
+const FALLBACK_DESC = 'Registreer de gebruikte meetinstrumenten inclusief kalibratiestatus. Correcte kalibratie is vereist voor herleidbare meetresultaten.';
+
+const FALLBACK_IB0_TITLE = 'ISO 7726:1998 — Meetinstrumenten voor thermische omgevingen';
 
 interface Props {
   investigation: ClimateInvestigation;
   onUpdate: (partial: Partial<ClimateInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 const INSTRUMENT_TYPE_LABELS: Record<ClimateInstrumentType, string> = {
@@ -126,8 +137,13 @@ function InstrumentCard({
   );
 }
 
-export default function ClimateStep4_Equipment({ investigation, onUpdate }: Props) {
+export default function ClimateStep4_Equipment({ investigation, onUpdate, contentOverrides }: Props) {
   const { instruments, scenarios } = investigation;
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
 
   function addInstrument(type: ClimateInstrumentType) {
     onUpdate({ instruments: [...instruments, { id: newClimateId(), type }] });
@@ -149,19 +165,38 @@ export default function ClimateStep4_Equipment({ investigation, onUpdate }: Prop
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 5 — Meetapparatuur
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Registreer de gebruikte meetinstrumenten inclusief kalibratiestatus. Correcte kalibratie
-          is vereist voor herleidbare meetresultaten.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Registreer de gebruikte meetinstrumenten inclusief kalibratiestatus. Correcte kalibratie
+                is vereist voor herleidbare meetresultaten.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="ISO 7726:1998 — Meetinstrumenten voor thermische omgevingen">
-        <Abbr id="ISO7726">ISO 7726:1998</Abbr> specificeert de vereisten voor meetinstrumenten voor
-        fysische grootheden in thermische omgevingen (t_a, t_g, t_r, v_a, RH). Kalibratie conform
-        nationale normen (NMi / ISO/IEC 17025) is vereist voor normatieve beoordelingen.
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <>
+                <Abbr id="ISO7726">ISO 7726:1998</Abbr> specificeert de vereisten voor meetinstrumenten voor
+                fysische grootheden in thermische omgevingen (t_a, t_g, t_r, v_a, RH). Kalibratie conform
+                nationale normen (NMi / ISO/IEC 17025) is vereist voor normatieve beoordelingen.
+              </>
+          }
+        </InlineEdit>
       </InfoBox>
 
       {/* Aanbevolen instrumenten op basis van scenario's */}

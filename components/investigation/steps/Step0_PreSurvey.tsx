@@ -9,10 +9,14 @@ import type {
 } from '@/lib/investigation-types';
 import { Abbr } from '@/components/Abbr';
 import { FieldLabel, FormGrid, Icon, Input, Textarea } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: Investigation;
   onUpdate: (partial: Partial<Investigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 // ─── Vraagdefinities ──────────────────────────────────────────────────────────
@@ -231,10 +235,20 @@ function QuestionRow({
   );
 }
 
+// ─── Content keys ──────────────────────────────────────────────────────────────
+
+const STEP_KEY = 'step.0';
+const NS = 'investigation.hazardous-substances';
+const FALLBACK_TITLE = 'Stap 1 — Voorverkenning gevaarlijke stoffen';
+const FALLBACK_DESC = 'Beantwoord de onderstaande oriënterende vragen samen met de opdrachtgever of contactpersoon om te bepalen of en welk type blootstellingsonderzoek noodzakelijk is. Elke beantwoorde vraag verbetert de aanbeveling.';
+
 // ─── Hoofdcomponent ────────────────────────────────────────────────────────────
 
-export default function Step0_PreSurvey({ investigation, onUpdate }: Props) {
+export default function Step0_PreSurvey({ investigation, onUpdate, contentOverrides }: Props) {
   const survey: HazardousPreSurvey = investigation.preSurvey ?? { responses: {} };
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
 
   function upd(patch: Partial<HazardousPreSurvey>) {
     const newSurvey = { ...survey, ...patch };
@@ -265,14 +279,20 @@ export default function Step0_PreSurvey({ investigation, onUpdate }: Props) {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 1 — Voorverkenning gevaarlijke stoffen
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Beantwoord de onderstaande oriënterende vragen samen met de opdrachtgever of contactpersoon
-          om te bepalen of en welk type blootstellingsonderzoek noodzakelijk is. Elke beantwoorde
-          vraag verbetert de aanbeveling.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Beantwoord de onderstaande oriënterende vragen samen met de opdrachtgever of contactpersoon
+                om te bepalen of en welk type blootstellingsonderzoek noodzakelijk is. Elke beantwoorde
+                vraag verbetert de aanbeveling.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
       <p className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">

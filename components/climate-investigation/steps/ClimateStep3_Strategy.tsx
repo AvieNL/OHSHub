@@ -4,10 +4,21 @@ import type { ClimateInvestigation, ClimateScenario } from '@/lib/climate-invest
 import { Abbr } from '@/components/Abbr';
 import { InfoBox } from '@/components/InfoBox';
 import { Alert } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.3';
+const NS = 'investigation.climate';
+const FALLBACK_TITLE = "Stap 4 — Meetstrategie & scenario's";
+const FALLBACK_DESC = "Selecteer welke beoordelingsscenario's van toepassing zijn op dit onderzoek. Meerdere scenario's kunnen gecombineerd worden. De bijbehorende meetstappen worden ingeschakeld op basis van uw selectie.";
+
+const FALLBACK_IB0_TITLE = 'Keuze meetstrategie — arbeidshygienische aanpak';
 
 interface Props {
   investigation: ClimateInvestigation;
   onUpdate: (partial: Partial<ClimateInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 const SCENARIOS: {
@@ -52,8 +63,13 @@ const SCENARIOS: {
   },
 ];
 
-export default function ClimateStep3_Strategy({ investigation, onUpdate }: Props) {
+export default function ClimateStep3_Strategy({ investigation, onUpdate, contentOverrides }: Props) {
   const { scenarios } = investigation;
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
 
   function toggleScenario(id: ClimateScenario) {
     const updated = scenarios.includes(id)
@@ -65,23 +81,42 @@ export default function ClimateStep3_Strategy({ investigation, onUpdate }: Props
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 4 — Meetstrategie &amp; scenario&apos;s
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Selecteer welke beoordelingsscenario&apos;s van toepassing zijn op dit onderzoek. Meerdere
-          scenario&apos;s kunnen gecombineerd worden. De bijbehorende meetstappen worden ingeschakeld
-          op basis van uw selectie.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Selecteer welke beoordelingsscenario&apos;s van toepassing zijn op dit onderzoek. Meerdere
+                scenario&apos;s kunnen gecombineerd worden. De bijbehorende meetstappen worden ingeschakeld
+                op basis van uw selectie.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="Keuze meetstrategie — arbeidshygienische aanpak">
-        Begin met een voorverkenning (stap 1). Pas daarna de meetstrategie aan op de aard van het
-        klimaatprobleem. Warmtestress: start altijd met WBGT-screening (<Abbr id="ISO7243">ISO 7243</Abbr>)
-        voordat het gedetailleerdere <Abbr id="PHS">PHS</Abbr>-model (<Abbr id="ISO7933">ISO 7933</Abbr>)
-        wordt ingezet. Koudestress: gebruik <Abbr id="IREQ">IREQ</Abbr> (<Abbr id="ISO11079">ISO 11079</Abbr>).
-        Thermisch comfort binnenklimaat: gebruik <Abbr id="PMV">PMV</Abbr>/<Abbr id="PPD">PPD</Abbr>{' '}
-        (<Abbr id="ISO7730">ISO 7730</Abbr>).
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <>
+                Begin met een voorverkenning (stap 1). Pas daarna de meetstrategie aan op de aard van het
+                klimaatprobleem. Warmtestress: start altijd met WBGT-screening (<Abbr id="ISO7243">ISO 7243</Abbr>)
+                voordat het gedetailleerdere <Abbr id="PHS">PHS</Abbr>-model (<Abbr id="ISO7933">ISO 7933</Abbr>)
+                wordt ingezet. Koudestress: gebruik <Abbr id="IREQ">IREQ</Abbr> (<Abbr id="ISO11079">ISO 11079</Abbr>).
+                Thermisch comfort binnenklimaat: gebruik <Abbr id="PMV">PMV</Abbr>/<Abbr id="PPD">PPD</Abbr>{' '}
+                (<Abbr id="ISO7730">ISO 7730</Abbr>).
+              </>
+          }
+        </InlineEdit>
       </InfoBox>
 
       <div className="space-y-3">

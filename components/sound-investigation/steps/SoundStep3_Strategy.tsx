@@ -6,12 +6,22 @@ import { Formula } from '@/components/Formula';
 import { SectionRef } from '@/components/SectionRef';
 import { InfoBox } from '@/components/InfoBox';
 import { Alert, Badge, Card, FieldLabel, Textarea } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
   onGoToStep: (step: number) => void;
+  contentOverrides?: Record<string, string>;
 }
+
+const STEP_KEY = 'step.3';
+const NS = 'investigation.sound';
+const FALLBACK_TITLE = 'Stap 4 — Meetstrategie (§8 NEN-EN-ISO 9612:2025)';
+const FALLBACK_DESC = 'Kies per HEG de meetstrategie op basis van het werkpatroon. Bijlage B Tabel B.1 geeft richtlijnen. Documenteer de keuze (§15.b.4 — meetstrategie met normatieve verwijzing).';
+const FALLBACK_IB0_TITLE = '§6 — Methodologie';
 
 // Annex B Table B.1 — recommended strategies per work pattern
 const STRATEGY_GUIDANCE: Record<WorkPattern, { rec: SoundStrategy[]; note: string }> = {
@@ -155,8 +165,13 @@ function StrategyCard({
   );
 }
 
-export default function SoundStep3_Strategy({ investigation, onUpdate, onGoToStep }: Props) {
+export default function SoundStep3_Strategy({ investigation, onUpdate, onGoToStep, contentOverrides }: Props) {
   const { hegs } = investigation;
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
 
   function updateHEG(updated: SoundHEG) {
     onUpdate({ hegs: hegs.map((h) => (h.id === updated.id ? updated : h)) });
@@ -165,9 +180,7 @@ export default function SoundStep3_Strategy({ investigation, onUpdate, onGoToSte
   if (hegs.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 4 — Meetstrategie (<SectionRef id="§8">§8</SectionRef>)
-        </h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="warning" size="md">
           Definieer eerst <Abbr id="HEG">HEG</Abbr>&apos;s in{' '}
           <button type="button" onClick={() => onGoToStep(2)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 3</button>,
@@ -180,19 +193,36 @@ export default function SoundStep3_Strategy({ investigation, onUpdate, onGoToSte
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 4 — Meetstrategie (<SectionRef id="§8">§8</SectionRef> <Abbr id="NEN9612">NEN-EN-ISO 9612</Abbr>:2025)
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Kies per <Abbr id="HEG">HEG</Abbr> de meetstrategie op basis van het werkpatroon. Bijlage B Tabel B.1 geeft
-          richtlijnen. Documenteer de keuze (<SectionRef id="§15.b.4">§15.b.4</SectionRef> — meetstrategie met normatieve verwijzing).
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Kies per <Abbr id="HEG">HEG</Abbr> de meetstrategie op basis van het werkpatroon. Bijlage B Tabel B.1 geeft
+                richtlijnen. Documenteer de keuze (<SectionRef id="§15.b.4">§15.b.4</SectionRef> — meetstrategie met normatieve verwijzing).
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="§6 — Methodologie">
-        <SectionRef id="§6">§6 Methodologie</SectionRef>: Het meetproces bestaat uit 5 stappen: (1) werkanalyse,
-        (2) selectie meetstrategie, (3) metingen, (4) fouten behandelen, (5) berekenen &amp;
-        presenteren inclusief onzekerheid (Bijlage C).
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <><SectionRef id="§6">§6 Methodologie</SectionRef>: Het meetproces bestaat uit 5 stappen: (1) werkanalyse,
+              (2) selectie meetstrategie, (3) metingen, (4) fouten behandelen, (5) berekenen &amp;
+              presenteren inclusief onzekerheid (Bijlage C).</>
+          }
+        </InlineEdit>
       </InfoBox>
 
       <div className="space-y-5">

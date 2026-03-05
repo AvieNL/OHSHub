@@ -1,12 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { getNamespaceContent } from '@/lib/content';
+import InlineChangelogEditor from '@/components/InlineChangelogEditor';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 export const metadata: Metadata = {
   title: 'Over de app — OHSHub',
   description: 'Versiehistorie en informatie over OHSHub.',
 };
 
-const CURRENT_VERSION = '0.14.1';
+const HARDCODED_VERSION = '0.20.2';
 
 const CHANGELOG: {
   version: string;
@@ -16,6 +20,318 @@ const CHANGELOG: {
   modules: string[];
   changes: string[];
 }[] = [
+  {
+    version: '0.20.2',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'Fix: privacy modal toont na client-side inloggen',
+    modules: ['Platform'],
+    changes: [
+      'PrivacyAcceptModal luistert nu via onAuthStateChange (SIGNED_IN) naar inloggen — de modal werkte niet na client-side navigatie via router.replace omdat de root layout niet herstartte.',
+    ],
+  },
+  {
+    version: '0.20.1',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'Privacy-kolom in gebruikersoverzicht',
+    modules: ['Platform'],
+    changes: [
+      'Beheerderspaneel: aparte "Privacy"-kolom in de gebruikerslijst met geaccepteerde versie, acceptatiedatum, "herbevestiging vereist"-melding én bell-/X-knop per rij.',
+    ],
+  },
+  {
+    version: '0.20.0',
+    date: '2026-03-05',
+    type: 'minor',
+    title: 'Privacy herbevestiging — admin push + gebruikersmodal',
+    modules: ['Platform'],
+    changes: [
+      'Admin kan per gebruiker (detailpagina) of voor alle gebruikers tegelijk een herbevestiging van de privacyverklaring verplichten.',
+      'Gebruikers zien bij de volgende sessie een modal met de privacytekst; "Later" slaat de herinnering tot de volgende sessie op via sessionStorage.',
+      '"Accepteren en doorgaan" slaat de versie op in user_roles en wist het verzoek.',
+      'Beheerderspaneel: bell-icoon per gebruiker in de lijst (oranje stip) en op de detailpagina (bell- of X-knop + amber badge).',
+      'DB: kolom privacy_required_version toegevoegd aan user_roles (migration 006).',
+    ],
+  },
+  {
+    version: '0.19.0',
+    date: '2026-03-05',
+    type: 'minor',
+    title: 'Privacyversiegeschiedenis + inline bewerken "Over de app"',
+    modules: ['Platform'],
+    changes: [
+      'Privacyverklaring: admin kan nu een nieuwe versie publiceren met type (major/minor/patch) en versienummer; eerdere versies zijn inklapbaar zichtbaar op /privacy.',
+      'Versionering: semantic versioning voor privacyverklaring (1.0.0 → 1.0.1 → 1.1.0 → 2.0.0).',
+      'Registratie: nieuw aangemaakte accounts accepteren automatisch de actuele live-versie van de privacyverklaring.',
+      '"Over de app" pagina: ondertitel, ontwikkelaarsbeschrijving, contactgegevens (KvK, vestigingsplaats, e-mail) en disclaimer nu volledig inline bewerkbaar.',
+      'Fix: onderzoekenaantal stond op 0 voor alle gebruikers in het beheerderspaneel — PostgREST aggregate-syntax vervangen door JS-telling.',
+    ],
+  },
+  {
+    version: '0.18.12',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'UI-opruiming: placeholder badge + hamburgermenu vereenvoudigd',
+    modules: ['Platform'],
+    changes: [
+      'Placeholder-pagina\'s: subtitel-badge verwijderd, "In ontwikkeling" badge staat nu inline naast de paginatitel.',
+      'color.badge en color.border props verwijderd uit InvestigationPlaceholder (waren overbodig).',
+      'Hamburgermenu: "Afkortingen beheren" en "UI-componentenbibliotheek" verwijderd — beide zijn bereikbaar via het beheerderspaneel.',
+      'AdminNav: "UI-bibliotheek" tab toegevoegd als derde tab in het beheerderspaneel.',
+    ],
+  },
+  {
+    version: '0.18.11',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'Placeholder stappen-layout: uitlijning cijfer en tekst gecorrigeerd',
+    modules: ['Platform'],
+    changes: [
+      'InvestigationPlaceholder: absolute positionering van stapnummers vervangen door flex-layout — tekst staat nu correct naast het getal in plaats van erachter.',
+      'Stapnummering gewijzigd van 0-gebaseerd naar 1-gebaseerd.',
+    ],
+  },
+  {
+    version: '0.18.10',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'Documentatie: renderWithFormulas vs MarkdownContent keuzegids',
+    modules: ['Platform'],
+    changes: [
+      'CLAUDE.md: formules/markdown/afkortingen sectie samengevoegd tot een keuzegids met tabel — wanneer Formula, renderWithFormulas of MarkdownContent te gebruiken.',
+      'lib/render-with-formulas.tsx: JSDoc uitgebreid met mogelijkheden, beperkingen en gebruiksadvies.',
+      'components/MarkdownContent.tsx: JSDoc uitgebreid met mogelijkheden, beperkingen en gebruiksadvies.',
+    ],
+  },
+  {
+    version: '0.18.9',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'Placeholder-thema\'s: dode wizard-imports verwijderd + CMS inline bewerken',
+    modules: ['Platform'],
+    changes: [
+      'wizard-configs.ts: dead imports voor bio-agents, verlichting, trillingen en straling wizards verwijderd — vervangen door lege stub-configs. Wizard-bestanden blijven bewaard als draft voor toekomstige implementatie.',
+      'wizardConfigs export-shim verwijderd (was nergens geïmporteerd).',
+      'InvestigationPlaceholder: InlineEdit toegevoegd voor paginatitel en -beschrijving; ThemeLegalInfo ontvangt nu ook namespace + contentOverrides.',
+      'Placeholder-pagina\'s (bio-agents, verlichting, trillingen, straling): geconverteerd naar async server components; fetchen theme.{slug} en theme-legal.{slug} content — admin kan titels en beschrijvingen nu inline bewerken.',
+    ],
+  },
+  {
+    version: '0.18.8',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'Deduplicatie: gedeelde InvestigationThemePage layout voor de 4 modules',
+    modules: ['Platform'],
+    changes: [
+      'Nieuw: components/InvestigationThemePage.tsx — gedeelde server-component voor de layout van alle onderzoeksmodule-pagina\'s (back-link, header, icon, InlineEdit-titel, InlineEdit-beschrijving, ThemeLegalInfo).',
+      'app/themes/sound, hazardous-substances, physical-load en climate page.tsx gereduceerd van 107 naar ~45 regels elk — alleen unieke metadata, fallback-strings en de module-app-component blijven per pagina.',
+    ],
+  },
+  {
+    version: '0.18.7',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'Efficiëntie: DB-aggregaat tellling onderzoeken + gedeelde fmtFullName helper',
+    modules: ['Platform'],
+    changes: [
+      'Admin gebruikerslijst: onderzoeken worden nu via DB COUNT-aggregaat geteld i.p.v. alle rijen op te halen — minder dataoverdracht bij grote datasets.',
+      'fmtFullName() geëxtraheerd naar lib/utils.ts — was gedupliceerd in admin/page.tsx en admin/users/[id]/page.tsx.',
+    ],
+  },
+  {
+    version: '0.18.6',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'Code-kwaliteit: gedeelde auth-helper, dode imports, revalidateTag-fix',
+    modules: ['Platform'],
+    changes: [
+      'requireAdmin() geëxtraheerd naar lib/auth.ts — centrale definitie voor alle API-routes (was 4× gedupliceerd).',
+      'generateStaticParams in app/themes/[slug]/page.tsx geeft nu [] terug — alle thema\'s hebben eigen pagina\'s, fallback-route heeft geen statische params nodig.',
+      'Ongebruikte ReactMarkdown-import verwijderd uit app/privacy/page.tsx.',
+      'revalidateTag(\'content\', {}) hersteld — tweede argument is vereist in Next.js 16 (CacheLifeConfig).',
+    ],
+  },
+  {
+    version: '0.18.5',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'Admin Content-sectie verwijderd — opruimen dode code',
+    modules: ['Platform'],
+    changes: [
+      'Volledige /admin/content-sectie (7 pagina\'s) verwijderd — alle bewerkfunctionaliteit is al inline op de betreffende pagina\'s beschikbaar.',
+      'Verwijderd: editor-componenten PlainEditor, TextareaEditor, MarkdownEditor (niet meer in gebruik).',
+      'Verwijderd: AdminEditButton-component (was al dode code — nergens geïmporteerd).',
+      'AdminNav: "Content"-tab verwijderd; navigatiebalk toont nu "Gebruikers" en "Afkortingen".',
+    ],
+  },
+  {
+    version: '0.18.4',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'Veiligheidsfixes: datalek onderzoeken + inputvalidatie + AdminNav',
+    modules: ['Platform'],
+    changes: [
+      'Fix: GET /api/investigations/[id] filtert nu op user_id — onderzoeken van andere gebruikers waren opvraagbaar voor ingelogde gebruikers.',
+      'Fix: POST /api/investigations valideert nu het type-veld (toegestaan: hazardous, sound, physical, climate), het id-formaat (UUID) en de naamlengte (max 500); updated_at wordt altijd server-side gegenereerd.',
+      'Fix: AdminNav wordt nu ingeladen in admin/layout.tsx — navigatietabs Gebruikers, Content en Afkortingen zijn nu zichtbaar op alle beheerpagina\'s.',
+    ],
+  },
+  {
+    version: '0.18.3',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'Afkortingenbeheer — eigen afkortingen toevoegen en beheren via admin',
+    modules: ['Platform'],
+    changes: [
+      'Nieuwe beheerpagina /admin/abbreviations: eigen afkortingen toevoegen, bewerken en verwijderen.',
+      'Eigen afkortingen worden via React Context gemerged met de hardcoded tabel — beschikbaar voor [[abbr:ID]]-markers in alle CMS-tekstvelden.',
+      'Navigatie: link in hamburgermenu + tab in AdminNav.',
+      'Overzicht van alle standaard (hardcoded) afkortingen als referentie — overschreven entries krijgen badge.',
+    ],
+  },
+  {
+    version: '0.18.2',
+    date: '2026-03-05',
+    type: 'patch',
+    title: '[[abbr:ID]]-marker voor afkortingen in CMS-tekstvelden',
+    modules: ['Platform'],
+    changes: [
+      '[[abbr:CMR]] rendert automatisch <abbr title="…"> via de gedeelde ABBR_TITLES-tabel — geen HTML meer nodig.',
+      '[[abbr:OELV:Eigen omschrijving]] voor een afwijkende toelichting.',
+      'InlineEdit-hint toont de abbr-markersyntax.',
+    ],
+  },
+  {
+    version: '0.18.1',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'HTML-tags (abbr) en betere voorinvulling in inline CMS-velden',
+    modules: ['Platform'],
+    changes: [
+      'MarkdownContent ondersteunt nu rauwe HTML via rehype-raw — <abbr title="voluit">afkorting</abbr> werkt in alle bewerkbare tekstvelden.',
+      'Bewerkingsveld toont nu de huidige live-tekst als beginwaarde (i.p.v. leeg) wanneer er nog geen DB-override bestaat.',
+      'InlineEdit-hint uitgebreid met abbr-voorbeeld.',
+    ],
+  },
+  {
+    version: '0.18.0',
+    date: '2026-03-05',
+    type: 'minor',
+    title: 'Inline bewerkbare staptitels, beschrijvingen en InfoBox-inhoud in alle onderzoeksmodules',
+    modules: ['Geluid', 'Gevaarlijke stoffen', 'Fysieke belasting', 'Klimaat'],
+    changes: [
+      'Staptitels, intro-beschrijvingen en InfoBox-inhoud zijn nu inline bewerkbaar in alle 4 onderzoeksmodules (47 stapcomponenten).',
+      'Admin: hover boven staptitel of beschrijving → potloodje → bewerk direct op de pagina.',
+      'Nieuwe InlineStepHeader-component herbruikbaar voor h2-titels in alle stap-componenten.',
+      'Namespaces: investigation.sound, investigation.hazardous-substances, investigation.physical-load, investigation.climate.',
+      'Shell-headers tonen ook de bewerkbare staptitel (InlineEdit op de stap-nummerbalk).',
+      'Bij InfoBox-override: markdown-rendering; bij geen override: originele JSX-opmaak (Abbr, Formula, SectionRef) als fallback.',
+    ],
+  },
+  {
+    version: '0.17.0',
+    date: '2026-03-05',
+    type: 'minor',
+    title: 'Volledig inline CMS — alle teksten direct op de pagina bewerkbaar',
+    modules: ['Platform'],
+    changes: [
+      'Wettelijk kader & normen bij thema\'s zijn nu per sectie inline bewerkbaar (potloodje per sectie: wetgeving, normen, grenswaarden, beheersverplichtingen).',
+      'Wizardteksten (staptitels, beschrijvingen, vraagopties) inline bewerkbaar via uitvouwbaar bewerkpaneel per stap.',
+      'Privacyverklaring inline bewerkbaar als markdown direct op /privacy.',
+      'Versiehistorie (changelog) inline bewerkbaar op /over via admin-toggle.',
+      'AdminEditButton-component volledig verwijderd — geen doorverwijzingen naar aparte beheerroutes meer.',
+    ],
+  },
+  {
+    version: '0.16.2',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'Admin contentbeheer-tab verwijderd',
+    modules: ['Platform'],
+    changes: [
+      'Content-tab verwijderd uit het admin-paneel — alle teksten zijn nu inline bewerkbaar direct op de pagina.',
+      'Admin-layout vereenvoudigd: tabnavigatie verwijderd (niet meer nodig met één sectie).',
+    ],
+  },
+  {
+    version: '0.16.1',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'Homepage ondertitel inline bewerkbaar',
+    modules: ['Platform'],
+    changes: [
+      'Homepage ondertitel ("Kennisplatform voor...") is nu inline bewerkbaar voor admins via namespace page.home, key subtitle.',
+      'Uitgelogde gebruikers zien de actuele (DB-)tekst; de standaardtekst dient als fallback.',
+    ],
+  },
+  {
+    version: '0.16.0',
+    date: '2026-03-05',
+    type: 'minor',
+    title: 'Inline bewerken op homepage-themakaarten + markdown in beschrijvingen',
+    modules: ['Platform'],
+    changes: [
+      'Nieuw: HomeThemesGrid-component — admins zien potloodje op naam en beschrijving van elke themakaart op de homepage; bewerken direct op de pagina zonder doorverwijzing.',
+      'Niet-admins zien de homepage ongewijzigd: themakaarten zijn volledig klikbaar als Link.',
+      'Alle vier thema-paginabeschrijvingen (geluid, klimaat, fysieke belasting, gevaarlijke stoffen) renderen nu als markdown via MarkdownContent.',
+      'InlineEdit-velden voor beschrijvingen hebben nu markdown-prop: admin ziet syntaxhint bij bewerken.',
+      'Bugfix: sound/page.tsx — onjuiste ReactMarkdown/renderWithFormulas-aanroep vervangen door MarkdownContent.',
+    ],
+  },
+  {
+    version: '0.15.2',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'Inline bewerken direct op de pagina',
+    modules: ['Platform'],
+    changes: [
+      'Nieuw: InlineEdit-component — hover over bewerkbare tekst en klik het potloodje om direct op de pagina te wijzigen.',
+      'Thema-pagina\'s (geluid, klimaat, fysieke belasting, gevaarlijke stoffen): titel en beschrijving inline bewerkbaar via namespace theme.{slug}, keys pageTitle en pageDesc.',
+      'Generieke thema-pagina (/themes/[slug]): naam en intro inline bewerkbaar.',
+      'Na opslaan: router.refresh() herlaadt de server-data zonder volledige herlaad van de pagina.',
+      'Nieuw: lib/render-with-formulas.tsx — gedeelde [[formule]]-rendering voor server- en client-componenten.',
+      'ThemeLegalInfo importeert renderWithFormulas nu uit gedeelde lib.',
+    ],
+  },
+  {
+    version: '0.15.1',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'Admin potloodje op alle bewerkbare UI-elementen',
+    modules: ['Platform'],
+    changes: [
+      'AdminEditButton (potloodje) toegevoegd naast alle bewerkbare koppen en secties voor admins.',
+      'ThemeLegalInfo: adminEditHref prop + potloodje in de inklapbare header.',
+      'ThemeWizard: potloodje in de progress-header naast de thema-naam.',
+      'Specifieke thema-pagina\'s (geluid, klimaat, fysieke belasting, gevaarlijke stoffen): potloodje naast de h1.',
+      'Generieke thema-pagina (/themes/[slug]): potloodje naast de h1.',
+    ],
+  },
+  {
+    version: '0.15.0',
+    date: '2026-03-05',
+    type: 'minor',
+    title: 'Admin CMS — webteksten bewerken zonder deployment',
+    modules: ['Platform'],
+    changes: [
+      'Nieuw: content-tabel in Supabase met namespace/key/value/ctype en RLS (alleen admin mag schrijven).',
+      'Nieuw: lib/content.ts — getNamespaceContent() en getContent() met Next.js unstable_cache en tag "content".',
+      'Nieuw: API-route GET/PUT/DELETE /api/admin/content met admin-authenticatie en revalidateTag na mutatie.',
+      'Nieuw: Admin tab-navigatie — "Gebruikers" en "Content" als horizontale tabs in de admin-layout.',
+      'Nieuw: /admin/content — overzichtspagina met drie categorieën: Pagina\'s, Thema\'s, Wizards.',
+      'Nieuw: /admin/content/pages — Privacyverklaring (MarkdownEditor) en Changelog (ChangelogEditor).',
+      "Nieuw: /admin/content/themes — naam, beschrijving en intro per thema met PlainEditor/TextareaEditor.",
+      "Nieuw: /admin/content/themes/[slug]/legal — wetgeving, normen, grenswaarden en administratieve verplichtingen.",
+      'Nieuw: /admin/content/wizards + /admin/content/wizards/[slug] — WizardEditor met boom-view: stap → vraag → optie.',
+      'Integratie: privacy/page.tsx laadt body uit DB; fallback naar hardcoded JSX.',
+      'Integratie: over/page.tsx laadt changelog-array uit DB; fallback naar hardcoded array.',
+      'Integratie: app/page.tsx laadt thema-naam/beschrijving uit DB.',
+      'Integratie: ThemeLegalInfo accepteert contentOverrides prop; alle vier thema-pagina\'s laden legal-overrides.',
+      'Integratie: ThemeWizard accepteert contentOverrides prop; applyWizardOverrides() past stap/vraag/optie-teksten toe.',
+      'Installatie: react-markdown voor MarkdownEditor preview en privacy-rendering.',
+    ],
+  },
   {
     version: '0.14.1',
     date: '2026-03-03',
@@ -401,7 +717,49 @@ const TYPE_BADGE: Record<'major' | 'minor' | 'patch', string> = {
   patch: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
 };
 
-export default function OverPage() {
+// ── Fallback strings (used when no DB override exists) ────────────────────────
+
+const FB_SUBTITLE =
+  'Kennisplatform voor arbeidshygiënisten, hogere veiligheidskundigen en ' +
+  '[[abbr:AO:Arbeids- en Organisatiedeskundige]]-deskundigen. ' +
+  'Onderzoeksgegevens worden beveiligd opgeslagen in de cloud. ' +
+  'Inloggen is vereist voor toegang.';
+
+const FB_DEV_DESC =
+  'OHSHub wordt ontwikkeld door **DiversiThijs**, gevestigd te Breedenbroek. ' +
+  'Het platform is ontstaan vanuit de praktijk: een behoefte aan toegankelijke, ' +
+  'gestructureerde ondersteuning bij arbeidshygiënisch onderzoek conform de ' +
+  'geldende wet- en regelgeving en normen.';
+
+const FB_DISCLAIMER_TITLE = 'Vroege ontwikkelfase — maak altijd een eigen back-up';
+
+const FB_DISCLAIMER_BODY =
+  'OHSHub is volop in ontwikkeling. In deze fase kan niet worden gegarandeerd dat ' +
+  'opgeslagen onderzoeken bewaard blijven bij updates of technische problemen. ' +
+  'Zorg daarom altijd voor een eigen back-up via de exportfunctie (JSON) binnen een onderzoek. ' +
+  'De ontwikkelaar aanvaardt geen aansprakelijkheid voor verlies van gegevens.';
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
+export default async function OverPage() {
+  const content = await getNamespaceContent('page.over');
+  const changelogRaw = content['changelog'] ?? '';
+  let activeChangelog = CHANGELOG;
+  if (changelogRaw) {
+    try {
+      activeChangelog = JSON.parse(changelogRaw);
+    } catch { /* use hardcoded */ }
+  }
+  const CURRENT_VERSION = activeChangelog[0]?.version ?? HARDCODED_VERSION;
+
+  const subtitle         = content['subtitle'];
+  const devDesc          = content['developer.description'];
+  const devKvk           = content['developer.kvk'] ?? '92899943';
+  const devCity          = content['developer.city'] ?? 'Breedenbroek';
+  const devEmail         = content['developer.email'] ?? 'info@diversithijs.nl';
+  const disclaimerTitle  = content['disclaimer.title'] ?? FB_DISCLAIMER_TITLE;
+  const disclaimerBody   = content['disclaimer.body'];
+
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
       {/* Header */}
@@ -414,16 +772,24 @@ export default function OverPage() {
             v{CURRENT_VERSION}
           </span>
         </div>
-        <p className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Kennisplatform voor arbeidshygiënisten, hogere veiligheidskundigen en{' '}
-          <abbr
-            title="Arbeids- en Organisatiedeskundige"
-            className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2"
-          >
-            A&amp;O
-          </abbr>
-          -deskundigen. Onderzoeksgegevens worden beveiligd opgeslagen in de cloud. Inloggen is vereist voor toegang.
-        </p>
+        <InlineEdit namespace="page.over" contentKey="subtitle"
+          initialValue={subtitle ?? FB_SUBTITLE} fallback={FB_SUBTITLE} multiline markdown>
+          {subtitle
+            ? <MarkdownContent className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">{subtitle}</MarkdownContent>
+            : (
+              <p className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Kennisplatform voor arbeidshygiënisten, hogere veiligheidskundigen en{' '}
+                <abbr
+                  title="Arbeids- en Organisatiedeskundige"
+                  className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2"
+                >
+                  A&amp;O
+                </abbr>
+                -deskundigen. Onderzoeksgegevens worden beveiligd opgeslagen in de cloud. Inloggen is vereist voor toegang.
+              </p>
+            )
+          }
+        </InlineEdit>
       </div>
 
       {/* Over de ontwikkelaar */}
@@ -431,21 +797,44 @@ export default function OverPage() {
         <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           Over de ontwikkelaar
         </h2>
-        <p className="mb-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-          OHSHub wordt ontwikkeld door <strong className="text-zinc-800 dark:text-zinc-200">DiversiThijs</strong>, gevestigd te Breedenbroek. Het platform is ontstaan vanuit de praktijk: een behoefte aan toegankelijke, gestructureerde ondersteuning bij arbeidshygiënisch onderzoek conform de geldende wet- en regelgeving en normen.
-        </p>
+        <div className="mb-3">
+          <InlineEdit namespace="page.over" contentKey="developer.description"
+            initialValue={devDesc ?? FB_DEV_DESC} fallback={FB_DEV_DESC} multiline markdown>
+            {devDesc
+              ? <MarkdownContent className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{devDesc}</MarkdownContent>
+              : (
+                <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                  OHSHub wordt ontwikkeld door <strong className="text-zinc-800 dark:text-zinc-200">DiversiThijs</strong>, gevestigd te Breedenbroek. Het platform is ontstaan vanuit de praktijk: een behoefte aan toegankelijke, gestructureerde ondersteuning bij arbeidshygiënisch onderzoek conform de geldende wet- en regelgeving en normen.
+                </p>
+              )
+            }
+          </InlineEdit>
+        </div>
         <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1.5 text-sm">
           <dt className="text-zinc-400 dark:text-zinc-500">
             <abbr title="Kamer van Koophandel" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">KvK</abbr>
           </dt>
-          <dd className="text-zinc-700 dark:text-zinc-300">92899943</dd>
+          <dd className="text-zinc-700 dark:text-zinc-300">
+            <InlineEdit namespace="page.over" contentKey="developer.kvk"
+              initialValue={devKvk} fallback="92899943">
+              {devKvk}
+            </InlineEdit>
+          </dd>
           <dt className="text-zinc-400 dark:text-zinc-500">Vestigingsplaats</dt>
-          <dd className="text-zinc-700 dark:text-zinc-300">Breedenbroek</dd>
+          <dd className="text-zinc-700 dark:text-zinc-300">
+            <InlineEdit namespace="page.over" contentKey="developer.city"
+              initialValue={devCity} fallback="Breedenbroek">
+              {devCity}
+            </InlineEdit>
+          </dd>
           <dt className="text-zinc-400 dark:text-zinc-500">E-mail</dt>
           <dd>
-            <a href="mailto:info@diversithijs.nl" className="text-orange-500 hover:underline">
-              info@diversithijs.nl
-            </a>
+            <InlineEdit namespace="page.over" contentKey="developer.email"
+              initialValue={devEmail} fallback="info@diversithijs.nl">
+              <a href={`mailto:${devEmail}`} className="text-orange-500 hover:underline">
+                {devEmail}
+              </a>
+            </InlineEdit>
           </dd>
           <dt className="text-zinc-400 dark:text-zinc-500">Privacyverklaring</dt>
           <dd>
@@ -462,26 +851,40 @@ export default function OverPage() {
           <svg className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
-          <div>
-            <p className="mb-1 text-sm font-semibold text-amber-800 dark:text-amber-300">
-              Vroege ontwikkelfase — maak altijd een eigen back-up
-            </p>
-            <p className="text-sm leading-relaxed text-amber-700 dark:text-amber-400">
-              OHSHub is volop in ontwikkeling. In deze fase kan niet worden gegarandeerd dat opgeslagen onderzoeken bewaard blijven bij updates of technische problemen. Zorg daarom altijd voor een eigen back-up via de exportfunctie (JSON) binnen een onderzoek. De ontwikkelaar aanvaardt geen aansprakelijkheid voor verlies van gegevens.
-            </p>
+          <div className="min-w-0 flex-1">
+            <InlineEdit namespace="page.over" contentKey="disclaimer.title"
+              initialValue={disclaimerTitle} fallback={FB_DISCLAIMER_TITLE}>
+              <p className="mb-1 text-sm font-semibold text-amber-800 dark:text-amber-300">
+                {disclaimerTitle}
+              </p>
+            </InlineEdit>
+            <InlineEdit namespace="page.over" contentKey="disclaimer.body"
+              initialValue={disclaimerBody ?? FB_DISCLAIMER_BODY} fallback={FB_DISCLAIMER_BODY}
+              multiline>
+              {disclaimerBody
+                ? <p className="text-sm leading-relaxed text-amber-700 dark:text-amber-400">{disclaimerBody}</p>
+                : (
+                  <p className="text-sm leading-relaxed text-amber-700 dark:text-amber-400">
+                    OHSHub is volop in ontwikkeling. In deze fase kan niet worden gegarandeerd dat opgeslagen onderzoeken bewaard blijven bij updates of technische problemen. Zorg daarom altijd voor een eigen back-up via de exportfunctie (JSON) binnen een onderzoek. De ontwikkelaar aanvaardt geen aansprakelijkheid voor verlies van gegevens.
+                  </p>
+                )
+              }
+            </InlineEdit>
           </div>
         </div>
       </section>
 
       {/* Changelog */}
       <section>
-        <h2 className="mb-6 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Versiehistorie
-        </h2>
+        <div className="mb-6 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            Versiehistorie
+          </h2>
+        </div>
 
         <div className="relative border-l-2 border-zinc-200 pl-6 dark:border-zinc-800">
-          {CHANGELOG.map((release, i) => (
-            <div key={release.version} className={`relative pb-10 ${i === CHANGELOG.length - 1 ? 'pb-0' : ''}`}>
+          {activeChangelog.map((release, i) => (
+            <div key={release.version} className={`relative pb-10 ${i === activeChangelog.length - 1 ? 'pb-0' : ''}`}>
               {/* Timeline dot */}
               <span
                 className={`absolute -left-[9px] top-1 h-4 w-4 rounded-full border-2 border-white dark:border-zinc-950 ${
@@ -532,6 +935,8 @@ export default function OverPage() {
             </div>
           ))}
         </div>
+
+        <InlineChangelogEditor initialEntries={activeChangelog} />
       </section>
 
       {/* Back link */}

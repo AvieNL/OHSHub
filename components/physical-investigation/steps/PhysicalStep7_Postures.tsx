@@ -5,10 +5,20 @@ import type { PhysicalInvestigation, PostureObservation, PostureBodyPart, Postur
 import { newPhysicalId } from '@/lib/physical-investigation-storage';
 import { InfoBox } from '@/components/InfoBox';
 import { Alert, Button, Card, FieldLabel, Icon, Input, Select } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.7';
+const NS = 'investigation.physical-load';
+const FALLBACK_TITLE = 'Stap 8 — Houdingen & bewegingen';
+const FALLBACK_DESC = 'Registreer geobserveerde houdingen per lichaamsgebied en taak. Beoordeling conform EN 1005-4:2005 en ISO 11226:2000.';
+const FALLBACK_IB0_TITLE = 'EN 1005-4:2005 — Zone-indeling werkhoudingen';
 
 interface Props {
   investigation: PhysicalInvestigation;
   onUpdate: (partial: Partial<PhysicalInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 const BODY_PART_LABELS: Record<PostureBodyPart, string> = {
@@ -184,7 +194,11 @@ function PostureForm({
   );
 }
 
-export default function PhysicalStep7_Postures({ investigation, onUpdate }: Props) {
+export default function PhysicalStep7_Postures({ investigation, onUpdate, contentOverrides }: Props) {
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
   const { bgs, postureObservations } = investigation;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addingBg, setAddingBg] = useState<string | null>(null);
@@ -203,7 +217,7 @@ export default function PhysicalStep7_Postures({ investigation, onUpdate }: Prop
   if (bgs.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 8 — Houdingen &amp; bewegingen</h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="warning" size="md">
           Definieer eerst belastingsgroepen in stap 3.
         </Alert>
@@ -214,25 +228,44 @@ export default function PhysicalStep7_Postures({ investigation, onUpdate }: Prop
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 8 — Houdingen &amp; bewegingen
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Registreer geobserveerde houdingen per lichaamsgebied en taak.
-          Beoordeling conform{' '}
-          <abbr title="Safety of machinery — Human physical performance — Part 4: Evaluation of working postures" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">EN 1005-4:2005</abbr>{' '}
-          en{' '}
-          <abbr title="Ergonomics — Evaluation of static working postures" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">ISO 11226:2000</abbr>.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Registreer geobserveerde houdingen per lichaamsgebied en taak.
+                Beoordeling conform{' '}
+                <abbr title="Safety of machinery — Human physical performance — Part 4: Evaluation of working postures" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">EN 1005-4:2005</abbr>{' '}
+                en{' '}
+                <abbr title="Ergonomics — Evaluation of static working postures" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">ISO 11226:2000</abbr>.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="EN 1005-4:2005 — Zone-indeling werkhoudingen">
-        Werkhoudingen worden ingedeeld in drie zones op basis van lichaamsgebied, hoek en frequentie:
-        <strong> Acceptabel</strong> (groen),{' '}
-        <strong> Voorwaardelijk acceptabel</strong> (geel — maatregelen gewenst),{' '}
-        <strong> Niet acceptabel</strong> (rood — maatregelen vereist).
-        Bijzondere aandacht voor statische houdingen: ook bij kleine hoeken kan langdurige statische belasting
-        leiden tot klachten (ISO 11226 §5).
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <>
+                Werkhoudingen worden ingedeeld in drie zones op basis van lichaamsgebied, hoek en frequentie:
+                <strong> Acceptabel</strong> (groen),{' '}
+                <strong> Voorwaardelijk acceptabel</strong> (geel — maatregelen gewenst),{' '}
+                <strong> Niet acceptabel</strong> (rood — maatregelen vereist).
+                Bijzondere aandacht voor statische houdingen: ook bij kleine hoeken kan langdurige statische belasting
+                leiden tot klachten (ISO 11226 §5).
+              </>
+          }
+        </InlineEdit>
       </InfoBox>
 
       {bgs.map((bg) => {

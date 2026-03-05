@@ -6,10 +6,22 @@ import { computeAllClimateStatistics, verdictBadgeClass, getMetabolicRate } from
 import { Abbr } from '@/components/Abbr';
 import { InfoBox } from '@/components/InfoBox';
 import { Alert } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.7';
+const NS = 'investigation.climate';
+const FALLBACK_TITLE = 'Stap 8 — Hittestress screening (WBGT)';
+const FALLBACK_DESC = 'Screening op hittestress conform ISO 7243:2017 op basis van de Wet Bulb Globe Temperature. De WBGT wordt vergeleken met de referentiewaarde (WBGTref) per metabole klasse en acclimatisatiestatus. Overschrijding vereist een gedetailleerdere PHS-analyse (stap 9).';
+
+const FALLBACK_IB0_TITLE = 'ISO 7243:2017 Tabel A.1 — WBGTref per metabole klasse (°C)';
+const FALLBACK_IB1_TITLE = 'ISO 7243:2017 Tabel B.2 — Kledingcorrectiewaarden (CAV)';
 
 interface Props {
   investigation: ClimateInvestigation;
   onUpdate: (partial: Partial<ClimateInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 function fmt1(v: number | undefined | null): string {
@@ -28,17 +40,22 @@ const WBGT_REF_TABLE: {
   { class: 4, label: 'Klasse 4 (zeer zwaar)',    acclimatized: 23, notAcclimatized: 18 },
 ];
 
-export default function ClimateStep7_WBGT({ investigation, onUpdate }: Props) {
+export default function ClimateStep7_WBGT({ investigation, onUpdate, contentOverrides }: Props) {
   const { bgs, scenarios } = investigation;
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
+  const ib1Title = contentOverrides?.[`${STEP_KEY}.infobox.1.title`] ?? FALLBACK_IB1_TITLE;
+  const ib1Content = contentOverrides?.[`${STEP_KEY}.infobox.1.content`];
 
   const isRelevant = scenarios.includes('heat');
 
   if (!isRelevant) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 8 — Hittestress screening (<Abbr id="WBGT">WBGT</Abbr>)
-        </h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="neutral">
           Dit scenario is niet geselecteerd. Selecteer &ldquo;Warmtestress&rdquo; in stap 4 om de WBGT-beoordeling in te schakelen.
         </Alert>
@@ -49,9 +66,7 @@ export default function ClimateStep7_WBGT({ investigation, onUpdate }: Props) {
   if (bgs.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 8 — Hittestress screening (WBGT)
-        </h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="warning">
           Definieer eerst blootstellingsgroepen in stap 3.
         </Alert>
@@ -70,19 +85,30 @@ export default function ClimateStep7_WBGT({ investigation, onUpdate }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 8 — Hittestress screening (<Abbr id="WBGT">WBGT</Abbr>)
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Screening op hittestress conform <Abbr id="ISO7243">ISO 7243:2017</Abbr> op basis van de{' '}
-          <Abbr id="WBGT">Wet Bulb Globe Temperature</Abbr>. De WBGT wordt vergeleken met de
-          referentiewaarde (WBGTref) per metabole klasse en acclimatisatiestatus.
-          Overschrijding vereist een gedetailleerdere <Abbr id="PHS">PHS</Abbr>-analyse (stap 9).
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Screening op hittestress conform <Abbr id="ISO7243">ISO 7243:2017</Abbr> op basis van de{' '}
+                <Abbr id="WBGT">Wet Bulb Globe Temperature</Abbr>. De WBGT wordt vergeleken met de
+                referentiewaarde (WBGTref) per metabole klasse en acclimatisatiestatus.
+                Overschrijding vereist een gedetailleerdere <Abbr id="PHS">PHS</Abbr>-analyse (stap 9).
+              </p>
+          }
+        </InlineEdit>
       </div>
 
       {/* Referentietabel */}
-      <InfoBox title="ISO 7243:2017 Tabel A.1 — WBGTref per metabole klasse (°C)">
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
@@ -112,7 +138,12 @@ export default function ClimateStep7_WBGT({ investigation, onUpdate }: Props) {
       </InfoBox>
 
       {/* CAV informatietabel */}
-      <InfoBox title="ISO 7243:2017 Tabel B.2 — Kledingcorrectiewaarden (CAV)" defaultOpen={false}>
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.1.title`}
+          initialValue={ib1Title} fallback={FALLBACK_IB1_TITLE}>
+          {ib1Title}
+        </InlineEdit>
+      } defaultOpen={false}>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>

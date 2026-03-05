@@ -5,10 +5,19 @@ import type { ClimateInvestigation, ClimateReport } from '@/lib/climate-investig
 import { computeAllClimateStatistics, verdictBadgeClass, pmvCategoryBadgeClass } from '@/lib/climate-stats';
 import { Abbr } from '@/components/Abbr';
 import { Button, Icon, Textarea, Input } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.12';
+const NS = 'investigation.climate';
+const FALLBACK_TITLE = 'Stap 13 — Rapport';
+const FALLBACK_DESC = 'Samenvatting van alle onderzoeksresultaten, conclusies en beheersmaatregelen. Exporteer als tekst voor gebruik in rapportagedocumenten.';
 
 interface Props {
   investigation: ClimateInvestigation;
   onUpdate: (partial: Partial<ClimateInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 const REVIEW_TRIGGER_OPTIONS = [
@@ -145,9 +154,12 @@ function buildReportText(inv: ClimateInvestigation): string {
   return lines.join('\n');
 }
 
-export default function ClimateStep12_Report({ investigation, onUpdate }: Props) {
+export default function ClimateStep12_Report({ investigation, onUpdate, contentOverrides }: Props) {
   const [copied, setCopied] = useState(false);
   const statistics = computeAllClimateStatistics(investigation);
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
 
   function updateReport(partial: Partial<ClimateReport>) {
     onUpdate({ report: { ...investigation.report, ...partial } });
@@ -180,13 +192,19 @@ export default function ClimateStep12_Report({ investigation, onUpdate }: Props)
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 13 — Rapport
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Samenvatting van alle onderzoeksresultaten, conclusies en beheersmaatregelen.
-          Exporteer als tekst voor gebruik in rapportagedocumenten.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Samenvatting van alle onderzoeksresultaten, conclusies en beheersmaatregelen.
+                Exporteer als tekst voor gebruik in rapportagedocumenten.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
       {/* Compliancestatus */}

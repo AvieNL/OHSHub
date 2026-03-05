@@ -8,12 +8,22 @@ import { Formula } from '@/components/Formula';
 import { SectionRef } from '@/components/SectionRef';
 import { InfoBox } from '@/components/InfoBox';
 import { Alert, Badge, Button, Card, FieldLabel, FormGrid, Icon, Input, Select, Textarea } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
   onGoToStep: (step: number) => void;
+  contentOverrides?: Record<string, string>;
 }
+
+const STEP_KEY = 'step.2';
+const NS = 'investigation.sound';
+const FALLBACK_TITLE = 'Stap 3 — Werkanalyse (§7 NEN-EN-ISO 9612:2025)';
+const FALLBACK_DESC = 'Stel Homogene Blootstellingsgroepen (HBG / HEG) vast. Een HEG omvat medewerkers die dezelfde soort werk uitvoeren en daardoor vergelijkbare geluidsblootstelling hebben (§7.2).';
+const FALLBACK_IB0_TITLE = '§7.2 — HEG-definitie';
 
 const WORK_PATTERNS: { value: WorkPattern; label: string }[] = [
   { value: 'stationary-simple',      label: 'Vaste werkplek — eenvoudige of enkelvoudige taak' },
@@ -177,7 +187,7 @@ function HEGForm({
   );
 }
 
-export default function SoundStep2_WorkAnalysis({ investigation, onUpdate, onGoToStep }: Props) {
+export default function SoundStep2_WorkAnalysis({ investigation, onUpdate, onGoToStep, contentOverrides }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const { hegs } = investigation;
 
@@ -209,6 +219,11 @@ export default function SoundStep2_WorkAnalysis({ investigation, onUpdate, onGoT
     };
   }
 
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
+
   const newId = '__new__';
   const isAddingNew = editingId === newId;
   const [draftNew, setDraftNew] = useState<SoundHEG | null>(null);
@@ -221,19 +236,36 @@ export default function SoundStep2_WorkAnalysis({ investigation, onUpdate, onGoT
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 3 — Werkanalyse (<SectionRef id="§7">§7</SectionRef> <Abbr id="NEN9612">NEN-EN-ISO 9612</Abbr>:2025)
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Stel Homogene Blootstellingsgroepen (HBG / <Abbr id="HEG">HEG</Abbr>) vast. Een <Abbr id="HEG">HEG</Abbr> omvat medewerkers die
-          dezelfde soort werk uitvoeren en daardoor vergelijkbare geluidsblootstelling hebben (<SectionRef id="§7.2">§7.2</SectionRef>).
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Stel Homogene Blootstellingsgroepen (HBG / <Abbr id="HEG">HEG</Abbr>) vast. Een <Abbr id="HEG">HEG</Abbr> omvat medewerkers die
+                dezelfde soort werk uitvoeren en daardoor vergelijkbare geluidsblootstelling hebben (<SectionRef id="§7.2">§7.2</SectionRef>).
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="§7.2 — HEG-definitie">
-        <SectionRef id="§7.2">§7.2</SectionRef>: Definieer voor elke <Abbr id="HEG">HEG</Abbr>: de samenstelling, het werkpatroon en de
-        nominale werkdag (welke taken, hoe lang). De effectieve werkdag <Formula math="T_e" /> is de som van
-        alle taaklengtes (<SectionRef id="§9.2">§9.2</SectionRef> Formule 2). <Formula math="T_0" /> = 8 uur is de referentieduur.
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <><SectionRef id="§7.2">§7.2</SectionRef>: Definieer voor elke <Abbr id="HEG">HEG</Abbr>: de samenstelling, het werkpatroon en de
+              nominale werkdag (welke taken, hoe lang). De effectieve werkdag <Formula math="T_e" /> is de som van
+              alle taaklengtes (<SectionRef id="§9.2">§9.2</SectionRef> Formule 2). <Formula math="T_0" /> = 8 uur is de referentieduur.</>
+          }
+        </InlineEdit>
       </InfoBox>
 
       {/* HEG list */}

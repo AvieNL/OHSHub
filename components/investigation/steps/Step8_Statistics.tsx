@@ -3,11 +3,20 @@
 import type { Investigation, MeasurementStatistics, MeasurementVerdict, Substance } from '@/lib/investigation-types';
 import { computeStats, getUT } from '@/lib/measurement-stats';
 import { Alert } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: Investigation;
   onUpdate: (partial: Partial<Investigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
+
+const STEP_KEY = 'step.8';
+const NS = 'investigation.hazardous-substances';
+const FALLBACK_TITLE = 'Stap 8 — Kwantitatieve beoordeling t.o.v. grenswaarden';
+const FALLBACK_DESC = 'Statistische compliance-toets conform NEN-EN 689:2018+C1:2019. Bij n<6: §5.5.2 voorlopige drempeltoets. Bij n≥6: Bijlage F toets (U_R vs U_T).';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -237,15 +246,16 @@ function PlanStatsCard({
 
 // ─── Step8_Statistics ─────────────────────────────────────────────────────────
 
-export default function Step8_Statistics({ investigation }: Props) {
+export default function Step8_Statistics({ investigation, contentOverrides }: Props) {
   const { measurementPlans, measurementSeries, substances, segs, tasks } = investigation;
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
 
   if (measurementPlans.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 8 — Kwantitatieve beoordeling
-        </h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="warning">
           Stel meetplannen op in stap 6 en voer meetwaarden in bij stap 7.
         </Alert>
@@ -352,13 +362,19 @@ export default function Step8_Statistics({ investigation }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 8 — Kwantitatieve beoordeling t.o.v. grenswaarden
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Statistische compliance-toets conform NEN-EN 689:2018+C1:2019.
-          Bij n&lt;6: §5.5.2 voorlopige drempeltoets. Bij n≥6: Bijlage F toets (U_R vs U_T).
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Statistische compliance-toets conform NEN-EN 689:2018+C1:2019.
+                Bij n&lt;6: §5.5.2 voorlopige drempeltoets. Bij n≥6: Bijlage F toets (U_R vs U_T).
+              </p>
+          }
+        </InlineEdit>
       </div>
 
       <div className="rounded-lg bg-zinc-50 px-4 py-3 text-xs text-zinc-500 dark:bg-zinc-800/50 dark:text-zinc-400">

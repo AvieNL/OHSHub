@@ -7,10 +7,14 @@ import { newId } from '@/lib/investigation-storage';
 import { Abbr, ABBR_TITLES } from '@/components/Abbr';
 import { lookupOELByCAS, SZW_VERSION, SZW_SOURCE, EU_OEL_VERSION, EU_OEL_SOURCE } from '@/data/oels';
 import { Button, Input, Select, Textarea, Icon } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: Investigation;
   onUpdate: (partial: Partial<Investigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 // ─── Source-hint data ─────────────────────────────────────────────────────────
@@ -1666,11 +1670,19 @@ function CMRBadge({ category }: { category: CMRCategory }) {
 
 // ─── Step2_Substances ─────────────────────────────────────────────────────────
 
-export default function Step2_Substances({ investigation, onUpdate }: Props) {
+const STEP_KEY = 'step.2';
+const NS = 'investigation.hazardous-substances';
+const FALLBACK_TITLE = 'Stap 2 — Volledige stoffeninventarisatie';
+const FALLBACK_DESC = 'Leg alle gevaarlijke stoffen vast conform Arbobesluit hoofdstuk 4 en REACH bijlage II. Per stof: identificatie, CLP-indeling, fysisch-chemische eigenschappen en grenswaarden.';
+
+export default function Step2_Substances({ investigation, onUpdate, contentOverrides }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftSubstance, setDraftSubstance] = useState<Substance | null>(null);
 
   const substances = investigation.substances;
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
 
   function startAdd() {
     setDraftSubstance(emptySubstance());
@@ -1706,15 +1718,21 @@ export default function Step2_Substances({ investigation, onUpdate }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 2 — Volledige stoffeninventarisatie
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Leg alle gevaarlijke stoffen vast conform Arbobesluit hoofdstuk 4 en <Abbr id="REACH">REACH</Abbr> bijlage II.
-          Per stof: identificatie, <Abbr id="CLP">CLP</Abbr>-indeling, fysisch-chemische eigenschappen en grenswaarden.
-          Klik het <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-zinc-300 align-middle text-xs text-zinc-400">ℹ</span>-icoon
-          naast een veld voor bronnen en referenties.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Leg alle gevaarlijke stoffen vast conform Arbobesluit hoofdstuk 4 en <Abbr id="REACH">REACH</Abbr> bijlage II.
+                Per stof: identificatie, <Abbr id="CLP">CLP</Abbr>-indeling, fysisch-chemische eigenschappen en grenswaarden.
+                Klik het <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-zinc-300 align-middle text-xs text-zinc-400">ℹ</span>-icoon
+                naast een veld voor bronnen en referenties.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
       {substances.length > 0 && (

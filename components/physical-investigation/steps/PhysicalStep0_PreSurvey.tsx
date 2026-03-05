@@ -5,10 +5,20 @@ import type { PhysicalInvestigation, PhysicalPreSurvey, PhysicalSurveyRecommenda
 import { InfoBox } from '@/components/InfoBox';
 import { Abbr } from '@/components/Abbr';
 import { Button, Card, FieldLabel, FormGrid, Input, Select } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.0';
+const NS = 'investigation.physical-load';
+const FALLBACK_TITLE = 'Stap 1 — Voorverkenning fysieke belasting';
+const FALLBACK_DESC = 'Beantwoord de signaleringsvrager om te bepalen welk soort onderzoek nodig is. De aanbeveling is gebaseerd op de RI&E-systematiek en Arbobesluit art. 5.1.';
+const FALLBACK_IB0_TITLE = 'Arbobesluit art. 5.1 — Risicobeoordeling fysieke belasting';
 
 interface Props {
   investigation: PhysicalInvestigation;
   onUpdate: (partial: Partial<PhysicalInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 type QGroup = 'lifting' | 'push-pull' | 'repetitive' | 'posture' | 'general';
@@ -86,7 +96,11 @@ function computeRecommendation(responses: Record<string, { answer?: PrePhysicalA
   return 'not-required';
 }
 
-export default function PhysicalStep0_PreSurvey({ investigation, onUpdate }: Props) {
+export default function PhysicalStep0_PreSurvey({ investigation, onUpdate, contentOverrides }: Props) {
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
   const preSurvey = investigation.preSurvey ?? { responses: {} };
   const [showOverride, setShowOverride] = useState(!!preSurvey.recommendationOverride);
 
@@ -109,23 +123,42 @@ export default function PhysicalStep0_PreSurvey({ investigation, onUpdate }: Pro
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 1 — Voorverkenning fysieke belasting
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Beantwoord de signaleringsvrager om te bepalen welk soort onderzoek nodig is.
-          De aanbeveling is gebaseerd op de{' '}
-          <Abbr id="RI&E">RI&amp;E</Abbr>-systematiek en Arbobesluit art. 5.1.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Beantwoord de signaleringsvrager om te bepalen welk soort onderzoek nodig is.
+                De aanbeveling is gebaseerd op de{' '}
+                <Abbr id="RI&E">RI&amp;E</Abbr>-systematiek en Arbobesluit art. 5.1.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="Arbobesluit art. 5.1 — Risicobeoordeling fysieke belasting">
-        De werkgever is verplicht bij{' '}
-        <abbr title="Risico-inventarisatie en -evaluatie" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">RI&amp;E</abbr>{' '}
-        de risico&apos;s van handmatig tillen, duwen/trekken en repeterende bewegingen te beoordelen.
-        Arbobesluit art. 5.1 schrijft voor dat specifieke maatregelen worden getroffen als
-        ongunstige ergonomische omstandigheden niet vermeden kunnen worden. Gebruik deze voorverkenning
-        om te bepalen welk nader onderzoek nodig is (NIOSH, OCRA, DUTCH of houdingsobservatie).
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <>
+                De werkgever is verplicht bij{' '}
+                <abbr title="Risico-inventarisatie en -evaluatie" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">RI&amp;E</abbr>{' '}
+                de risico&apos;s van handmatig tillen, duwen/trekken en repeterende bewegingen te beoordelen.
+                Arbobesluit art. 5.1 schrijft voor dat specifieke maatregelen worden getroffen als
+                ongunstige ergonomische omstandigheden niet vermeden kunnen worden. Gebruik deze voorverkenning
+                om te bepalen welk nader onderzoek nodig is (NIOSH, OCRA, DUTCH of houdingsobservatie).
+              </>
+          }
+        </InlineEdit>
       </InfoBox>
 
       {/* Respondent info */}

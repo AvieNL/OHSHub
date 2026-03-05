@@ -15,11 +15,15 @@ import { Formula } from '@/components/Formula';
 import { InfoBox } from '@/components/InfoBox';
 import { SectionRef } from '@/components/SectionRef';
 import { Alert, Button, Icon } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
   onGoToStep: (step: number) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 function fmt1(n: number): string { return isFinite(n) ? n.toFixed(1) : '—'; }
@@ -47,6 +51,12 @@ const VERDICT_COLORS = {
     badge: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
   },
 };
+
+const STEP_KEY = 'step.8';
+const NS = 'investigation.sound';
+const FALLBACK_TITLE = 'Stap 9 — L_EX,8h & onzekerheid (Bijlage C)';
+const FALLBACK_DESC = 'Berekening van de dagelijkse geluidblootstelling en de uitgebreide onzekerheid conform NEN-EN-ISO 9612:2025.';
+const FALLBACK_IB0_TITLE = '§9.2 / §9.3 / §12.2 / §15.d — Meetprocedure & eisen (NEN-EN-ISO 9612)';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -508,7 +518,7 @@ function HEGResult({
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export default function SoundStep7_Calculation({ investigation, onUpdate, onGoToStep }: Props) {
+export default function SoundStep7_Calculation({ investigation, onUpdate, onGoToStep, contentOverrides }: Props) {
   const { hegs, statistics, tasks, measurements, measurementSeries } = investigation;
   const [formulasOpen, setFormulasOpen] = useState(false);
 
@@ -523,6 +533,11 @@ export default function SoundStep7_Calculation({ investigation, onUpdate, onGoTo
     onUpdate({ statistics: computed });
   }
 
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
+
   const hegMap        = Object.fromEntries(hegs.map((h) => [h.id, h.name]));
   const hasTaskBased  = hegs.some((h) => h.strategy === 'task-based');
   const hasNonTask    = hegs.some((h) => h.strategy === 'job-based' || h.strategy === 'full-day');
@@ -532,9 +547,7 @@ export default function SoundStep7_Calculation({ investigation, onUpdate, onGoTo
   if (hegs.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 9 — <Formula math="L_{EX,8h}" /> &amp; onzekerheid
-        </h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="warning" size="md">
           Voer eerst meetwaarden in bij{' '}
           <Button variant="link" type="button" onClick={() => onGoToStep(7)}>stap 8</Button>.
@@ -555,75 +568,92 @@ export default function SoundStep7_Calculation({ investigation, onUpdate, onGoTo
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-            Stap 9 — <Formula math="L_{EX,8h}" /> &amp; onzekerheid (Bijlage C)
-          </h2>
-          <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-            Berekening van de dagelijkse geluidblootstelling en de uitgebreide onzekerheid conform{' '}
-            <Abbr id="NEN9612">NEN-EN-ISO 9612</Abbr>:2025.
-          </p>
+          <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+          <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+            initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+            {desc
+              ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  <MarkdownContent>{desc}</MarkdownContent>
+                </p>
+              : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  Berekening van de dagelijkse geluidblootstelling en de uitgebreide onzekerheid conform{' '}
+                  <Abbr id="NEN9612">NEN-EN-ISO 9612</Abbr>:2025.
+                </p>
+            }
+          </InlineEdit>
         </div>
         <Button variant="secondary" className="shrink-0" onClick={recompute}>
           Herberekenen
         </Button>
       </div>
 
-      <InfoBox title="§9.2 / §9.3 / §12.2 / §15.d — Meetprocedure & eisen (NEN-EN-ISO 9612)">
-        <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
-          {/* Meetduur */}
-          <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-              Meetduur <SectionRef id="§9.3.2">§9.3.2</SectionRef>
-            </p>
-            <ul className="space-y-0.5 text-xs">
-              <li>→ Minimaal <strong>5 minuten</strong> per meting</li>
-              <li>→ Taak korter dan 5 min? Meet de <strong>volledige taak</strong></li>
-              <li>→ <strong>Stabiliteitcriterium:</strong> meting mag eerder stoppen als{' '}
-                <abbr title="Equivalent geluidniveau A-gewogen over meetduur" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">
-                  L<sub>p,A,eq</sub>
-                </abbr>{' '}
-                gedurende <strong>30 s niet meer dan 0,2 dB</strong> varieert (alleen bij stationaire bronnen)</li>
-              <li>→ Start <strong>ná aanlooptijd</strong> — wacht tot bron stabiel draait</li>
-            </ul>
-          </div>
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+                {/* Meetduur */}
+                <div>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    Meetduur <SectionRef id="§9.3.2">§9.3.2</SectionRef>
+                  </p>
+                  <ul className="space-y-0.5 text-xs">
+                    <li>→ Minimaal <strong>5 minuten</strong> per meting</li>
+                    <li>→ Taak korter dan 5 min? Meet de <strong>volledige taak</strong></li>
+                    <li>→ <strong>Stabiliteitcriterium:</strong> meting mag eerder stoppen als{' '}
+                      <abbr title="Equivalent geluidniveau A-gewogen over meetduur" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">
+                        L<sub>p,A,eq</sub>
+                      </abbr>{' '}
+                      gedurende <strong>30 s niet meer dan 0,2 dB</strong> varieert (alleen bij stationaire bronnen)</li>
+                    <li>→ Start <strong>ná aanlooptijd</strong> — wacht tot bron stabiel draait</li>
+                  </ul>
+                </div>
 
-          {/* Meetpositie */}
-          <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-              Meetpositie <SectionRef id="§9.2">§9.2</SectionRef>
-            </p>
-            <ul className="space-y-0.5 text-xs">
-              <li>→ Microfoon op <strong>oorhoogte medewerker</strong>, op ± 0,1–0,2 m van het oor</li>
-              <li>→ Medewerker in <strong>normale werkhouding</strong></li>
-              <li>→ Microfoon niet beschaduwd door hoofd of schouder</li>
-              <li>→ Windkap gebruiken bij luchtbeweging &gt; 1 m/s</li>
-            </ul>
-          </div>
+                {/* Meetpositie */}
+                <div>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    Meetpositie <SectionRef id="§9.2">§9.2</SectionRef>
+                  </p>
+                  <ul className="space-y-0.5 text-xs">
+                    <li>→ Microfoon op <strong>oorhoogte medewerker</strong>, op ± 0,1–0,2 m van het oor</li>
+                    <li>→ Medewerker in <strong>normale werkhouding</strong></li>
+                    <li>→ Microfoon niet beschaduwd door hoofd of schouder</li>
+                    <li>→ Windkap gebruiken bij luchtbeweging &gt; 1 m/s</li>
+                  </ul>
+                </div>
 
-          {/* Omstandigheden */}
-          <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-              Omstandigheden <SectionRef id="§9.3.1">§9.3.1</SectionRef> / <SectionRef id="§15.d.4">§15.d.4</SectionRef>
-            </p>
-            <ul className="space-y-0.5 text-xs">
-              <li>→ Meten tijdens <strong>representatieve, normale werkzaamheden</strong></li>
-              <li>→ Alle geluidbronnen actief die normaal aanwezig zijn</li>
-              <li>→ Afwijkingen vastleggen per meting via de <strong>OB-knop</strong> <SectionRef id="§15.d.5">§15.d.5</SectionRef></li>
-            </ul>
-          </div>
+                {/* Omstandigheden */}
+                <div>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    Omstandigheden <SectionRef id="§9.3.1">§9.3.1</SectionRef> / <SectionRef id="§15.d.4">§15.d.4</SectionRef>
+                  </p>
+                  <ul className="space-y-0.5 text-xs">
+                    <li>→ Meten tijdens <strong>representatieve, normale werkzaamheden</strong></li>
+                    <li>→ Alle geluidbronnen actief die normaal aanwezig zijn</li>
+                    <li>→ Afwijkingen vastleggen per meting via de <strong>OB-knop</strong> <SectionRef id="§15.d.5">§15.d.5</SectionRef></li>
+                  </ul>
+                </div>
 
-          {/* Kalibratie & aantallen */}
-          <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-              Kalibratie & aantallen <SectionRef id="§12.2">§12.2</SectionRef> / <SectionRef id="§9.3">§9.3</SectionRef>
-            </p>
-            <ul className="space-y-0.5 text-xs">
-              <li>→ <strong>Vóór en ná</strong> elke meetserie een veldkalibratie uitvoeren</li>
-              <li>→ Kalibratiefout &gt; 0,5 dB → serie <strong>automatisch uitgesloten</strong></li>
-              <li>→ Per taak: ≥ <strong>3 metingen</strong> verplicht; ≥ <strong>5 aanbevolen</strong> bij meerdere medewerkers</li>
-            </ul>
-          </div>
-        </div>
+                {/* Kalibratie & aantallen */}
+                <div>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    Kalibratie & aantallen <SectionRef id="§12.2">§12.2</SectionRef> / <SectionRef id="§9.3">§9.3</SectionRef>
+                  </p>
+                  <ul className="space-y-0.5 text-xs">
+                    <li>→ <strong>Vóór en ná</strong> elke meetserie een veldkalibratie uitvoeren</li>
+                    <li>→ Kalibratiefout &gt; 0,5 dB → serie <strong>automatisch uitgesloten</strong></li>
+                    <li>→ Per taak: ≥ <strong>3 metingen</strong> verplicht; ≥ <strong>5 aanbevolen</strong> bij meerdere medewerkers</li>
+                  </ul>
+                </div>
+              </div>
+          }
+        </InlineEdit>
       </InfoBox>
 
       {hegsWithoutPPE.length > 0 && (

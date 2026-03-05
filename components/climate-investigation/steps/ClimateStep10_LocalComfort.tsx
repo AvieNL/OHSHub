@@ -5,10 +5,21 @@ import { computeAllClimateStatistics, pmvCategoryBadgeClass } from '@/lib/climat
 import { Abbr } from '@/components/Abbr';
 import { InfoBox } from '@/components/InfoBox';
 import { Alert } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.10';
+const NS = 'investigation.climate';
+const FALLBACK_TITLE = 'Stap 11 — Lokaal thermisch comfort';
+const FALLBACK_DESC = 'Beoordeling van lokale thermische oncomfortbronnen conform ISO 7730:2025 §6: tocht (DR), verticaal temperatuurverschil, vloertemperatuur en stralingsasymmetrie.';
+
+const FALLBACK_IB0_TITLE = 'ISO 7730:2025 §6 — Beoordelingscriteria lokaal comfort (Tabel 1)';
 
 interface Props {
   investigation: ClimateInvestigation;
   onUpdate: (partial: Partial<ClimateInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 function fmt1(v: number | undefined | null): string {
@@ -89,17 +100,20 @@ function ScoreRow({
   );
 }
 
-export default function ClimateStep10_LocalComfort({ investigation, onUpdate: _onUpdate }: Props) {
+export default function ClimateStep10_LocalComfort({ investigation, onUpdate: _onUpdate, contentOverrides }: Props) {
   const { bgs, scenarios } = investigation;
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
 
   const isRelevant = scenarios.includes('local');
 
   if (!isRelevant) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 11 — Lokaal thermisch comfort
-        </h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="neutral">
           Dit scenario is niet geselecteerd. Selecteer &ldquo;Lokaal thermisch comfort&rdquo; in stap 4 om
           de lokale comfortbeoordeling in te schakelen.
@@ -111,7 +125,7 @@ export default function ClimateStep10_LocalComfort({ investigation, onUpdate: _o
   if (bgs.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 11 — Lokaal thermisch comfort</h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="warning">
           Definieer eerst blootstellingsgroepen in stap 3.
         </Alert>
@@ -124,18 +138,29 @@ export default function ClimateStep10_LocalComfort({ investigation, onUpdate: _o
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 11 — Lokaal thermisch comfort
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Beoordeling van lokale thermische oncomfortbronnen conform{' '}
-          <Abbr id="ISO7730">ISO 7730:2025</Abbr> §6: tocht (<Abbr id="DR">DR</Abbr>),
-          verticaal temperatuurverschil, vloertemperatuur en stralingsasymmetrie.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Beoordeling van lokale thermische oncomfortbronnen conform{' '}
+                <Abbr id="ISO7730">ISO 7730:2025</Abbr> §6: tocht (<Abbr id="DR">DR</Abbr>),
+                verticaal temperatuurverschil, vloertemperatuur en stralingsasymmetrie.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
       {/* Normen overzicht */}
-      <InfoBox title="ISO 7730:2025 §6 — Beoordelingscriteria lokaal comfort (Tabel 1)">
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>

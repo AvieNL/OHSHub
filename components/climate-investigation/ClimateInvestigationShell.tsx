@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { ClimateInvestigation } from '@/lib/climate-investigation-types';
+import InlineEdit from '@/components/InlineEdit';
 import ClimateStep0_PreSurvey from './steps/ClimateStep0_PreSurvey';
 import ClimateStep1_Scope from './steps/ClimateStep1_Scope';
 import ClimateStep2_WorkAnalysis from './steps/ClimateStep2_WorkAnalysis';
@@ -56,9 +57,10 @@ interface Props {
   investigation: ClimateInvestigation;
   onUpdate: (updated: ClimateInvestigation) => void;
   onClose: () => void;
+  stepContent?: Record<string, string>;
 }
 
-export default function ClimateInvestigationShell({ investigation, onUpdate, onClose }: Props) {
+export default function ClimateInvestigationShell({ investigation, onUpdate, onClose, stepContent }: Props) {
   const [inv, setInv] = useState<ClimateInvestigation>(investigation);
   const [saving, setSaving] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -122,7 +124,7 @@ export default function ClimateInvestigationShell({ investigation, onUpdate, onC
     if (e.key === 'Escape') { setEditingTitle(false); }
   }
 
-  const stepProps = { investigation: inv, onUpdate: handleStepUpdate };
+  const stepProps = { investigation: inv, onUpdate: handleStepUpdate, contentOverrides: stepContent };
 
   const StepComponents = [
     ClimateStep0_PreSurvey,
@@ -251,9 +253,16 @@ export default function ClimateInvestigationShell({ investigation, onUpdate, onC
                   <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500">
                     Stap {inv.currentStep + 1} van {TOTAL_STEPS}
                   </p>
-                  <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
-                    {STEPS[inv.currentStep].title}
-                  </h3>
+                  <InlineEdit
+                    namespace="investigation.climate"
+                    contentKey={`step.${inv.currentStep}.title`}
+                    initialValue={stepContent?.[`step.${inv.currentStep}.title`] ?? STEPS[inv.currentStep].title}
+                    fallback={STEPS[inv.currentStep].title}
+                  >
+                    <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                      {stepContent?.[`step.${inv.currentStep}.title`] ?? STEPS[inv.currentStep].title}
+                    </h3>
+                  </InlineEdit>
                 </div>
               </div>
               <div className="hidden items-center gap-2 sm:flex">

@@ -4,11 +4,20 @@ import { useState } from 'react';
 import type { Investigation, SEG } from '@/lib/investigation-types';
 import { newId } from '@/lib/investigation-storage';
 import { Button, Input, Textarea, Icon } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: Investigation;
   onUpdate: (partial: Partial<Investigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
+
+const STEP_KEY = 'step.5';
+const NS = 'investigation.hazardous-substances';
+const FALLBACK_TITLE = 'Stap 5 — SEG-vorming (Similar Exposure Groups)';
+const FALLBACK_DESC = 'Groepeer werknemers met vergelijkbare blootstelling in SEG\'s conform NEN-EN 689 §5.2.1. Elk SEG heeft dezelfde taken, stoffen, procescondities en beheersmaatregelen. Metingen (stap 7) worden per SEG uitgevoerd.';
 
 function emptySEG(): SEG {
   return {
@@ -149,10 +158,13 @@ function SEGForm({
   );
 }
 
-export default function Step5_SEGs({ investigation, onUpdate }: Props) {
+export default function Step5_SEGs({ investigation, onUpdate, contentOverrides }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<SEG | null>(null);
   const { tasks, substances, segs } = investigation;
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
 
   function substancesForSEG(seg: SEG): string[] {
     const subIds = new Set<string>();
@@ -200,14 +212,20 @@ export default function Step5_SEGs({ investigation, onUpdate }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 5 — SEG-vorming (Similar Exposure Groups)
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Groepeer werknemers met vergelijkbare blootstelling in SEG&apos;s conform NEN-EN 689 §5.2.1.
-          Elk SEG heeft dezelfde taken, stoffen, procescondities en beheersmaatregelen.
-          Metingen (stap 7) worden per SEG uitgevoerd.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Groepeer werknemers met vergelijkbare blootstelling in SEG&apos;s conform NEN-EN 689 §5.2.1.
+                Elk SEG heeft dezelfde taken, stoffen, procescondities en beheersmaatregelen.
+                Metingen (stap 7) worden per SEG uitgevoerd.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
       <div className="rounded-lg bg-zinc-50 px-4 py-3 text-xs text-zinc-500 dark:bg-zinc-800/50 dark:text-zinc-400">

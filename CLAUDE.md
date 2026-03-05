@@ -13,30 +13,27 @@ Nooit vragen of dit gedaan moet worden — gewoon doen.
 
 ---
 
-## Formules en wiskunde
+## Formules, markdown en afkortingen
 
-Alle wiskundige notatie in de UI altijd via KaTeX renderen.
+Alle wiskundige notatie altijd via KaTeX. Nooit plain tekst (`L_EX,8h`, Unicode-subscripts).
 
-**In JSX/TSX (componenten en pagina's):**
+| Situatie | Gebruik |
+|---|---|
+| Hardcoded tekst in een **server-component** | `<Formula math="L_{EX,8h}" />` |
+| Hardcoded **datastring** met formule-marker | `renderWithFormulas('Norm [[L_{EX,8h}]]')` — server-safe |
+| **CMS-bewerkte** tekst (markdown + formules + afkortingen) | `<MarkdownContent>` — client-only, vereist `AbbrProvider` |
+
+**Marker-syntax** (voor strings die door `renderWithFormulas` of `MarkdownContent` lopen):
+- Formule: `[[L_{EX,8h}]]`
+- Afkorting: `[[abbr:CMR]]` of `[[abbr:CMR:Carcinogeen, Mutageen of Reprotoxisch]]`
+
+**Afkortingen in JSX** — altijd omhullen met `<abbr title="...">`:
 ```tsx
-import { Formula } from '@/components/Formula';
-<Formula math="L_{EX,8h}" />
+<abbr title="Carcinogeen, Mutageen of Reprotoxisch"
+      className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">
+  CMR
+</abbr>
 ```
-
-**In datastrings (bijv. `lib/theme-legal-info.ts`) die via `renderWithFormulas()` lopen:**
-```ts
-'Dagblootstelling [[L_{EX,8h}]] — art. 6.5'
-```
-De `[[...]]`-markers worden door `renderWithFormulas()` in `components/ThemeLegalInfo.tsx` omgezet naar `<Formula>`-elementen.
-
-Nooit plain tekst gebruiken voor formules (geen `L_EX,8h`, geen Unicode-subscripts).
-
----
-
-## Afkortingen
-
-Alle afkortingen in de UI omhullen met `<abbr title="...">` (of de projecteigen `<Abbr>`-component).
-Styling: `className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2"`.
 
 ---
 

@@ -112,7 +112,11 @@ function NewInvestigationDialog({
 
 // ─── InvestigationApp ─────────────────────────────────────────────────────────
 
-export default function InvestigationApp() {
+interface InvestigationAppProps {
+  stepContent?: Record<string, string>;
+}
+
+export default function InvestigationApp({ stepContent }: InvestigationAppProps) {
   const [investigations, setInvestigations] = useState<Investigation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showNewDialog, setShowNewDialog] = useState(false);
@@ -192,6 +196,7 @@ export default function InvestigationApp() {
         investigation={activeInvestigation}
         onUpdate={handleUpdate}
         onClose={() => setActiveId(null)}
+        stepContent={stepContent}
       />
     );
   }

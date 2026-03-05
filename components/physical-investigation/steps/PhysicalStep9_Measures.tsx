@@ -6,10 +6,20 @@ import { newPhysicalId } from '@/lib/physical-investigation-storage';
 import { computeAllPhysicalStatistics, computeLiftingResult, computePushPullResult, computeRepetitiveResult } from '@/lib/physical-stats';
 import { InfoBox } from '@/components/InfoBox';
 import { Button, Card, FieldLabel, Icon, Input, Select } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.9';
+const NS = 'investigation.physical-load';
+const FALLBACK_TITLE = 'Stap 10 — Beheersmaatregelen';
+const FALLBACK_DESC = 'Definieer maatregelen op basis van de geïdentificeerde risico\'s. Volg de Arbeidshygiënische Strategie: technische maatregelen (bron) gaan altijd voor organisatorische en persoonlijke maatregelen.';
+const FALLBACK_IB0_TITLE = 'Arbobesluit art. 5.3 — Beheersmaatregelen fysieke belasting';
 
 interface Props {
   investigation: PhysicalInvestigation;
   onUpdate: (partial: Partial<PhysicalInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 const TYPE_LABELS: Record<PhysicalMeasureType, string> = {
@@ -247,7 +257,11 @@ function MeasureForm({
   );
 }
 
-export default function PhysicalStep9_Measures({ investigation, onUpdate }: Props) {
+export default function PhysicalStep9_Measures({ investigation, onUpdate, contentOverrides }: Props) {
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
   const { bgs, measures } = investigation;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
@@ -284,25 +298,44 @@ export default function PhysicalStep9_Measures({ investigation, onUpdate }: Prop
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 10 — Beheersmaatregelen
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Definieer maatregelen op basis van de geïdentificeerde risico&apos;s.
-          Volg de{' '}
-          <abbr title="Arbeidshygiënische Strategie: T=Technisch, O=Organisatorisch, P=Persoonlijk" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">
-            Arbeidshygiënische Strategie
-          </abbr>: technische maatregelen (bron) gaan altijd voor organisatorische en persoonlijke maatregelen.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Definieer maatregelen op basis van de geïdentificeerde risico&apos;s.
+                Volg de{' '}
+                <abbr title="Arbeidshygiënische Strategie: T=Technisch, O=Organisatorisch, P=Persoonlijk" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">
+                  Arbeidshygiënische Strategie
+                </abbr>: technische maatregelen (bron) gaan altijd voor organisatorische en persoonlijke maatregelen.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="Arbobesluit art. 5.3 — Beheersmaatregelen fysieke belasting">
-        Als ergonomische risico&apos;s niet volledig kunnen worden vermeden, zijn maatregelen
-        verplicht conform de Arbeidshygiënische Strategie:
-        (1) Technisch — mechanisatie, hulpgereedschappen, aanpassing werkplek/hoogte;
-        (2) Organisatorisch — taakroulatie, aangepaste werktijden, pauzes;
-        (3) Persoonlijk — ergonomische training, gebruiksaanwijzingen.
-        Persoonlijke beschermingsmiddelen (rugsteun) zijn geen substitutie voor bronmaatregelen.
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <>
+                Als ergonomische risico&apos;s niet volledig kunnen worden vermeden, zijn maatregelen
+                verplicht conform de Arbeidshygiënische Strategie:
+                (1) Technisch — mechanisatie, hulpgereedschappen, aanpassing werkplek/hoogte;
+                (2) Organisatorisch — taakroulatie, aangepaste werktijden, pauzes;
+                (3) Persoonlijk — ergonomische training, gebruiksaanwijzingen.
+                Persoonlijke beschermingsmiddelen (rugsteun) zijn geen substitutie voor bronmaatregelen.
+              </>
+          }
+        </InlineEdit>
       </InfoBox>
 
       {/* Risk overview */}

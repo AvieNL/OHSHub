@@ -4,11 +4,20 @@ import { useState } from 'react';
 import type { Investigation, ControlMeasure, ControlType } from '@/lib/investigation-types';
 import { newId } from '@/lib/investigation-storage';
 import { Button, Input, Select, Textarea, Icon } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: Investigation;
   onUpdate: (partial: Partial<Investigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
+
+const STEP_KEY = 'step.9';
+const NS = 'investigation.hazardous-substances';
+const FALLBACK_TITLE = 'Stap 9 — Maatregelen (Arbeidshygiënische Strategie)';
+const FALLBACK_DESC = 'Leg maatregelen vast conform de AHS-hiërarchie: begin altijd bij de bron. Persoonlijke bescherming is het laatste redmiddel, niet de eerste keuze.';
 
 // ─── AHS hierarchy config ──────────────────────────────────────────────────────
 
@@ -254,10 +263,13 @@ function StatusBadge({ status }: { status: ControlMeasure['status'] }) {
 
 // ─── Step9_Measures ───────────────────────────────────────────────────────────
 
-export default function Step9_Measures({ investigation, onUpdate }: Props) {
+export default function Step9_Measures({ investigation, onUpdate, contentOverrides }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<ControlMeasure | null>(null);
   const { controlMeasures } = investigation;
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
 
   function startAdd() {
     setDraft(emptyMeasure());
@@ -293,13 +305,19 @@ export default function Step9_Measures({ investigation, onUpdate }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 9 — Maatregelen (Arbeidshygiënische Strategie)
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Leg maatregelen vast conform de AHS-hiërarchie: begin altijd bij de bron.
-          Persoonlijke bescherming is het laatste redmiddel, niet de eerste keuze.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Leg maatregelen vast conform de AHS-hiërarchie: begin altijd bij de bron.
+                Persoonlijke bescherming is het laatste redmiddel, niet de eerste keuze.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
       {/* AHS pyramid */}

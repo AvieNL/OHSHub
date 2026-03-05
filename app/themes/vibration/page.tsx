@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import InvestigationPlaceholder from '@/components/InvestigationPlaceholder';
 import { THEME_LEGAL_INFO } from '@/lib/theme-legal-info';
 import { themes } from '@/lib/themes';
+import { getNamespaceContent } from '@/lib/content';
 
 export const metadata: Metadata = {
   title: 'Trillingen — OHSHub',
@@ -12,16 +13,27 @@ export const metadata: Metadata = {
 const { legislation, norms, limitGroups, adminObligations } = THEME_LEGAL_INFO['vibration'];
 const theme = themes.find((t) => t.slug === 'vibration')!;
 
-export default function VibrationPage() {
+const FALLBACK_TITLE = 'Trillingen';
+const FALLBACK_DESC =
+  'Beoordeling van blootstelling aan hand-armtrillingen (HAV) en hele-lichaamstrillingen (WBV) conform de Europese Trillingenrichtlijn 2002/44/EG en Arbobesluit art. 6.11a–6.11g. Langdurige blootstelling kan leiden tot het Hand-Arm Vibration Syndrome (HAVS), witte vingers of chronische rugklachten.';
+
+export default async function VibrationPage() {
+  const [legalOverrides, themeOverrides] = await Promise.all([
+    getNamespaceContent('theme-legal.vibration'),
+    getNamespaceContent('theme.vibration'),
+  ]);
+
   return (
     <InvestigationPlaceholder
-      title="Trillingen"
-      subtitle="HAV · WBV"
-      description="Beoordeling van blootstelling aan hand-armtrillingen (HAV) en hele-lichaamstrillingen (WBV) conform de Europese Trillingenrichtlijn 2002/44/EG en Arbobesluit art. 6.11a–6.11g. Langdurige blootstelling kan leiden tot het Hand-Arm Vibration Syndrome (HAVS), witte vingers of chronische rugklachten."
+      namespace="theme.vibration"
+      legalNamespace="theme-legal.vibration"
+      legalOverrides={legalOverrides}
+      title={themeOverrides['pageTitle'] ?? FALLBACK_TITLE}
+      fallbackTitle={FALLBACK_TITLE}
+      description={themeOverrides['pageDesc'] ?? FALLBACK_DESC}
+      fallbackDesc={FALLBACK_DESC}
       iconPaths={theme.iconPaths}
       color={{
-        border: 'border-rose-500',
-        badge: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
         dot: 'bg-rose-500',
         stepDot: 'bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-400',
         limitBg: 'bg-rose-50 dark:bg-rose-950/30',

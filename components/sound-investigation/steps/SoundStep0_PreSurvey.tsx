@@ -10,11 +10,15 @@ import type {
 } from '@/lib/sound-investigation-types';
 import { Abbr } from '@/components/Abbr';
 import { FieldLabel, FormGrid, Icon, Input, Textarea } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
   onGoToStep: (step: number) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 // ─── Question definitions ─────────────────────────────────────────────────────
@@ -293,7 +297,12 @@ function QuestionRow({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function SoundStep0_PreSurvey({ investigation, onUpdate }: Props) {
+const STEP_KEY = 'step.0';
+const NS = 'investigation.sound';
+const FALLBACK_TITLE = 'Stap 1 — Voorverkenning geluidsbelasting';
+const FALLBACK_DESC = 'Beantwoord de onderstaande oriënterende vragen samen met de opdrachtgever of contactpersoon om te bepalen of (en welk type) geluidsonderzoek noodzakelijk is. De vragen hoeven niet volledig te worden ingevuld; elke beantwoorde vraag verbetert de aanbeveling.';
+
+export default function SoundStep0_PreSurvey({ investigation, onUpdate, contentOverrides }: Props) {
   const survey: SoundPreSurvey = investigation.preSurvey ?? { responses: {} };
 
   const REC_MAP: Record<SurveyRecommendation, 'measurement-required' | 'recommended' | 'not-required'> = {
@@ -340,18 +349,27 @@ export default function SoundStep0_PreSurvey({ investigation, onUpdate }: Props)
   const totalQuestions = CATEGORIES.flatMap((c) => c.questions).filter((q) => !q.isDuration).length;
 
 
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 1 — Voorverkenning geluidsbelasting
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Beantwoord de onderstaande oriënterende vragen samen met de opdrachtgever of contactpersoon
-          om te bepalen of (en welk type) geluidsonderzoek noodzakelijk is. De vragen hoeven niet
-          volledig te worden ingevuld; elke beantwoorde vraag verbetert de aanbeveling.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Beantwoord de onderstaande oriënterende vragen samen met de opdrachtgever of contactpersoon
+                om te bepalen of (en welk type) geluidsonderzoek noodzakelijk is. De vragen hoeven niet
+                volledig te worden ingevuld; elke beantwoorde vraag verbetert de aanbeveling.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
       <p className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">

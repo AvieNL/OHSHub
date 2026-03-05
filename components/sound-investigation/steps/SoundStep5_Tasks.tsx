@@ -8,11 +8,15 @@ import { Formula } from '@/components/Formula';
 import { SectionRef } from '@/components/SectionRef';
 import { InfoBox } from '@/components/InfoBox';
 import { Alert, Button, Icon, Input, Select } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
   onGoToStep: (step: number) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 // Table 1 (§9.3.2): minimum workers to measure per task
@@ -55,6 +59,11 @@ function fromMin(raw: string): number | undefined {
   const n = parseInt(raw, 10);
   return isFinite(n) && n > 0 ? n / 60 : undefined;
 }
+
+const STEP_KEY = 'step.6';
+const NS = 'investigation.sound';
+const FALLBACK_TITLE = 'Stap 7 — Meetplan & taken';
+const FALLBACK_DESC = 'Stel voor taakgerichte metingen de taken en hun duur vast (§9.2). Voor functie- of volledigedagmeting: bekijk het vereiste aantal steekproeven hieronder.';
 
 function equipmentCategoryShort(cat: SoundEquipment['category']): string {
   const map: Record<SoundEquipment['category'], string> = {
@@ -261,17 +270,18 @@ function CopyTasksBar({
   );
 }
 
-export default function SoundStep5_Tasks({ investigation, onUpdate, onGoToStep }: Props) {
+export default function SoundStep5_Tasks({ investigation, onUpdate, onGoToStep, contentOverrides }: Props) {
   const { hegs, tasks } = investigation;
   const equipment = investigation.equipment ?? [];
   const [openHEG, setOpenHEG] = useState<string | null>(hegs[0]?.id ?? null);
 
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+
   if (hegs.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 7 — Meetplan & taken
-        </h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="warning" size="md">
           Definieer eerst <Abbr id="HEG">HEG</Abbr>&apos;s in{' '}
           <button type="button" onClick={() => onGoToStep(2)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 3</button>.
@@ -317,13 +327,19 @@ export default function SoundStep5_Tasks({ investigation, onUpdate, onGoToStep }
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 7 — Meetplan & taken
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Stel voor taakgerichte metingen de taken en hun duur vast (<SectionRef id="§9.2">§9.2</SectionRef>). Voor functie- of
-          volledigedagmeting: bekijk het vereiste aantal steekproeven hieronder.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Stel voor taakgerichte metingen de taken en hun duur vast (<SectionRef id="§9.2">§9.2</SectionRef>). Voor functie- of
+                volledigedagmeting: bekijk het vereiste aantal steekproeven hieronder.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
       <div className="space-y-4">

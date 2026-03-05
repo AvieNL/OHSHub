@@ -223,14 +223,6 @@ export default function Navbar() {
                       Beheerderspaneel
                     </Link>
 
-                    <Link
-                      href="/ui-demo"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                    >
-                      <Icon name="document" size="md" className="text-zinc-400" />
-                      UI-componentenbibliotheek
-                    </Link>
                   </>
                 )}
 

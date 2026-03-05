@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Investigation } from '@/lib/investigation-types';
+import InlineEdit from '@/components/InlineEdit';
 import Step0_PreSurvey from './steps/Step0_PreSurvey';
 import Step1_Scope from './steps/Step1_Scope';
 import Step2_Substances from './steps/Step2_Substances';
@@ -56,9 +57,10 @@ interface Props {
   investigation: Investigation;
   onUpdate: (updated: Investigation) => void;
   onClose: () => void;
+  stepContent?: Record<string, string>;
 }
 
-export default function InvestigationShell({ investigation, onUpdate, onClose }: Props) {
+export default function InvestigationShell({ investigation, onUpdate, onClose, stepContent }: Props) {
   const [inv, setInv] = useState<Investigation>(investigation);
   const [saving, setSaving] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -130,6 +132,7 @@ export default function InvestigationShell({ investigation, onUpdate, onClose }:
   const stepProps = {
     investigation: inv,
     onUpdate: handleStepUpdate,
+    contentOverrides: stepContent,
   };
 
   const CurrentStep = [
@@ -263,9 +266,16 @@ export default function InvestigationShell({ investigation, onUpdate, onClose }:
                   <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500">
                     Stap {inv.currentStep + 1} van 11
                   </p>
-                  <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
-                    {STEPS[inv.currentStep].title}
-                  </h3>
+                  <InlineEdit
+                    namespace="investigation.hazardous-substances"
+                    contentKey={`step.${inv.currentStep}.title`}
+                    initialValue={stepContent?.[`step.${inv.currentStep}.title`] ?? STEPS[inv.currentStep].title}
+                    fallback={STEPS[inv.currentStep].title}
+                  >
+                    <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                      {stepContent?.[`step.${inv.currentStep}.title`] ?? STEPS[inv.currentStep].title}
+                    </h3>
+                  </InlineEdit>
                 </div>
               </div>
               {/* Progress bar */}

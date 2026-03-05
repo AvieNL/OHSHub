@@ -102,7 +102,11 @@ function NewInvestigationDialog({
   );
 }
 
-export default function ClimateInvestigationApp() {
+interface ClimateInvestigationAppProps {
+  stepContent?: Record<string, string>;
+}
+
+export default function ClimateInvestigationApp({ stepContent }: ClimateInvestigationAppProps) {
   const [investigations, setInvestigations] = useState<ClimateInvestigation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showNewDialog, setShowNewDialog] = useState(false);
@@ -188,6 +192,7 @@ export default function ClimateInvestigationApp() {
         investigation={activeInvestigation}
         onUpdate={handleUpdate}
         onClose={() => setActiveId(null)}
+        stepContent={stepContent}
       />
     );
   }

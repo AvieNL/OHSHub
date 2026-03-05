@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { fmtFullName } from '@/lib/utils';
 
 type UserRow = {
   id: string;
@@ -9,6 +10,7 @@ type UserRow = {
   role: string;
   privacy_version_accepted: string | null;
   privacy_accepted_at: string | null;
+  privacy_required_version: string | null;
   first_name: string | null;
   tussenvoegsel: string | null;
   last_name: string | null;
@@ -18,9 +20,6 @@ type UserRow = {
   investigation_count: number;
 };
 
-function fmtFullName(u: Pick<UserRow, 'first_name' | 'tussenvoegsel' | 'last_name'>): string {
-  return [u.first_name, u.tussenvoegsel, u.last_name].filter(Boolean).join(' ');
-}
 
 const ROLES = ['gebruiker', 'test-gebruiker', 'admin'] as const;
 
@@ -47,6 +46,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
+  const [privacyLoading, setPrivacyLoading] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/admin/users')
@@ -70,6 +70,24 @@ export default function AdminPage() {
     await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
     setUsers((prev) => prev.filter((u) => u.id !== userId));
     setDeleteConfirm(null);
+  }
+
+  async function handlePrivacyPush(userId: string, hasPending: boolean) {
+    setPrivacyLoading(userId);
+    const res = await fetch(`/api/admin/users/${userId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: hasPending ? 'privacy-clear' : 'privacy-push' }),
+    });
+    const json = await res.json().catch(() => ({}));
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId
+          ? { ...u, privacy_required_version: hasPending ? null : ((json as { version?: string }).version ?? null) }
+          : u
+      )
+    );
+    setPrivacyLoading(null);
   }
 
   return (
@@ -117,6 +135,7 @@ export default function AdminPage() {
                 <th className="px-4 py-3 text-left">Rol</th>
                 <th className="px-4 py-3 text-left">Aangemeld</th>
                 <th className="px-4 py-3 text-left">Laatste login</th>
+                <th className="px-4 py-3 text-left">Privacy</th>
                 <th className="px-4 py-3 text-right">Onderzoeken</th>
                 <th className="px-4 py-3" />
               </tr>
@@ -125,31 +144,17 @@ export default function AdminPage() {
               {users.map((user) => (
                 <tr key={user.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div>
-                        <Link
-                          href={`/admin/users/${user.id}`}
-                          className="font-medium text-zinc-900 hover:underline dark:text-zinc-100"
-                        >
-                          {user.email}
-                        </Link>
-                        {fmtFullName(user) && (
-                          <p className="text-xs text-zinc-400 dark:text-zinc-500">
-                            {fmtFullName(user)}{user.company ? ` · ${user.company}` : ''}
-                          </p>
-                        )}
-                      </div>
-                      {!user.privacy_version_accepted && (
-                        <span
-                          title="Privacyverklaring nog niet geregistreerd"
-                          className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400"
-                        >
-                          <svg className="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                          </svg>
-                        </span>
-                      )}
-                    </div>
+                    <Link
+                      href={`/admin/users/${user.id}`}
+                      className="font-medium text-zinc-900 hover:underline dark:text-zinc-100"
+                    >
+                      {user.email}
+                    </Link>
+                    {fmtFullName(user) && (
+                      <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                        {fmtFullName(user)}{user.company ? ` · ${user.company}` : ''}
+                      </p>
+                    )}
                   </td>
                   <td className="px-4 py-4">
                     <select
@@ -165,6 +170,51 @@ export default function AdminPage() {
                   </td>
                   <td className="px-4 py-4 text-zinc-500 dark:text-zinc-400">{fmtDate(user.created_at)}</td>
                   <td className="px-4 py-4 text-zinc-500 dark:text-zinc-400">{fmtDate(user.last_sign_in_at)}</td>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-2">
+                      <div>
+                        {user.privacy_version_accepted ? (
+                          <span className="font-mono text-xs text-zinc-700 dark:text-zinc-300">
+                            v{user.privacy_version_accepted}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-amber-600 dark:text-amber-400" title="Privacyverklaring nog niet geregistreerd">—</span>
+                        )}
+                        {user.privacy_accepted_at && (
+                          <p className="text-xs text-zinc-400 dark:text-zinc-500">{fmtDate(user.privacy_accepted_at)}</p>
+                        )}
+                        {user.privacy_required_version && (
+                          <p className="text-xs font-medium text-orange-600 dark:text-orange-400">
+                            herbevestiging vereist
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handlePrivacyPush(user.id, !!user.privacy_required_version)}
+                        disabled={privacyLoading === user.id}
+                        title={user.privacy_required_version
+                          ? `Verzoek intrekken (v${user.privacy_required_version})`
+                          : 'Herbevestiging privacyverklaring verplichten'}
+                        className={`shrink-0 rounded-lg p-1.5 disabled:opacity-50 ${
+                          user.privacy_required_version
+                            ? 'text-orange-500 hover:bg-orange-50 hover:text-orange-700 dark:hover:bg-orange-900/20'
+                            : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800'
+                        }`}
+                      >
+                        {user.privacy_required_version ? (
+                          // X icon — intrekken
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        ) : (
+                          // Bell icon — push
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </td>
                   <td className="px-4 py-4 text-right text-zinc-700 dark:text-zinc-300">{user.investigation_count}</td>
                   <td className="px-4 py-4 text-right">
                     <button

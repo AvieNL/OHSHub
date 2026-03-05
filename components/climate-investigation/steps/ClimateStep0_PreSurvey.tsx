@@ -5,10 +5,21 @@ import type { ClimateInvestigation, ClimatePreSurvey, PreClimateResponse, Climat
 import { Abbr } from '@/components/Abbr';
 import { InfoBox } from '@/components/InfoBox';
 import { Button, Input, Select, Textarea } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.0';
+const NS = 'investigation.climate';
+const FALLBACK_TITLE = 'Stap 1 — Voorverkenning';
+const FALLBACK_DESC = 'Beantwoord de oriënterende vragen om de aard en omvang van het klimaatrisico in te schatten. Op basis van de antwoorden wordt aanbevolen welk meetscenario van toepassing is (PMV/PPD, WBGT of IREQ).';
+
+const FALLBACK_IB0_TITLE = 'Arbobesluit art. 3.2 — Klimaateisen arbeidsplaatsen';
 
 interface Props {
   investigation: ClimateInvestigation;
   onUpdate: (partial: Partial<ClimateInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 // Voorverkenningsvragen per thema
@@ -109,7 +120,7 @@ const RECOMMENDATION_LABELS: Record<ClimateSurveyRecommendation, { label: string
 
 const ANSWER_LABELS: Record<Answer, string> = { yes: 'Ja', no: 'Nee', unknown: 'Onbekend' };
 
-export default function ClimateStep0_PreSurvey({ investigation, onUpdate }: Props) {
+export default function ClimateStep0_PreSurvey({ investigation, onUpdate, contentOverrides }: Props) {
   const survey = investigation.preSurvey ?? { responses: {} };
   const [showAll, setShowAll] = useState(false);
 
@@ -127,26 +138,50 @@ export default function ClimateStep0_PreSurvey({ investigation, onUpdate }: Prop
   const effectiveRec = survey.recommendationOverride ?? recommendation;
   const recStyle = RECOMMENDATION_LABELS[effectiveRec];
 
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
+
   const groups = [...new Set(PRE_SURVEY_QUESTIONS.map((q) => q.group))];
   const visibleGroups = showAll ? groups : groups.slice(0, 3);
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 1 — Voorverkenning
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Beantwoord de oriënterende vragen om de aard en omvang van het klimaatrisico in te schatten.
-          Op basis van de antwoorden wordt aanbevolen welk meetscenario van toepassing is
-          (<Abbr id="PMV">PMV</Abbr>/PPD, <Abbr id="WBGT">WBGT</Abbr> of <Abbr id="IREQ">IREQ</Abbr>).
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Beantwoord de oriënterende vragen om de aard en omvang van het klimaatrisico in te schatten.
+                Op basis van de antwoorden wordt aanbevolen welk meetscenario van toepassing is
+                (<Abbr id="PMV">PMV</Abbr>/PPD, <Abbr id="WBGT">WBGT</Abbr> of <Abbr id="IREQ">IREQ</Abbr>).
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="Arbobesluit art. 3.2 — Klimaateisen arbeidsplaatsen">
-        Arbobesluit art. 3.2 lid 1 en 2 eisen dat de klimatologische omstandigheden op de arbeidsplaats
-        geen gevaar opleveren voor de veiligheid en gezondheid van de medewerkers. Bij afwijkende omstandigheden
-        moeten technische, organisatorische of persoonlijke maatregelen worden getroffen.
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <>
+                Arbobesluit art. 3.2 lid 1 en 2 eisen dat de klimatologische omstandigheden op de arbeidsplaats
+                geen gevaar opleveren voor de veiligheid en gezondheid van de medewerkers. Bij afwijkende omstandigheden
+                moeten technische, organisatorische of persoonlijke maatregelen worden getroffen.
+              </>
+          }
+        </InlineEdit>
       </InfoBox>
 
       {/* Respondent */}

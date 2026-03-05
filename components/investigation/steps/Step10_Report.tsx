@@ -10,11 +10,20 @@ import type {
 import { computeStats } from '@/lib/measurement-stats';
 import { downloadPDF } from '@/lib/pdf-html';
 import { Button, Input, Textarea } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: Investigation;
   onUpdate: (partial: Partial<Investigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
+
+const STEP_KEY = 'step.10';
+const NS = 'investigation.hazardous-substances';
+const FALLBACK_TITLE = 'Stap 10 — Borging, herbeoordeling & rapport';
+const FALLBACK_DESC = 'Leg de conclusie vast, plan de volgende herbeoordeling en exporteer het volledige onderzoeksrapport.';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -244,11 +253,14 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 // ─── Step10_Report ────────────────────────────────────────────────────────────
 
-export default function Step10_Report({ investigation, onUpdate }: Props) {
+export default function Step10_Report({ investigation, onUpdate, contentOverrides }: Props) {
   const [copied, setCopied] = useState(false);
 
   const { substances, tasks, initialEstimates, measurementPlans, controlMeasures, report, segs } =
     investigation;
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
 
   function updateReport(patch: Partial<InvestigationReport>) {
     onUpdate({ report: { ...report, ...patch } });
@@ -287,13 +299,19 @@ export default function Step10_Report({ investigation, onUpdate }: Props) {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 10 — Borging, herbeoordeling & rapport
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Leg de conclusie vast, plan de volgende herbeoordeling en exporteer het volledige
-          onderzoeksrapport.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Leg de conclusie vast, plan de volgende herbeoordeling en exporteer het volledige
+                onderzoeksrapport.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
       {/* ── Conclusion ─────────────────────────────────────────────────────── */}

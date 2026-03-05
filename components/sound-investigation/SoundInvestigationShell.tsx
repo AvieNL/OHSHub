@@ -4,6 +4,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { SectionRef } from '@/components/SectionRef';
 import { Formula } from '@/components/Formula';
 import type { SoundInvestigation } from '@/lib/sound-investigation-types';
+import InlineEdit from '@/components/InlineEdit';
 import SoundStep0_PreSurvey from './steps/SoundStep0_PreSurvey';
 import SoundStep1_Scope from './steps/SoundStep1_Scope';
 import SoundStep2_WorkAnalysis from './steps/SoundStep2_WorkAnalysis';
@@ -54,9 +55,10 @@ interface Props {
   investigation: SoundInvestigation;
   onUpdate: (updated: SoundInvestigation) => void;
   onClose: () => void;
+  stepContent?: Record<string, string>;
 }
 
-export default function SoundInvestigationShell({ investigation, onUpdate, onClose }: Props) {
+export default function SoundInvestigationShell({ investigation, onUpdate, onClose, stepContent }: Props) {
   const [inv, setInv] = useState<SoundInvestigation>(investigation);
   const [saving, setSaving] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -120,7 +122,7 @@ export default function SoundInvestigationShell({ investigation, onUpdate, onClo
     if (e.key === 'Escape') { setEditingTitle(false); }
   }
 
-  const stepProps = { investigation: inv, onUpdate: handleStepUpdate, onGoToStep: goToStep };
+  const stepProps = { investigation: inv, onUpdate: handleStepUpdate, onGoToStep: goToStep, contentOverrides: stepContent };
 
   const StepComponents = [
     SoundStep0_PreSurvey,
@@ -244,9 +246,16 @@ export default function SoundInvestigationShell({ investigation, onUpdate, onClo
                   <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500">
                     Stap {inv.currentStep + 1} van 12
                   </p>
-                  <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
-                    {STEPS[inv.currentStep].title}
-                  </h3>
+                  <InlineEdit
+                    namespace="investigation.sound"
+                    contentKey={`step.${inv.currentStep}.title`}
+                    initialValue={stepContent?.[`step.${inv.currentStep}.title`] ?? ''}
+                    fallback=""
+                  >
+                    <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                      {stepContent?.[`step.${inv.currentStep}.title`] || STEPS[inv.currentStep].title}
+                    </h3>
+                  </InlineEdit>
                 </div>
               </div>
               <div className="hidden items-center gap-2 sm:flex">

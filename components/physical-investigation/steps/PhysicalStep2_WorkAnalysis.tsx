@@ -5,10 +5,20 @@ import type { PhysicalInvestigation, PhysicalBG } from '@/lib/physical-investiga
 import { newPhysicalId } from '@/lib/physical-investigation-storage';
 import { InfoBox } from '@/components/InfoBox';
 import { Button, Card, FieldLabel, FormGrid, Icon, Input, Select, Textarea } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.2';
+const NS = 'investigation.physical-load';
+const FALLBACK_TITLE = 'Stap 3 — Belastingsgroepen';
+const FALLBACK_DESC = 'Definieer groepen medewerkers met vergelijkbare fysieke belasting. Per groep worden de tiltaken, houdingen en andere belastingtypen afzonderlijk beoordeeld.';
+const FALLBACK_IB0_TITLE = 'Belastingsgroepen conform ISO 11228-1 §7.1';
 
 interface Props {
   investigation: PhysicalInvestigation;
   onUpdate: (partial: Partial<PhysicalInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 function BGForm({
@@ -130,7 +140,11 @@ function BGForm({
   );
 }
 
-export default function PhysicalStep2_WorkAnalysis({ investigation, onUpdate }: Props) {
+export default function PhysicalStep2_WorkAnalysis({ investigation, onUpdate, contentOverrides }: Props) {
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
   const { bgs } = investigation;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
@@ -169,24 +183,43 @@ export default function PhysicalStep2_WorkAnalysis({ investigation, onUpdate }: 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 3 — Belastingsgroepen
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Definieer groepen medewerkers met vergelijkbare fysieke belasting. Per groep
-          worden de tiltaken, houdingen en andere belastingtypen afzonderlijk beoordeeld.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Definieer groepen medewerkers met vergelijkbare fysieke belasting. Per groep
+                worden de tiltaken, houdingen en andere belastingtypen afzonderlijk beoordeeld.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="Belastingsgroepen conform ISO 11228-1 §7.1">
-        Groepeer medewerkers die{' '}
-        <abbr title="Vergelijkbare fysieke belasting in aard, intensiteit en duur" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">
-          vergelijkbare fysieke belasting
-        </abbr>{' '}
-        uitvoeren (vergelijkbaar aan{' '}
-        <abbr title="Homogene Exposure Group — groep medewerkers met vergelijkbare blootstelling" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">HEG</abbr>{' '}
-        bij geluid). Taken met duidelijk verschillende belastingprofielen (bijv. tillen vs. duwen)
-        kunnen beter als aparte groepen worden geanalyseerd, ook als het dezelfde medewerkers zijn.
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <>
+                Groepeer medewerkers die{' '}
+                <abbr title="Vergelijkbare fysieke belasting in aard, intensiteit en duur" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">
+                  vergelijkbare fysieke belasting
+                </abbr>{' '}
+                uitvoeren (vergelijkbaar aan{' '}
+                <abbr title="Homogene Exposure Group — groep medewerkers met vergelijkbare blootstelling" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">HEG</abbr>{' '}
+                bij geluid). Taken met duidelijk verschillende belastingprofielen (bijv. tillen vs. duwen)
+                kunnen beter als aparte groepen worden geanalyseerd, ook als het dezelfde medewerkers zijn.
+              </>
+          }
+        </InlineEdit>
       </InfoBox>
 
       {/* BG list */}

@@ -2,6 +2,11 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Navbar from '@/components/Navbar';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { AdminContextProvider } from '@/components/AdminContext';
+import AbbrProvider from '@/components/AbbrProvider';
+import PrivacyAcceptModal from '@/components/PrivacyAcceptModal';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { getNamespaceContent } from '@/lib/content';
 import './globals.css';
 
 const geistSans = Geist({
@@ -20,11 +25,29 @@ export const metadata: Metadata = {
     'Kennisplatform voor arbeidshygiënisten, hogere veiligheidskundigen en A&O-deskundigen.',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Check admin status once per request for the edit-hint buttons
+  let isAdmin = false;
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+      isAdmin = data?.role === 'admin';
+    }
+  } catch { /* not critical — falls back to false */ }
+
+  // Fetch custom abbreviations (merged with hardcoded ABBR_TITLES in AbbrProvider)
+  const customAbbr = await getNamespaceContent('abbr.list').catch(() => ({}));
+
   return (
     <html lang="nl" suppressHydrationWarning>
       <head>
@@ -37,8 +60,13 @@ export default function RootLayout({
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50`}>
         <ThemeProvider>
-          <Navbar />
-          {children}
+          <AdminContextProvider isAdmin={isAdmin}>
+            <AbbrProvider customAbbr={customAbbr}>
+              <Navbar />
+              {children}
+              <PrivacyAcceptModal />
+            </AbbrProvider>
+          </AdminContextProvider>
         </ThemeProvider>
       </body>
     </html>

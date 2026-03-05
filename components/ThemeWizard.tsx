@@ -10,8 +10,12 @@ import type {
   RiskFinding,
   Recommendation,
 } from '@/lib/wizard-types';
-import { getWizardConfig } from '@/lib/wizard-configs';
+import { getWizardConfig, applyWizardOverrides } from '@/lib/wizard-configs';
 import type { ThemeSlug } from '@/lib/themes';
+import { useIsAdmin } from '@/components/AdminContext';
+import { useRouter } from 'next/navigation';
+import InlineEdit from '@/components/InlineEdit';
+import WizardEditor from '@/components/admin/content/WizardEditor';
 
 // ─── Module-level helpers ─────────────────────────────────────────────────────
 
@@ -172,10 +176,13 @@ function generateReportText(
 interface Props {
   slug: ThemeSlug;
   themeName: string;
+  /** DB content overrides for `wizard.{slug}` namespace */
+  contentOverrides?: Record<string, string>;
 }
 
-export default function ThemeWizard({ slug, themeName }: Props) {
-  const config = getWizardConfig(slug);
+export default function ThemeWizard({ slug, themeName, contentOverrides }: Props) {
+  const baseConfig = getWizardConfig(slug);
+  const config = contentOverrides ? applyWizardOverrides(baseConfig, contentOverrides) : baseConfig;
   const { steps, assessRisk } = config;
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -314,6 +321,9 @@ export default function ThemeWizard({ slug, themeName }: Props) {
           step && (
             <StepContent
               step={step}
+              baseStep={baseConfig.steps.find((s) => s.id === step.id) ?? step}
+              slug={slug}
+              contentOverrides={contentOverrides ?? {}}
               answers={answers}
               showValidation={showValidation}
               onRadio={handleRadio}
@@ -373,6 +383,9 @@ export default function ThemeWizard({ slug, themeName }: Props) {
 
 interface StepContentProps {
   step: WizardStep;
+  baseStep: WizardStep;
+  slug: ThemeSlug;
+  contentOverrides: Record<string, string>;
   answers: WizardAnswers;
   showValidation: boolean;
   onRadio: (id: string, value: string) => void;
@@ -380,15 +393,66 @@ interface StepContentProps {
   onText: (id: string, value: string) => void;
 }
 
-function StepContent({ step, answers, showValidation, onRadio, onCheckbox, onText }: StepContentProps) {
+function StepContent({ step, baseStep, slug, contentOverrides, answers, showValidation, onRadio, onCheckbox, onText }: StepContentProps) {
   const visibleQuestions = visibleQuestionsOf(step, answers);
+  const isAdmin = useIsAdmin();
+  const router = useRouter();
+  const [showEditor, setShowEditor] = useState(false);
+  const ns = `wizard.${slug}`;
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">{step.title}</h2>
-      <p className="mt-1.5 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-        {step.description}
-      </p>
+      <InlineEdit
+        namespace={ns}
+        contentKey={`step.${step.id}.title`}
+        initialValue={step.title}
+        fallback={baseStep.title}
+      >
+        <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">{step.title}</h2>
+      </InlineEdit>
+      <InlineEdit
+        namespace={ns}
+        contentKey={`step.${step.id}.description`}
+        initialValue={step.description}
+        fallback={baseStep.description}
+        multiline
+      >
+        <p className="mt-1.5 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+          {step.description}
+        </p>
+      </InlineEdit>
+
+      {/* Admin: inline vraag/optie-editor voor deze stap */}
+      {isAdmin && (
+        <div className="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+          <button
+            type="button"
+            onClick={() => setShowEditor((v) => !v)}
+            className="flex items-center gap-1.5 text-xs text-zinc-400 transition hover:text-orange-500 dark:hover:text-orange-400"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+            {showEditor ? 'Verberg vraag-editor' : 'Bewerk vragen & opties'}
+          </button>
+          {showEditor && (
+            <div className="mt-3">
+              <WizardEditor
+                namespace={ns}
+                steps={[step]}
+                initialOverrides={contentOverrides}
+              />
+              <button
+                type="button"
+                onClick={() => router.refresh()}
+                className="mt-3 rounded-lg bg-zinc-800 px-4 py-1.5 text-xs font-medium text-white transition hover:bg-zinc-700 dark:bg-zinc-200 dark:text-zinc-900 dark:hover:bg-zinc-300"
+              >
+                ↺ Wijzigingen toepassen
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="mt-8 space-y-8">
         {visibleQuestions.map((question) => {

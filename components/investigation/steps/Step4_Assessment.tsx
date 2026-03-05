@@ -10,11 +10,20 @@ import type {
   ExposureBand,
 } from '@/lib/investigation-types';
 import { Alert, Textarea } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: Investigation;
   onUpdate: (partial: Partial<Investigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
+
+const STEP_KEY = 'step.4';
+const NS = 'investigation.hazardous-substances';
+const FALLBACK_TITLE = 'Stap 4 — Eerste risicobeoordeling (zonder metingen)';
+const FALLBACK_DESC = 'Tier-1 oriënterend model (conform Stoffenmanager-methodiek) op basis van emissiefactoren en beheersmaatregelen. Per combinatie neemt u een beslissing conform NEN-EN 689 §5.1.5.';
 
 // ─── Tier-1 exposure model ────────────────────────────────────────────────────
 
@@ -517,8 +526,11 @@ function PairCard({
 
 // ─── Step4_Assessment ─────────────────────────────────────────────────────────
 
-export default function Step4_Assessment({ investigation, onUpdate }: Props) {
+export default function Step4_Assessment({ investigation, onUpdate, contentOverrides }: Props) {
   const { tasks, substances, initialEstimates } = investigation;
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
 
   // Collect all task × substance pairs that need assessment
   const pairs: { task: WorkTask; substance: Substance }[] = [];
@@ -564,9 +576,7 @@ export default function Step4_Assessment({ investigation, onUpdate }: Props) {
   if (tasks.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 4 — Eerste risicobeoordeling
-        </h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="warning">
           Voeg eerst taken toe in stap 3 en koppel stoffen daaraan, dan verschijnen hier de tier-1 beoordelingen.
         </Alert>
@@ -577,9 +587,7 @@ export default function Step4_Assessment({ investigation, onUpdate }: Props) {
   if (pairs.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 4 — Eerste risicobeoordeling
-        </h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="warning">
           Koppel in stap 3 stoffen aan de taken. Dan berekent het tier-1 model hier de blootstellingsband per taak-stof combinatie.
         </Alert>
@@ -590,13 +598,19 @@ export default function Step4_Assessment({ investigation, onUpdate }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 4 — Eerste risicobeoordeling (zonder metingen)
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Tier-1 oriënterend model (conform Stoffenmanager-methodiek) op basis van emissiefactoren
-          en beheersmaatregelen. Per combinatie neemt u een beslissing conform NEN-EN 689 §5.1.5.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Tier-1 oriënterend model (conform Stoffenmanager-methodiek) op basis van emissiefactoren
+                en beheersmaatregelen. Per combinatie neemt u een beslissing conform NEN-EN 689 §5.1.5.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

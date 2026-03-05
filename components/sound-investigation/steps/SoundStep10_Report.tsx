@@ -8,12 +8,21 @@ import katex from 'katex';
 import { Formula } from '@/components/Formula';
 import { SectionRef } from '@/components/SectionRef';
 import { Alert, Button, Card, FieldLabel, Icon, Input, Textarea } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: SoundInvestigation;
   onUpdate: (partial: Partial<SoundInvestigation>) => void;
   onGoToStep: (step: number) => void;
+  contentOverrides?: Record<string, string>;
 }
+
+const STEP_KEY = 'step.11';
+const NS = 'investigation.sound';
+const FALLBACK_TITLE = 'Stap 12 — Rapport (§15 NEN-EN-ISO 9612:2025)';
+const FALLBACK_DESC = 'Vul de conclusie en conformiteitsverklaring in. Het volledige rapport inclusief alle §15-vereiste gegevens kan worden geëxporteerd als PDF, CSV of JSON.';
 
 function fmt1(n: number): string {
   return isFinite(n) ? n.toFixed(1) : '—';
@@ -514,9 +523,12 @@ function suggestReviewDate(inv: SoundInvestigation): string {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function SoundStep10_Report({ investigation, onUpdate }: Props) {
+export default function SoundStep10_Report({ investigation, onUpdate, contentOverrides }: Props) {
   const { report, statistics, hegs, measures } = investigation;
   const [copied, setCopied] = useState(false);
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
   const [previewOpen, setPreviewOpen] = useState(false);
   const complianceRef = useRef<HTMLTextAreaElement>(null);
 
@@ -589,13 +601,19 @@ export default function SoundStep10_Report({ investigation, onUpdate }: Props) {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 12 — Rapport (<SectionRef id="§15">§15</SectionRef> NEN-EN-ISO 9612:2025)
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Vul de conclusie en conformiteitsverklaring in. Het volledige rapport inclusief
-          alle <SectionRef id="§15">§15</SectionRef>-vereiste gegevens kan worden geëxporteerd als PDF, CSV of JSON.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Vul de conclusie en conformiteitsverklaring in. Het volledige rapport inclusief
+                alle <SectionRef id="§15">§15</SectionRef>-vereiste gegevens kan worden geëxporteerd als PDF, CSV of JSON.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
       {/* ── Completion checklist ─────────────────────────────────────────── */}

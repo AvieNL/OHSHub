@@ -8,10 +8,20 @@ import { Abbr } from '@/components/Abbr';
 import { FieldLabel, Textarea } from '@/components/ui';
 import { PersonSection } from '@/components/shared/scope/PersonSection';
 import { ScopeFields } from '@/components/shared/scope/ScopeFields';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.1';
+const NS = 'investigation.physical-load';
+const FALLBACK_TITLE = 'Stap 2 — Opdracht & kaders';
+const FALLBACK_DESC = 'Leg de onderzoeksopdracht, betrokkenen en werkplek vast. Dit vormt de basis van het rapport conform NEN-ISO 11228-1 §7 en Arbobesluit art. 5.1.';
+const FALLBACK_IB0_TITLE = 'Arbobesluit art. 5.1 — Ergonomische risicobeoordeling';
 
 interface Props {
   investigation: PhysicalInvestigation;
   onUpdate: (partial: Partial<PhysicalInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 const QUALIFICATION_OPTIONS = [
@@ -22,7 +32,11 @@ const QUALIFICATION_OPTIONS = [
   { value: 'other',        label: 'Overige deskundige' },
 ];
 
-export default function PhysicalStep1_Scope({ investigation, onUpdate }: Props) {
+export default function PhysicalStep1_Scope({ investigation, onUpdate, contentOverrides }: Props) {
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
   const { investigators, clients, respondents, scope } = investigation;
 
   function updateScope(patch: Partial<CommonScopeFields & { referenceDocument?: string }>) {
@@ -56,23 +70,42 @@ export default function PhysicalStep1_Scope({ investigation, onUpdate }: Props) 
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 2 — Opdracht & kaders
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Leg de onderzoeksopdracht, betrokkenen en werkplek vast. Dit vormt de basis
-          van het rapport conform{' '}
-          <Abbr id="NEN-ISO 11228-1">NEN-ISO 11228-1</Abbr> §7 en Arbobesluit art. 5.1.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Leg de onderzoeksopdracht, betrokkenen en werkplek vast. Dit vormt de basis
+                van het rapport conform{' '}
+                <Abbr id="NEN-ISO 11228-1">NEN-ISO 11228-1</Abbr> §7 en Arbobesluit art. 5.1.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="Arbobesluit art. 5.1 — Ergonomische risicobeoordeling">
-        De werkgever is verplicht de risico&apos;s van handmatige handling te inventariseren
-        bij de{' '}
-        <abbr title="Risico-inventarisatie en -evaluatie" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">RI&amp;E</abbr>.
-        Leg de onderzoekopdracht vast: aanleiding (klachten,{' '}
-        <abbr title="Risico-inventarisatie en -evaluatie" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">RI&amp;E</abbr>,
-        nieuwbouw/verbouw), werkplekbeschrijving en betrokken medewerkers.
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <>
+                De werkgever is verplicht de risico&apos;s van handmatige handling te inventariseren
+                bij de{' '}
+                <abbr title="Risico-inventarisatie en -evaluatie" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">RI&amp;E</abbr>.
+                Leg de onderzoekopdracht vast: aanleiding (klachten,{' '}
+                <abbr title="Risico-inventarisatie en -evaluatie" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">RI&amp;E</abbr>,
+                nieuwbouw/verbouw), werkplekbeschrijving en betrokken medewerkers.
+              </>
+          }
+        </InlineEdit>
       </InfoBox>
 
       {/* Uitvoerders */}

@@ -5,10 +5,19 @@ import type { PhysicalInvestigation } from '@/lib/physical-investigation-types';
 import { computeAllPhysicalStatistics, computeLiftingResult, computePushPullResult, computeRepetitiveResult, computeForceResult } from '@/lib/physical-stats';
 import { InfoBox } from '@/components/InfoBox';
 import { Button, FieldLabel, Icon, Input, Textarea } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.10';
+const NS = 'investigation.physical-load';
+const FALLBACK_TITLE = 'Stap 11 — Rapport';
+const FALLBACK_DESC = 'Vat de bevindingen samen, leg de compliancestatus vast en exporteer het rapport.';
 
 interface Props {
   investigation: PhysicalInvestigation;
   onUpdate: (partial: Partial<PhysicalInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 const REVIEW_TRIGGER_OPTIONS = [
@@ -109,7 +118,9 @@ function buildReportText(inv: PhysicalInvestigation): string {
   return lines.join('\n');
 }
 
-export default function PhysicalStep10_Report({ investigation, onUpdate }: Props) {
+export default function PhysicalStep10_Report({ investigation, onUpdate, contentOverrides }: Props) {
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
   const { bgs, report } = investigation;
   const [copied, setCopied] = useState(false);
 
@@ -129,12 +140,18 @@ export default function PhysicalStep10_Report({ investigation, onUpdate }: Props
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 11 — Rapport
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Vat de bevindingen samen, leg de compliancestatus vast en exporteer het rapport.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Vat de bevindingen samen, leg de compliancestatus vast en exporteer het rapport.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
       {/* Overall status banner */}

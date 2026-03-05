@@ -7,10 +7,21 @@ import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
 import { InfoBox } from '@/components/InfoBox';
 import { Alert } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.6';
+const NS = 'investigation.climate';
+const FALLBACK_TITLE = 'Stap 7 — Thermisch comfort (PMV/PPD)';
+const FALLBACK_DESC = 'Berekening van de Predicted Mean Vote en Predicted Percentage Dissatisfied conform ISO 7730:2025 op basis van de ingevoerde meetwaarden per BG.';
+
+const FALLBACK_IB0_TITLE = 'ISO 7730:2025 — PMV/PPD beoordelingscriteria (Tabel 1)';
 
 interface Props {
   investigation: ClimateInvestigation;
   onUpdate: (partial: Partial<ClimateInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 function fmt2(v: number | undefined | null): string {
@@ -21,17 +32,20 @@ function fmt0(v: number | undefined | null): string {
   return v != null ? Math.round(v).toString() : '—';
 }
 
-export default function ClimateStep6_PMV({ investigation, onUpdate }: Props) {
+export default function ClimateStep6_PMV({ investigation, onUpdate, contentOverrides }: Props) {
   const { bgs, scenarios } = investigation;
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
 
   const isRelevant = scenarios.includes('comfort');
 
   if (!isRelevant) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 7 — Thermisch comfort (<Abbr id="PMV">PMV</Abbr>/<Abbr id="PPD">PPD</Abbr>)
-        </h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="neutral">
           Dit scenario is niet geselecteerd. Selecteer &ldquo;Thermisch comfort&rdquo; in stap 4 om de PMV/PPD-beoordeling in te schakelen.
         </Alert>
@@ -42,7 +56,7 @@ export default function ClimateStep6_PMV({ investigation, onUpdate }: Props) {
   if (bgs.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 7 — Thermisch comfort (PMV/PPD)</h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="warning">
           Definieer eerst blootstellingsgroepen in stap 3.
         </Alert>
@@ -63,17 +77,28 @@ export default function ClimateStep6_PMV({ investigation, onUpdate }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 7 — Thermisch comfort (<Abbr id="PMV">PMV</Abbr>/<Abbr id="PPD">PPD</Abbr>)
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Berekening van de <Abbr id="PMV">Predicted Mean Vote</Abbr> en{' '}
-          <Abbr id="PPD">Predicted Percentage Dissatisfied</Abbr> conform{' '}
-          <Abbr id="ISO7730">ISO 7730:2025</Abbr> op basis van de ingevoerde meetwaarden per BG.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Berekening van de <Abbr id="PMV">Predicted Mean Vote</Abbr> en{' '}
+                <Abbr id="PPD">Predicted Percentage Dissatisfied</Abbr> conform{' '}
+                <Abbr id="ISO7730">ISO 7730:2025</Abbr> op basis van de ingevoerde meetwaarden per BG.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="ISO 7730:2025 — PMV/PPD beoordelingscriteria (Tabel 1)">
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>

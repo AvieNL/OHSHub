@@ -7,10 +7,20 @@ import { computePushPullResult } from '@/lib/physical-stats';
 import { InfoBox } from '@/components/InfoBox';
 import { Abbr } from '@/components/Abbr';
 import { Alert, Button, Card, FieldLabel, Icon, Input, Select } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.5';
+const NS = 'investigation.physical-load';
+const FALLBACK_TITLE = 'Stap 6 — Duwen & trekken';
+const FALLBACK_DESC = 'Voer per belastingsgroep de duw- en trekkrachten in. Vergelijk gemeten krachten met de grenswaarden uit NEN-ISO 11228-2 / DUTCH.';
+const FALLBACK_IB0_TITLE = 'NEN-ISO 11228-2:2007 — Duwen & trekken';
 
 interface Props {
   investigation: PhysicalInvestigation;
   onUpdate: (partial: Partial<PhysicalInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 const TYPE_LABELS: Record<PushPullType, string> = {
@@ -163,7 +173,11 @@ function PushPullForm({
   );
 }
 
-export default function PhysicalStep5_PushPull({ investigation, onUpdate }: Props) {
+export default function PhysicalStep5_PushPull({ investigation, onUpdate, contentOverrides }: Props) {
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
   const { bgs, pushPullTasks } = investigation;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addingBg, setAddingBg] = useState<string | null>(null);
@@ -182,7 +196,7 @@ export default function PhysicalStep5_PushPull({ investigation, onUpdate }: Prop
   if (bgs.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 6 — Duwen &amp; trekken</h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="warning" size="md">
           Definieer eerst belastingsgroepen in stap 3.
         </Alert>
@@ -193,25 +207,44 @@ export default function PhysicalStep5_PushPull({ investigation, onUpdate }: Prop
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 6 — Duwen &amp; trekken
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Voer per belastingsgroep de duw- en trekkrachten in. Vergelijk gemeten krachten
-          met de grenswaarden uit{' '}
-          <Abbr id="NEN-ISO 11228-2">NEN-ISO 11228-2</Abbr> /{' '}
-          <abbr title="Duw en Trek CHeck — TNO hulpmiddel voor beoordeling duw/trekkrachten" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">DUTCH</abbr>.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Voer per belastingsgroep de duw- en trekkrachten in. Vergelijk gemeten krachten
+                met de grenswaarden uit{' '}
+                <Abbr id="NEN-ISO 11228-2">NEN-ISO 11228-2</Abbr> /{' '}
+                <abbr title="Duw en Trek CHeck — TNO hulpmiddel voor beoordeling duw/trekkrachten" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">DUTCH</abbr>.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="NEN-ISO 11228-2:2007 — Duwen & trekken">
-        Grenswaarden voor duwen en trekken zijn afhankelijk van handgreephoogte, afstand en
-        frequentie. Meet de aanzettkracht (aanzetter) en de voortbewegingskracht met een{' '}
-        <abbr title="Een instrument dat krachten meet; hier gebruikt als dynamometer" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">
-          dynamometer
-        </abbr>.
-        De grenswaarden in dit instrument zijn gebaseerd op de gemengde populatie (mannen &amp; vrouwen).
-        Voor specifieke populaties of hogere frequenties: raadpleeg de volledige norm.
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <>
+                Grenswaarden voor duwen en trekken zijn afhankelijk van handgreephoogte, afstand en
+                frequentie. Meet de aanzettkracht (aanzetter) en de voortbewegingskracht met een{' '}
+                <abbr title="Een instrument dat krachten meet; hier gebruikt als dynamometer" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">
+                  dynamometer
+                </abbr>.
+                De grenswaarden in dit instrument zijn gebaseerd op de gemengde populatie (mannen &amp; vrouwen).
+                Voor specifieke populaties of hogere frequenties: raadpleeg de volledige norm.
+              </>
+          }
+        </InlineEdit>
       </InfoBox>
 
       {bgs.map((bg) => {

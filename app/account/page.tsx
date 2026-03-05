@@ -223,7 +223,14 @@ export default function AccountPage() {
               <dt className="text-zinc-500 dark:text-zinc-400">Privacyverklaring geaccepteerd</dt>
               <dd className="text-zinc-700 dark:text-zinc-300">
                 {exportData?.privacy_version_accepted
-                  ? `v${exportData.privacy_version_accepted} — ${fmtDate(exportData.privacy_accepted_at)}`
+                  ? (
+                    <>
+                      <a href="/privacy" className="font-mono text-orange-600 hover:underline dark:text-orange-400">
+                        v{exportData.privacy_version_accepted}
+                      </a>
+                      {' — '}{fmtDate(exportData.privacy_accepted_at)}
+                    </>
+                  )
                   : '—'}
               </dd>
             </div>

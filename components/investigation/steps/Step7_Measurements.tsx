@@ -4,11 +4,20 @@ import { useState } from 'react';
 import type { Investigation, MeasurementSeries, SingleMeasurement } from '@/lib/investigation-types';
 import { newId } from '@/lib/investigation-storage';
 import { Button, Input, Alert, Icon } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
 
 interface Props {
   investigation: Investigation;
   onUpdate: (partial: Partial<Investigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
+
+const STEP_KEY = 'step.7';
+const NS = 'investigation.hazardous-substances';
+const FALLBACK_TITLE = 'Stap 7 — Metingen uitvoeren en vastleggen';
+const FALLBACK_DESC = 'Voer per meetplan de meetresultaten in. Kies bulk-invoer (kommagescheiden) of rij-voor-rij. Afwijkende metingen kunt u uitsluiten met een onderbouwing. Analyses worden in stap 8 berekend.';
 
 function parseValues(raw: string): number[] {
   return raw
@@ -262,15 +271,16 @@ function SeriesPanel({
   );
 }
 
-export default function Step7_Measurements({ investigation, onUpdate }: Props) {
+export default function Step7_Measurements({ investigation, onUpdate, contentOverrides }: Props) {
   const { measurementPlans, measurementSeries, segs, substances } = investigation;
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
 
   if (measurementPlans.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 7 — Metingen uitvoeren en vastleggen
-        </h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="warning">
           Stel eerst meetplannen op in stap 6 (per SEG × stof), dan kunt u hier de meetwaarden invoeren.
         </Alert>
@@ -297,13 +307,19 @@ export default function Step7_Measurements({ investigation, onUpdate }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 7 — Metingen uitvoeren en vastleggen
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Voer per meetplan de meetresultaten in. Kies bulk-invoer (kommagescheiden) of rij-voor-rij.
-          Afwijkende metingen kunt u uitsluiten met een onderbouwing. Analyses worden in stap 8 berekend.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Voer per meetplan de meetresultaten in. Kies bulk-invoer (kommagescheiden) of rij-voor-rij.
+                Afwijkende metingen kunt u uitsluiten met een onderbouwing. Analyses worden in stap 8 berekend.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
       <div className="rounded-lg bg-zinc-50 px-4 py-3 text-xs text-zinc-500 dark:bg-zinc-800/50 dark:text-zinc-400">

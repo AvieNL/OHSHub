@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { ThemeNorm, ThemeLimitGroup } from '@/lib/theme-legal-info';
 import ThemeLegalInfo from '@/components/ThemeLegalInfo';
-
+import InlineEdit from '@/components/InlineEdit';
 
 export interface PlaceholderStep {
   title: string;
@@ -9,14 +9,16 @@ export interface PlaceholderStep {
 }
 
 export interface InvestigationPlaceholderProps {
+  namespace: string;
+  legalNamespace: string;
+  legalOverrides: Record<string, string>;
   title: string;
-  subtitle: string;
+  fallbackTitle: string;
   description: string;
+  fallbackDesc: string;
   /** SVG path `d` attributes for the theme icon (Heroicons v2 outline) */
   iconPaths?: readonly string[];
   color: {
-    border: string;       // e.g. 'border-rose-500'
-    badge: string;        // e.g. 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
     dot: string;          // e.g. 'bg-rose-500'
     stepDot: string;      // e.g. 'bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-400'
     limitBg: string;      // e.g. 'bg-rose-50 dark:bg-rose-950/30'
@@ -30,9 +32,13 @@ export interface InvestigationPlaceholderProps {
 }
 
 export default function InvestigationPlaceholder({
+  namespace,
+  legalNamespace,
+  legalOverrides,
   title,
-  subtitle,
+  fallbackTitle,
   description,
+  fallbackDesc,
   iconPaths,
   color,
   legislation,
@@ -58,7 +64,7 @@ export default function InvestigationPlaceholder({
 
       {/* Header */}
       <div className="mb-3 h-1 w-10 rounded-full bg-orange-500" />
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         {iconPaths && iconPaths.length > 0 && (
           <svg
             className={`h-8 w-8 ${iconColor}`}
@@ -72,21 +78,32 @@ export default function InvestigationPlaceholder({
             ))}
           </svg>
         )}
-        <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-          {title}
-        </h1>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className={`rounded-full px-3 py-0.5 text-xs font-semibold ${color.badge}`}>
-          {subtitle}
-        </span>
+        <InlineEdit
+          namespace={namespace}
+          contentKey="pageTitle"
+          initialValue={title}
+          fallback={fallbackTitle}
+        >
+          <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+            {title}
+          </h1>
+        </InlineEdit>
         <span className="rounded-full bg-zinc-100 px-3 py-0.5 text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
           In ontwikkeling
         </span>
       </div>
-      <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
-        {description}
-      </p>
+
+      <InlineEdit
+        namespace={namespace}
+        contentKey="pageDesc"
+        initialValue={description}
+        fallback={fallbackDesc}
+        multiline
+      >
+        <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
+          {description}
+        </p>
+      </InlineEdit>
 
       {/* Wettelijk kader */}
       <ThemeLegalInfo
@@ -96,6 +113,8 @@ export default function InvestigationPlaceholder({
         limitGroups={limitGroups}
         adminObligations={adminObligations}
         className="mt-8"
+        contentOverrides={legalOverrides}
+        namespace={legalNamespace}
       />
 
       {/* Geplande stappen */}
@@ -103,17 +122,17 @@ export default function InvestigationPlaceholder({
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
           Geplande stappen
         </h2>
-        <ol className="relative border-l border-zinc-200 pl-5 dark:border-zinc-700">
+        <ol className="space-y-3">
           {steps.map((step, i) => (
-            <li key={i} className={`relative ${i < steps.length - 1 ? 'mb-5' : ''}`}>
+            <li key={i} className="flex items-start gap-3">
               <span
-                className={`absolute -left-[18px] flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${color.stepDot}`}
+                className={`mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ${color.stepDot}`}
               >
-                {i}
+                {i + 1}
               </span>
-              <div className="ml-1">
+              <div>
                 <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{step.title}</div>
-                <div className="text-xs text-zinc-500 dark:text-zinc-400">{step.desc}</div>
+                <div className="mt-0.5 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">{step.desc}</div>
               </div>
             </li>
           ))}

@@ -9,10 +9,21 @@ import { InfoBox } from '@/components/InfoBox';
 import { FieldLabel, FormGrid, Select } from '@/components/ui';
 import { PersonSection } from '@/components/shared/scope/PersonSection';
 import { ScopeFields } from '@/components/shared/scope/ScopeFields';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.1';
+const NS = 'investigation.climate';
+const FALLBACK_TITLE = 'Stap 2 — Opdracht & kaders';
+const FALLBACK_DESC = 'Registreer de opdrachtgever, uitvoerder, meetlocatie en doel van het onderzoek.';
+
+const FALLBACK_IB0_TITLE = 'Normen — ISO 7730:2025 · ISO 7243:2017 · ISO 7933:2023 · ISO 11079:2007';
 
 interface Props {
   investigation: ClimateInvestigation;
   onUpdate: (partial: Partial<ClimateInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 const QUALIFICATION_OPTIONS = [
@@ -23,9 +34,14 @@ const QUALIFICATION_OPTIONS = [
   { value: 'other',        label: 'Overige' },
 ];
 
-export default function ClimateStep1_Scope({ investigation, onUpdate }: Props) {
+export default function ClimateStep1_Scope({ investigation, onUpdate, contentOverrides }: Props) {
   const { investigators, clients, scope } = investigation;
   const respondents = investigation.respondents ?? [];
+
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
 
   function updateScope(patch: Partial<CommonScopeFields & { season?: string }>) {
     onUpdate({ scope: { ...scope, ...patch } });
@@ -58,21 +74,40 @@ export default function ClimateStep1_Scope({ investigation, onUpdate }: Props) {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 2 — Opdracht & kaders
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Registreer de opdrachtgever, uitvoerder, meetlocatie en doel van het onderzoek.
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Registreer de opdrachtgever, uitvoerder, meetlocatie en doel van het onderzoek.
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="Normen — ISO 7730:2025 · ISO 7243:2017 · ISO 7933:2023 · ISO 11079:2007">
-        Dit onderzoek kan de volgende normen omvatten:{' '}
-        <Abbr id="ISO7730">ISO 7730:2025</Abbr> (thermisch comfort PMV/PPD),{' '}
-        <Abbr id="ISO7243">ISO 7243:2017</Abbr> (warmtestress WBGT),{' '}
-        <Abbr id="ISO7933">ISO 7933:2023</Abbr> (gedetailleerde warmtestress PHS),{' '}
-        <Abbr id="ISO11079">ISO 11079:2007</Abbr> (koudestress IREQ).
-        Wetgeving: Arbobesluit art. 3.2 (inrichting arbeidsplaatsen — klimaat).
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <>
+                Dit onderzoek kan de volgende normen omvatten:{' '}
+                <Abbr id="ISO7730">ISO 7730:2025</Abbr> (thermisch comfort PMV/PPD),{' '}
+                <Abbr id="ISO7243">ISO 7243:2017</Abbr> (warmtestress WBGT),{' '}
+                <Abbr id="ISO7933">ISO 7933:2023</Abbr> (gedetailleerde warmtestress PHS),{' '}
+                <Abbr id="ISO11079">ISO 11079:2007</Abbr> (koudestress IREQ).
+                Wetgeving: Arbobesluit art. 3.2 (inrichting arbeidsplaatsen — klimaat).
+              </>
+          }
+        </InlineEdit>
       </InfoBox>
 
       {/* Uitvoerders */}

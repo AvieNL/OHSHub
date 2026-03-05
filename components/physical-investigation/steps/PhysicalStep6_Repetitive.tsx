@@ -7,10 +7,20 @@ import { computeRepetitiveResult } from '@/lib/physical-stats';
 import { InfoBox } from '@/components/InfoBox';
 import { Abbr } from '@/components/Abbr';
 import { Alert, Button, Card, FieldLabel, Icon, Input, Select } from '@/components/ui';
+import InlineStepHeader from '@/components/InlineStepHeader';
+import InlineEdit from '@/components/InlineEdit';
+import MarkdownContent from '@/components/MarkdownContent';
+
+const STEP_KEY = 'step.6';
+const NS = 'investigation.physical-load';
+const FALLBACK_TITLE = 'Stap 7 — Repeterende handelingen (OCRA Checklist)';
+const FALLBACK_DESC = 'Beoordeel repeterende arm- en handbewegingen met de OCRA Checklist (NEN-ISO 11228-3 / EN 1005-5). Score = CF + FaF × (PF + RF + AddF).';
+const FALLBACK_IB0_TITLE = 'NEN-ISO 11228-3:2007 — OCRA Checklist risicocategorieën';
 
 interface Props {
   investigation: PhysicalInvestigation;
   onUpdate: (partial: Partial<PhysicalInvestigation>) => void;
+  contentOverrides?: Record<string, string>;
 }
 
 // OCRA CF scores (Herstelfactor): hoe meer hersteltijd, hoe lager de score
@@ -211,7 +221,11 @@ function RepetitiveForm({
   );
 }
 
-export default function PhysicalStep6_Repetitive({ investigation, onUpdate }: Props) {
+export default function PhysicalStep6_Repetitive({ investigation, onUpdate, contentOverrides }: Props) {
+  const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
+  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
+  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
+  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
   const { bgs, repetitiveTasks } = investigation;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addingBg, setAddingBg] = useState<string | null>(null);
@@ -230,7 +244,7 @@ export default function PhysicalStep6_Repetitive({ investigation, onUpdate }: Pr
   if (bgs.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Stap 7 — Repeterende handelingen (OCRA)</h2>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
         <Alert variant="warning" size="md">
           Definieer eerst belastingsgroepen in stap 3.
         </Alert>
@@ -241,29 +255,48 @@ export default function PhysicalStep6_Repetitive({ investigation, onUpdate }: Pr
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Stap 7 — Repeterende handelingen (<Abbr id="OCRA">OCRA</Abbr> Checklist)
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Beoordeel repeterende arm- en handbewegingen met de{' '}
-          <abbr title="Occupational Repetitive Actions checklist — screeningsinstrument voor repetitieve belasting van de bovenste extremiteiten" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">OCRA</abbr>{' '}
-          Checklist (NEN-ISO 11228-3 / EN 1005-5).
-          Score = CF + FaF × (PF + RF + AddF).
-        </p>
+        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+          {desc
+            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <MarkdownContent>{desc}</MarkdownContent>
+              </p>
+            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Beoordeel repeterende arm- en handbewegingen met de{' '}
+                <abbr title="Occupational Repetitive Actions checklist — screeningsinstrument voor repetitieve belasting van de bovenste extremiteiten" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">OCRA</abbr>{' '}
+                Checklist (NEN-ISO 11228-3 / EN 1005-5).
+                Score = CF + FaF × (PF + RF + AddF).
+              </p>
+          }
+        </InlineEdit>
       </div>
 
-      <InfoBox title="NEN-ISO 11228-3:2007 — OCRA Checklist risicocategorieën">
-        <span className="inline-block mr-3">{'< 7,5'} <strong>GROEN</strong> — Acceptabel</span>
-        <span className="inline-block mr-3">7,5–11 <strong>GEEL</strong> — Licht risicovol</span>
-        <span className="inline-block mr-3">11–14 <strong>LICHTORANJE</strong> — Matig risicovol</span>
-        <span className="inline-block mr-3">14–22,5 <strong>ORANJE</strong> — Risicovol</span>
-        <span className="inline-block">&gt; 22,5 <strong>ROOD</strong> — Zeer risicovol</span>
-        <br />
-        <span className="mt-1 block text-xs opacity-75">
-          Bij score ≥ 11: biomechanisch onderzoek en maatregelen vereist.
-          <abbr title="Occupational Repetitive Actions Index — uitgebreidere analyse naast de checklist" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2 ml-1">OCRA Index</abbr>{' '}
-          biedt verdere precisering.
-        </span>
+      <InfoBox title={
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
+          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
+          {ib0Title}
+        </InlineEdit>
+      }>
+        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
+          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
+          {ib0Content
+            ? <MarkdownContent>{ib0Content}</MarkdownContent>
+            : <>
+                <span className="inline-block mr-3">{'< 7,5'} <strong>GROEN</strong> — Acceptabel</span>
+                <span className="inline-block mr-3">7,5–11 <strong>GEEL</strong> — Licht risicovol</span>
+                <span className="inline-block mr-3">11–14 <strong>LICHTORANJE</strong> — Matig risicovol</span>
+                <span className="inline-block mr-3">14–22,5 <strong>ORANJE</strong> — Risicovol</span>
+                <span className="inline-block">&gt; 22,5 <strong>ROOD</strong> — Zeer risicovol</span>
+                <br />
+                <span className="mt-1 block text-xs opacity-75">
+                  Bij score ≥ 11: biomechanisch onderzoek en maatregelen vereist.
+                  <abbr title="Occupational Repetitive Actions Index — uitgebreidere analyse naast de checklist" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2 ml-1">OCRA Index</abbr>{' '}
+                  biedt verdere precisering.
+                </span>
+              </>
+          }
+        </InlineEdit>
       </InfoBox>
 
       {bgs.map((bg) => {

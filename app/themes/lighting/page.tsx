@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import InvestigationPlaceholder from '@/components/InvestigationPlaceholder';
 import { THEME_LEGAL_INFO } from '@/lib/theme-legal-info';
 import { themes } from '@/lib/themes';
+import { getNamespaceContent } from '@/lib/content';
 
 export const metadata: Metadata = {
   title: 'Verlichting — OHSHub',
@@ -12,16 +13,27 @@ export const metadata: Metadata = {
 const { legislation, norms, limitGroups, adminObligations } = THEME_LEGAL_INFO['lighting'];
 const theme = themes.find((t) => t.slug === 'lighting')!;
 
-export default function LightingPage() {
+const FALLBACK_TITLE = 'Verlichting';
+const FALLBACK_DESC =
+  'Systematische beoordeling van kunstmatige en daglichtsituaties op de werkplek conform NEN-EN-12464-1:2021. Onvoldoende of ongepaste verlichting leidt tot visuele vermoeidheid, verhoogde foutkans, hoofdpijn en een hoger risico op bedrijfsongevallen. De beoordeling omvat verlichtingssterkte, uniformiteit, verblinding (UGR) en kleurweergave.';
+
+export default async function LightingPage() {
+  const [legalOverrides, themeOverrides] = await Promise.all([
+    getNamespaceContent('theme-legal.lighting'),
+    getNamespaceContent('theme.lighting'),
+  ]);
+
   return (
     <InvestigationPlaceholder
-      title="Verlichting"
-      subtitle="NEN-EN 12464"
-      description="Systematische beoordeling van kunstmatige en daglichtsituaties op de werkplek conform NEN-EN-12464-1:2021. Onvoldoende of ongepaste verlichting leidt tot visuele vermoeidheid, verhoogde foutkans, hoofdpijn en een hoger risico op bedrijfsongevallen. De beoordeling omvat verlichtingssterkte, uniformiteit, verblinding (UGR) en kleurweergave."
+      namespace="theme.lighting"
+      legalNamespace="theme-legal.lighting"
+      legalOverrides={legalOverrides}
+      title={themeOverrides['pageTitle'] ?? FALLBACK_TITLE}
+      fallbackTitle={FALLBACK_TITLE}
+      description={themeOverrides['pageDesc'] ?? FALLBACK_DESC}
+      fallbackDesc={FALLBACK_DESC}
       iconPaths={theme.iconPaths}
       color={{
-        border: 'border-amber-500',
-        badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
         dot: 'bg-amber-500',
         stepDot: 'bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400',
         limitBg: 'bg-amber-50 dark:bg-amber-950/30',

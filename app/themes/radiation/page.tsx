@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import InvestigationPlaceholder from '@/components/InvestigationPlaceholder';
 import { THEME_LEGAL_INFO } from '@/lib/theme-legal-info';
 import { themes } from '@/lib/themes';
+import { getNamespaceContent } from '@/lib/content';
 
 export const metadata: Metadata = {
   title: 'Straling — OHSHub',
@@ -12,16 +13,27 @@ export const metadata: Metadata = {
 const { legislation, norms, limitGroups, adminObligations } = THEME_LEGAL_INFO['radiation'];
 const theme = themes.find((t) => t.slug === 'radiation')!;
 
-export default function RadiationPage() {
+const FALLBACK_TITLE = 'Straling';
+const FALLBACK_DESC =
+  'Beoordeling van blootstelling aan ioniserende straling (röntgen, gamma, neutronenstraling) en niet-ioniserende straling (UV, infrarood, laser en elektromagnetische velden) conform het Besluit basisveiligheidsnormen stralingsbescherming (Bbs/2013/59/Euratom) en Arbobesluit art. 4.45a–4.45k.';
+
+export default async function RadiationPage() {
+  const [legalOverrides, themeOverrides] = await Promise.all([
+    getNamespaceContent('theme-legal.radiation'),
+    getNamespaceContent('theme.radiation'),
+  ]);
+
   return (
     <InvestigationPlaceholder
-      title="Straling"
-      subtitle="Ioniserend · Niet-ioniserend · EMV"
-      description="Beoordeling van blootstelling aan ioniserende straling (röntgen, gamma, neutronenstraling) en niet-ioniserende straling (UV, infrarood, laser en elektromagnetische velden) conform het Besluit basisveiligheidsnormen stralingsbescherming (Bbs/2013/59/Euratom) en Arbobesluit art. 4.45a–4.45k."
+      namespace="theme.radiation"
+      legalNamespace="theme-legal.radiation"
+      legalOverrides={legalOverrides}
+      title={themeOverrides['pageTitle'] ?? FALLBACK_TITLE}
+      fallbackTitle={FALLBACK_TITLE}
+      description={themeOverrides['pageDesc'] ?? FALLBACK_DESC}
+      fallbackDesc={FALLBACK_DESC}
       iconPaths={theme.iconPaths}
       color={{
-        border: 'border-purple-500',
-        badge: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
         dot: 'bg-purple-500',
         stepDot: 'bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-400',
         limitBg: 'bg-purple-50 dark:bg-purple-950/30',
