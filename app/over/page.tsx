@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: 'Versiehistorie en informatie over OHSHub.',
 };
 
-const HARDCODED_VERSION = '0.20.3';
+const HARDCODED_VERSION = '0.20.4';
 
 const CHANGELOG: {
   version: string;
@@ -20,6 +20,16 @@ const CHANGELOG: {
   modules: string[];
   changes: string[];
 }[] = [
+  {
+    version: '0.20.4',
+    date: '2026-03-05',
+    type: 'patch',
+    title: 'Admin: één scrollbare tabel voor alle schermformaten',
+    modules: ['Platform'],
+    changes: [
+      'Kaartweergave verwijderd; alle gebruikers staan nu in één tabel die horizontaal scrollt op smalle schermen.',
+    ],
+  },
   {
     version: '0.20.3',
     date: '2026-03-05',

@@ -53,117 +53,6 @@ function TrashIcon() {
   );
 }
 
-// ── Mobiele kaartweergave ─────────────────────────────────────────────────────
-
-function UserCard({
-  user,
-  saving,
-  privacyLoading,
-  onRoleChange,
-  onPrivacyPush,
-  onDelete,
-}: {
-  user: UserRow;
-  saving: string | null;
-  privacyLoading: string | null;
-  onRoleChange: (id: string, role: string) => void;
-  onPrivacyPush: (id: string, hasPending: boolean) => void;
-  onDelete: (id: string) => void;
-}) {
-  const ROLE_COLORS: Record<string, string> = {
-    admin: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
-    'test-gebruiker': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-    gebruiker: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
-  };
-
-  return (
-    <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-      {/* Header: email + delete */}
-      <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-3">
-        <div className="min-w-0">
-          <Link
-            href={`/admin/users/${user.id}`}
-            className="block truncate font-medium text-zinc-900 hover:underline dark:text-zinc-100"
-          >
-            {user.email}
-          </Link>
-          {fmtFullName(user) && (
-            <p className="mt-0.5 truncate text-xs text-zinc-400 dark:text-zinc-500">
-              {fmtFullName(user)}{user.company ? ` · ${user.company}` : ''}
-            </p>
-          )}
-        </div>
-        <button
-          onClick={() => onDelete(user.id)}
-          className="shrink-0 rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-          title="Gebruiker verwijderen"
-        >
-          <TrashIcon />
-        </button>
-      </div>
-
-      {/* Details grid */}
-      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 border-t border-zinc-100 px-4 py-3 text-sm dark:border-zinc-800">
-        <dt className="self-center text-xs text-zinc-400 dark:text-zinc-500">Rol</dt>
-        <dd>
-          <select
-            value={user.role}
-            disabled={saving === user.id}
-            onChange={(e) => onRoleChange(user.id, e.target.value)}
-            className="rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs text-zinc-700 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
-          >
-            {ROLES.map((r) => (
-              <option key={r} value={r}>{r}</option>
-            ))}
-          </select>
-        </dd>
-
-        <dt className="self-center text-xs text-zinc-400 dark:text-zinc-500">Privacy</dt>
-        <dd className="flex items-center gap-2">
-          <div className="min-w-0">
-            {user.privacy_version_accepted ? (
-              <span className="font-mono text-xs text-zinc-700 dark:text-zinc-300">
-                v{user.privacy_version_accepted}
-              </span>
-            ) : (
-              <span className="text-xs text-amber-600 dark:text-amber-400">—</span>
-            )}
-            {user.privacy_accepted_at && (
-              <p className="text-xs text-zinc-400 dark:text-zinc-500">{fmtDate(user.privacy_accepted_at)}</p>
-            )}
-            {user.privacy_required_version && (
-              <p className="text-xs font-medium text-orange-600 dark:text-orange-400">herbevestiging vereist</p>
-            )}
-          </div>
-          <button
-            onClick={() => onPrivacyPush(user.id, !!user.privacy_required_version)}
-            disabled={privacyLoading === user.id}
-            title={user.privacy_required_version
-              ? `Verzoek intrekken (v${user.privacy_required_version})`
-              : 'Herbevestiging verplichten'}
-            className={`shrink-0 rounded-lg p-1.5 disabled:opacity-50 ${
-              user.privacy_required_version
-                ? 'text-orange-500 hover:bg-orange-50 hover:text-orange-700 dark:hover:bg-orange-900/20'
-                : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800'
-            }`}
-          >
-            {user.privacy_required_version ? <XIcon /> : <BellIcon />}
-          </button>
-        </dd>
-
-        <dt className="text-xs text-zinc-400 dark:text-zinc-500">Aangemeld</dt>
-        <dd className="text-xs text-zinc-500 dark:text-zinc-400">{fmtDate(user.created_at)}</dd>
-
-        <dt className="text-xs text-zinc-400 dark:text-zinc-500">Laatste login</dt>
-        <dd className="text-xs text-zinc-500 dark:text-zinc-400">{fmtDate(user.last_sign_in_at)}</dd>
-
-        <dt className="text-xs text-zinc-400 dark:text-zinc-500">Onderzoeken</dt>
-        <dd className="text-xs text-zinc-700 dark:text-zinc-300">{user.investigation_count}</dd>
-      </dl>
-    </div>
-  );
-}
-
 // ── Hoofd component ───────────────────────────────────────────────────────────
 
 export default function AdminPage() {
@@ -254,24 +143,9 @@ export default function AdminPage() {
         <div className="flex h-32 items-center justify-center text-sm text-zinc-400">Laden…</div>
       ) : (
         <>
-          {/* Mobiele kaartweergave (< md) */}
-          <div className="flex flex-col gap-3 md:hidden">
-            {users.map((user) => (
-              <UserCard
-                key={user.id}
-                user={user}
-                saving={saving}
-                privacyLoading={privacyLoading}
-                onRoleChange={handleRoleChange}
-                onPrivacyPush={handlePrivacyPush}
-                onDelete={setDeleteConfirm}
-              />
-            ))}
-          </div>
-
-          {/* Desktoptabel (md+), horizontaal scrollbaar */}
-          <div className="hidden md:block overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
-            <table className="w-full min-w-[780px] text-sm">
+          {/* Tabel, horizontaal scrollbaar op smalle schermen */}
+          <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <table className="w-full min-w-[700px] text-sm">
               <thead className="border-b border-zinc-200 bg-zinc-50 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
                 <tr>
                   <th className="px-5 py-3 text-left">E-mail</th>
@@ -371,7 +245,6 @@ export default function AdminPage() {
               </tbody>
             </table>
           </div>
-        </>
       )}
     </>
   );
