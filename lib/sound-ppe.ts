@@ -1,6 +1,17 @@
 /**
- * PPE attenuation calculation utilities — EN 458:2016
- * Used by the Assessment component, text report, and PDF export.
+ * PPE attenuation calculation utilities — EN 458:2025 (NEN-EN 458:2026)
+ * Supersedes EN 458:2016. Used by Assessment, text report, and PDF export.
+ *
+ * Implemented methods:
+ *   §A.2  Octave-band method (exact — Formule A.1: APV = m − s per band)
+ *   §A.4  HML check-method   (no L_C needed; used as conservative estimate)
+ *   §A.5  SNR method         (exact when L_p,C is available; SNR/2 approximation as fallback)
+ *
+ * Deviations from EN 458:2025:
+ *   HML:  Full HML method §A.3 (interpolation with L_p,C) is NOT implemented; §A.4 check-method is used instead.
+ *   SNR:  When L_p,C is unavailable, SNR/2 is used as an approximation (not normative).
+ *   Dual: §6.2.4 prescribes manufacturer combination data; this module estimates max(APF1,APF2)+5 dB.
+ *   Cap:  35 dB(A) bone-conduction limit is physically motivated but not stated as a fixed value in EN 458:2025.
  */
 
 import type { SoundHEG } from './sound-investigation-types';
@@ -111,9 +122,11 @@ export interface CombinedPPEResult {
  *
  * Single protector:  returns the stored ppeAttenuation directly.
  * Double protectors: uses the highest-accuracy method available (octave → HML → SNR/APF).
- *   Combined attenuation = max(APF1, APF2) + 5 dB (HML / SNR methods)
- *   For octave-band method: per-band minimum of both protected levels, then energy-sum.
- *   Hard cap: 35 dB — total attenuation cannot exceed 35 dB(A) due to bone conduction.
+ *   Octave method:   per-band minimum of both protected A-weighted levels, then energy-sum.
+ *   HML/SNR methods: max(APF1, APF2) + 5 dB (estimated bonus based on EN 458:2025 §6.2.4 guidance,
+ *                    measured range 1–12 dB; EN 458:2025 prescribes manufacturer combination data,
+ *                    no formula provided).
+ *   Cap: 35 dB — physically motivated bone-conduction limit; not a fixed value in EN 458:2025.
  *
  * Returns null when no PPE data is present.
  */
@@ -182,8 +195,19 @@ export function computeCombinedAttenuation(
   }
 
   // ── Double: SNR / APF fallback ────────────────────────────────────────────
-  const snrApf1 = apf1 > 0 ? apf1 : ((heg.ppeSNR ?? 0) / 2);
-  const snrApf2 = heg.ppe2SNRUnknown ? 0 : (heg.ppe2Attenuation ?? ((heg.ppe2SNR ?? 0) / 2));
+  // Derive L_p,A from octave-band averages + A-weighting for use in exact SNR formula (EN 458:2025 §A.5).
+  // Falls back to SNR/2 approximation (not normative) when L_p,C or octave data is unavailable.
+  let lpAFromOctave: number | null = null;
+  if (avgLp) {
+    const sumA = avgLp.reduce((s, lp, i) => s + Math.pow(10, (lp + A_WEIGHTS[i]) / 10), 0);
+    lpAFromOctave = 10 * Math.log10(sumA);
+  }
+  const toSnrApf = (snr: number, lpC: number | undefined): number =>
+    lpC != null && lpAFromOctave != null ? snr - (lpC - lpAFromOctave) : snr / 2;
+
+  const snrApf1 = apf1 > 0 ? apf1 : (heg.ppeSNR ? toSnrApf(heg.ppeSNR, heg.ppeLpC) : 0);
+  const snrApf2 = heg.ppe2SNRUnknown ? 0
+    : (heg.ppe2Attenuation ?? (heg.ppe2SNR ? toSnrApf(heg.ppe2SNR, heg.ppe2LpC) : 0));
   if (snrApf1 > 0 || snrApf2 > 0) {
     const raw = Math.max(snrApf1, snrApf2) + 5;
     const capped = raw > 35;

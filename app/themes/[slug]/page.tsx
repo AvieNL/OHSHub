@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { themes } from '@/lib/themes';
@@ -6,6 +6,7 @@ import { getWizardConfig } from '@/lib/wizard-configs';
 import ThemeWizard from '@/components/ThemeWizard';
 import type { ThemeSlug } from '@/lib/themes';
 import { getNamespaceContent } from '@/lib/content';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import InlineEdit from '@/components/InlineEdit';
 
 type Props = {
@@ -33,6 +34,16 @@ export default async function ThemePage({ params }: Props) {
   const theme = themes.find((t) => t.slug === slug);
 
   if (!theme) notFound();
+
+  // Guard: redirect non-admins away from inactive themes
+  if (!theme.active) {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const isAdmin = user
+      ? (await supabase.from('user_roles').select('role').eq('user_id', user.id).single()).data?.role === 'admin'
+      : false;
+    if (!isAdmin) redirect('/');
+  }
 
   const themeSlug = theme.slug as ThemeSlug;
   const config = getWizardConfig(themeSlug);

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: 'Versiehistorie en informatie over OHSHub.',
 };
 
-const HARDCODED_VERSION = '0.22.2';
+const HARDCODED_VERSION = '0.22.5';
 
 const CHANGELOG: {
   version: string;
@@ -20,6 +20,47 @@ const CHANGELOG: {
   modules: string[];
   changes: string[];
 }[] = [
+  {
+    version: '0.22.5',
+    date: '2026-03-06',
+    type: 'patch',
+    title: 'Onderzoekstegels: geluid actief, overige thema\'s gedeactiveerd voor gebruikers',
+    modules: ['Algemeen'],
+    changes: [
+      'Alle onderzoeksthema\'s behalve Geluid zijn gemarkeerd als inactief (`active: false` in lib/themes.ts).',
+      'Niet-admins zien inactieve tegels als greyed-out (opacity-40) met "Binnenkort"-badge; tegels zijn niet klikbaar.',
+      'Admins zien alle tegels als links met een subtiel "inactief"-label.',
+      'Directe URL-navigatie naar een inactief thema (/themes/climate etc.) leidt niet-admins terug naar de homepagina.',
+    ],
+  },
+  {
+    version: '0.22.4',
+    date: '2026-03-06',
+    type: 'patch',
+    title: 'Vereenvoudiging PPE-module geluid — SNR÷2 als standaard, PFRE-disclaimer',
+    modules: ['Geluid'],
+    changes: [
+      'Geluid: PPE-invoerformulier (stap 6) vereenvoudigd tot SNR-only — methode-tabs (SNR §A.5, HML §A.4, octaafband §A.2, handmatig) verwijderd.',
+      'Geluid: APF wordt altijd berekend als SNR÷2 (conservatieve PFRE-benadering); handmatige override blijft mogelijk.',
+      'Geluid: PFRE-disclaimer toegevoegd in stap 6 en stap 10 — legt uit dat werkelijke demping ≈ 50–60% van nominale SNR is (EN 458:2025 Annex B) en waarom SNR÷2 aansluit bij ISO 9612.',
+      'Geluid: piekgeluid-correctie (L_p,Cpeak,oor) is niet meer berekend — SNR beschrijft de spectrale samenstelling van piekgeluid niet; uitleg toegevoegd.',
+      'Geluid: beoordeling (stap 10) vereenvoudigd — apfFreqBased-logica verwijderd; PBM-samenvatting toont SNR÷2 als methode-label.',
+      'Geluid: bestaande onderzoekdata met HML/octaafband-methode blijft geldig (velden worden bewaard in de database; PDF-export en rapport ongewijzigd).',
+    ],
+  },
+  {
+    version: '0.22.3',
+    date: '2026-03-06',
+    type: 'patch',
+    title: 'SNR-methode fix + normatieve verwijzingen gehoorbescherming (EN 458:2025)',
+    modules: ['Geluid'],
+    changes: [
+      'Geluid: SNR-methode aangepast conform EN 458:2025 §A.5 — exacte formule L′_p,A = L_p,C − SNR; invoerveld voor C-gewogen niveau L_p,C toegevoegd. Zonder L_p,C wordt SNR÷2 als benadering gebruikt (niet conform norm, duidelijk aangegeven).',
+      'Geluid: normatieve verwijzingen (EN 458:2025 §A.2/§A.4/§A.5/§6.2.4) toegevoegd aan alle PPE-methode-secties in stap 6 en stap 10.',
+      'Geluid: afwijkingen van EN 458:2025 expliciet gedocumenteerd — HML check-methode (§A.4 i.p.v. §A.3), dubbele bescherming (schatting vs. fabricantcombinaties), 35 dB-cap (informatief).',
+      'Geluid: code-commentaar en infoboxen bijgewerkt van EN 458:2016 naar EN 458:2025.',
+    ],
+  },
   {
     version: '0.22.2',
     date: '2026-03-06',

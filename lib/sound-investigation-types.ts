@@ -45,10 +45,12 @@ export interface SoundHEG {
   strategy: SoundStrategy;
   workPattern?: WorkPattern;
   noiseSources?: string; // observed noise sources
-  /** Method used to determine APF (EN 458:2016) */
+  /** Method used to determine APF (EN 458:2025) */
   ppeMethod?: 'snr' | 'hml' | 'octave' | 'manual';
-  /** Method 1 — SNR value from product data sheet; APF = SNR/2 (auto-calculated) */
+  /** Method SNR (EN 458:2025 §A.5) — SNR value from product data sheet */
   ppeSNR?: number;
+  /** Method SNR — C-weighted level L_p,C at workplace in dB(C); required for exact EN 458:2025 §A.5 formula */
+  ppeLpC?: number;
   /** Method 1 — True when the SNR is explicitly marked as unknown (PPE is used but data sheet is pending) */
   ppeSNRUnknown?: boolean;
   /** Method 3 — Octave band inputs (8 bands: 63–8000 Hz); APF auto-calculated via EN 458 Annex A */
@@ -68,6 +70,8 @@ export interface SoundHEG {
   ppeDouble?: boolean;
   ppe2Method?: 'snr' | 'hml' | 'octave' | 'manual';
   ppe2SNR?: number;
+  /** Method SNR — C-weighted level L_p,C for second protector (dB(C)) */
+  ppe2LpC?: number;
   ppe2SNRUnknown?: boolean;
   ppe2OctaveBands?: Array<{ lp?: number; m?: number; s?: number }>;
   ppe2H?: number;

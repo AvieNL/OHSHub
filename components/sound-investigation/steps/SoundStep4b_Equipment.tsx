@@ -8,13 +8,7 @@ import type {
   EquipmentCategory,
 } from '@/lib/sound-investigation-types';
 import { newSoundId } from '@/lib/sound-investigation-storage';
-import {
-  OCTAVE_BANDS,
-  averageOctaveBands,
-  buildMergedBands,
-  calcOctaveAPF,
-  computeCombinedAttenuation,
-} from '@/lib/sound-ppe';
+import { computeCombinedAttenuation } from '@/lib/sound-ppe';
 import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
 import { InfoBox } from '@/components/InfoBox';
@@ -35,7 +29,7 @@ const NS = 'investigation.sound';
 const FALLBACK_TITLE = 'Stap 6 — Arbeidsmiddelen (art. 7.4a Arbobesluit)';
 const FALLBACK_DESC = 'Registreer voertuigen, machines en gereedschappen die gebruikt worden bij de beoordeelde werkzaamheden.';
 const FALLBACK_IB0_TITLE = 'Wettelijke basis — art. 7.4a Arbobesluit / Machinerichtlijn 2006/42/EG';
-const FALLBACK_IB1_TITLE = 'Wettelijke basis — art. 6.6 lid 1b & 6.9 Arbobesluit / EN 458:2016';
+const FALLBACK_IB1_TITLE = 'Wettelijke basis — art. 6.6 lid 1b & 6.9 Arbobesluit / EN 458:2025';
 
 const CATEGORY_OPTIONS: { value: EquipmentCategory; label: string; short: string }[] = [
   { value: 'voertuig',        label: 'Voertuig (auto, heftruck, tractor)',      short: 'Voertuig' },
@@ -368,345 +362,113 @@ type PPESlot = 1 | 2;
 function getPPEFields(heg: SoundHEG, slot: PPESlot) {
   if (slot === 1) {
     return {
-      method:       heg.ppeMethod ?? 'snr' as const,
-      snr:          heg.ppeSNR,
-      snrUnknown:   heg.ppeSNRUnknown ?? false,
-      octaveBands:  heg.ppeOctaveBands,
-      h:            heg.ppeH,
-      m:            heg.ppeM,
-      l:            heg.ppeL,
-      spectralChar: heg.ppeSpectralChar ?? 'medium' as const,
-      attenuation:  heg.ppeAttenuation,
-      notes:        heg.ppeNotes,
+      snr:         heg.ppeSNR,
+      snrUnknown:  heg.ppeSNRUnknown ?? false,
+      attenuation: heg.ppeAttenuation,
+      notes:       heg.ppeNotes,
     };
   }
   return {
-    method:       heg.ppe2Method ?? 'snr' as const,
-    snr:          heg.ppe2SNR,
-    snrUnknown:   heg.ppe2SNRUnknown ?? false,
-    octaveBands:  heg.ppe2OctaveBands,
-    h:            heg.ppe2H,
-    m:            heg.ppe2M,
-    l:            heg.ppe2L,
-    spectralChar: heg.ppe2SpectralChar ?? 'medium' as const,
-    attenuation:  heg.ppe2Attenuation,
-    notes:        heg.ppe2Notes,
+    snr:         heg.ppe2SNR,
+    snrUnknown:  heg.ppe2SNRUnknown ?? false,
+    attenuation: heg.ppe2Attenuation,
+    notes:       heg.ppe2Notes,
   };
 }
 
 function setPPEFields(heg: SoundHEG, slot: PPESlot, partial: Partial<ReturnType<typeof getPPEFields>>): Partial<SoundHEG> {
   if (slot === 1) {
     return {
-      ppeMethod:       partial.method as SoundHEG['ppeMethod'],
-      ppeSNR:          partial.snr,
-      ppeSNRUnknown:   partial.snrUnknown,
-      ppeOctaveBands:  partial.octaveBands,
-      ppeH:            partial.h,
-      ppeM:            partial.m,
-      ppeL:            partial.l,
-      ppeSpectralChar: partial.spectralChar as SoundHEG['ppeSpectralChar'],
-      ppeAttenuation:  partial.attenuation,
-      ppeNotes:        partial.notes,
+      ppeSNR:        partial.snr,
+      ppeSNRUnknown: partial.snrUnknown,
+      ppeAttenuation: partial.attenuation,
+      ppeNotes:      partial.notes,
     };
   }
   return {
-    ppe2Method:       partial.method as SoundHEG['ppe2Method'],
-    ppe2SNR:          partial.snr,
-    ppe2SNRUnknown:   partial.snrUnknown,
-    ppe2OctaveBands:  partial.octaveBands,
-    ppe2H:            partial.h,
-    ppe2M:            partial.m,
-    ppe2L:            partial.l,
-    ppe2SpectralChar: partial.spectralChar as SoundHEG['ppe2SpectralChar'],
-    ppe2Attenuation:  partial.attenuation,
-    ppe2Notes:        partial.notes,
+    ppe2SNR:        partial.snr,
+    ppe2SNRUnknown: partial.snrUnknown,
+    ppe2Attenuation: partial.attenuation,
+    ppe2Notes:      partial.notes,
   };
-}
-
-type PPEMethod = 'snr' | 'hml' | 'octave' | 'manual';
-
-function computeAPFFromFields(
-  fields: ReturnType<typeof getPPEFields>,
-  avgLp: number[] | null,
-): { apf: number; label: string } | null {
-  switch (fields.method) {
-    case 'snr': {
-      if (!fields.snr) return null;
-      const apf = parseFloat((fields.snr / 2).toFixed(1));
-      return { apf, label: `SNR ${fields.snr} ÷ 2 = ${apf} dB` };
-    }
-    case 'hml': {
-      const char = fields.spectralChar;
-      const val  = char === 'high' ? fields.h : char === 'low' ? fields.l : fields.m;
-      const key  = char === 'high' ? 'H' : char === 'low' ? 'L' : 'M';
-      if (!val) return null;
-      const apf = val;
-      return { apf, label: `${key} = ${apf} dB (PNR direct)` };
-    }
-    case 'octave': {
-      const merged = buildMergedBands(fields.octaveBands, avgLp);
-      const result = calcOctaveAPF(merged);
-      if (!result) return null;
-      return { apf: result.apf, label: `Octaafband: L_A ${result.lA.toFixed(1)} − L′_A ${result.lPrime.toFixed(1)} = ${result.apf.toFixed(1)} dB` };
-    }
-    default:
-      return null;
-  }
 }
 
 function PPEDeviceForm({
   heg,
   slot,
-  measurements,
   onUpdate,
 }: {
   heg: SoundHEG;
   slot: PPESlot;
-  measurements: SoundInvestigation['measurements'];
   onUpdate: (partial: Partial<SoundHEG>) => void;
 }) {
   const fields = getPPEFields(heg, slot);
-  const avgLp = averageOctaveBands(measurements.filter((m) => m.hegId === heg.id && !m.excluded));
-
-  const computed = fields.snrUnknown ? null : computeAPFFromFields(fields, avgLp);
-  const isOverridden = !fields.snrUnknown && computed !== null && fields.attenuation != null
-    && Math.abs(fields.attenuation - computed.apf) > 0.05;
-
-  const octaveMerged = buildMergedBands(fields.octaveBands, avgLp);
-  const octaveResult = fields.method === 'octave' ? calcOctaveAPF(octaveMerged) : null;
+  const computedAPF = !fields.snrUnknown && fields.snr != null
+    ? parseFloat((fields.snr / 2).toFixed(1))
+    : null;
+  const isOverridden = computedAPF !== null && fields.attenuation != null
+    && Math.abs(fields.attenuation - computedAPF) > 0.05;
 
   const inputCls = 'rounded-lg border border-blue-200 bg-white px-2 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-blue-700 dark:bg-zinc-800 dark:text-zinc-100';
 
   function upd(partial: Partial<ReturnType<typeof getPPEFields>>) {
     const merged = { ...fields, ...partial };
-    // Auto-compute APF when method inputs change
-    if (!merged.snrUnknown) {
-      const newComputed = computeAPFFromFields(merged, avgLp);
-      if (newComputed && !isOverridden) {
-        onUpdate(setPPEFields(heg, slot, { ...merged, attenuation: newComputed.apf }));
-        return;
-      }
+    // Auto-compute APF = SNR÷2 when SNR changes (unless user has manually overridden)
+    if (!merged.snrUnknown && merged.snr != null && !isOverridden) {
+      const apf = parseFloat((merged.snr / 2).toFixed(1));
+      onUpdate(setPPEFields(heg, slot, { ...merged, attenuation: apf }));
+      return;
     }
     onUpdate(setPPEFields(heg, slot, merged));
   }
 
-  function setMethod(m: PPEMethod) {
-    const merged = { ...fields, method: m };
-    const newComputed = computeAPFFromFields(merged, avgLp);
-    onUpdate(setPPEFields(heg, slot, newComputed ? { ...merged, attenuation: newComputed.apf } : merged));
-  }
-
-  function updateBand(index: number, partial: { lp?: number | undefined; m?: number | undefined; s?: number | undefined }) {
-    const current = (fields.octaveBands ?? Array.from({ length: 8 }, () => ({}))) as { lp?: number; m?: number; s?: number }[];
-    upd({ octaveBands: current.map((b, i) => i === index ? { ...b, ...partial } : b) });
-  }
-
-  const methods: PPEMethod[] = ['snr', 'hml', 'octave', 'manual'];
-  const methodLabels: Record<PPEMethod, string> = {
-    snr: 'Methode 1 — SNR/2', hml: 'Methode 2 — HML',
-    octave: 'Methode 3 — Octaafband', manual: 'Handmatig',
-  };
-
   return (
     <div className="space-y-3">
-      {/* Method tabs */}
-      <div className="flex flex-wrap gap-1.5">
-        {methods.map((m) => (
-          <button
-            key={m}
-            onClick={() => setMethod(m)}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-              fields.method === m
-                ? 'bg-blue-600 text-white dark:bg-blue-500'
-                : 'border border-blue-200 bg-white text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:bg-zinc-800 dark:text-blue-300'
-            }`}
-          >
-            {methodLabels[m]}
-          </button>
-        ))}
-      </div>
+      {/* SNR unknown checkbox */}
+      <label className="flex cursor-pointer items-center gap-2 text-xs text-blue-700 dark:text-blue-300">
+        <input
+          type="checkbox"
+          checked={fields.snrUnknown}
+          onChange={(e) => {
+            if (e.target.checked) {
+              onUpdate(setPPEFields(heg, slot, { ...fields, snrUnknown: true, snr: undefined, attenuation: undefined }));
+            } else {
+              onUpdate(setPPEFields(heg, slot, { ...fields, snrUnknown: false }));
+            }
+          }}
+          className="accent-orange-500"
+        />
+        <Abbr id="SNR">SNR</Abbr>-waarde nog onbekend (datablad niet beschikbaar)
+      </label>
 
-      {/* ── SNR/2 ── */}
-      {fields.method === 'snr' && (
-        <div className="space-y-2">
-          <label className="flex cursor-pointer items-center gap-2 text-xs text-blue-700 dark:text-blue-300">
-            <input
-              type="checkbox"
-              checked={fields.snrUnknown}
-              onChange={(e) => {
-                if (e.target.checked) {
-                  onUpdate(setPPEFields(heg, slot, { ...fields, snrUnknown: true, snr: undefined, attenuation: undefined }));
-                } else {
-                  onUpdate(setPPEFields(heg, slot, { ...fields, snrUnknown: false }));
-                }
-              }}
-              className="accent-orange-500"
-            />
-            <Abbr id="SNR">SNR</Abbr>-waarde nog onbekend (datablad niet beschikbaar)
-          </label>
-          {!fields.snrUnknown && (
-            <div className="flex items-end gap-3">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-blue-800 dark:text-blue-300">
-                  <Abbr id="SNR">SNR</Abbr>-waarde van datablad
-                </label>
-                <div className="flex items-center gap-1.5">
-                  <input
-                    type="number" min={0} max={50} step={1}
-                    value={fields.snr ?? ''}
-                    onChange={(e) => upd({ snr: parseFloat(e.target.value) || undefined })}
-                    placeholder="bijv. 33"
-                    className={`w-20 ${inputCls}`}
-                  />
-                  <span className="text-xs text-blue-600 dark:text-blue-400">dB</span>
-                </div>
-              </div>
-              {computed && (
-                <div className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs dark:border-blue-700 dark:bg-zinc-800">
-                  <span className="text-blue-500 dark:text-blue-400">Berekende <Abbr id="APF">APF</Abbr>:</span>
-                  <span className="ml-2 font-mono font-semibold text-blue-800 dark:text-blue-200">{computed.apf} dB</span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── HML ── */}
-      {fields.method === 'hml' && (
-        <div className="space-y-3">
-          <div className="flex flex-wrap gap-3">
-            {(['H', 'M', 'L'] as const).map((letter) => {
-              const val  = letter === 'H' ? fields.h : letter === 'M' ? fields.m : fields.l;
-              const desc = letter === 'H' ? 'hoogfrequent' : letter === 'M' ? 'middenfrequent' : 'laagfrequent';
-              return (
-                <div key={letter}>
-                  <label className="mb-1 block text-xs font-medium text-blue-800 dark:text-blue-300">
-                    {letter} <span className="font-normal text-blue-500">({desc})</span>
-                  </label>
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number" min={0} max={60} step={0.5}
-                      value={val ?? ''}
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value) || undefined;
-                        upd(letter === 'H' ? { h: v } : letter === 'M' ? { m: v } : { l: v });
-                      }}
-                      placeholder="dB"
-                      className={`w-16 ${inputCls}`}
-                    />
-                    <span className="text-xs text-blue-500">dB</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+      {!fields.snrUnknown && (
+        <div className="flex flex-wrap items-end gap-3">
+          {/* SNR input */}
           <div>
-            <label className="mb-1 block text-xs font-medium text-blue-800 dark:text-blue-300">Spectraal karakter</label>
-            <div className="flex flex-wrap gap-1.5">
-              {([
-                ['low',    'Laagfrequent (L<sub>p,C</sub>−L<sub>p,A</sub> &gt; 2 dB)'],
-                ['medium', 'Middenfrequent (≤ 2 dB)'],
-                ['high',   'Hoogfrequent (&gt; 1 kHz)'],
-              ] as const).map(([v, html]) => (
-                <button
-                  key={v}
-                  onClick={() => upd({ spectralChar: v })}
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                    fields.spectralChar === v
-                      ? 'bg-blue-600 text-white dark:bg-blue-500'
-                      : 'border border-blue-200 bg-white text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:bg-zinc-800 dark:text-blue-300'
-                  }`}
-                  dangerouslySetInnerHTML={{ __html: html }}
-                />
-              ))}
+            <label className="mb-1 block text-xs font-medium text-blue-800 dark:text-blue-300">
+              <Abbr id="SNR">SNR</Abbr>-waarde van datablad
+            </label>
+            <div className="flex items-center gap-1.5">
+              <input
+                type="number" min={0} max={50} step={1}
+                value={fields.snr ?? ''}
+                onChange={(e) => upd({ snr: parseFloat(e.target.value) || undefined })}
+                placeholder="bijv. 33"
+                className={`w-20 ${inputCls}`}
+              />
+              <span className="text-xs text-blue-600 dark:text-blue-400">dB</span>
             </div>
           </div>
-          {computed && (
-            <div className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs dark:border-blue-700 dark:bg-zinc-800">
-              <span className="text-blue-500">Berekende <Abbr id="APF">APF</Abbr>:</span>
-              <span className="ml-2 font-mono font-semibold text-blue-800 dark:text-blue-200">{computed.apf} dB</span>
-              <span className="ml-2 text-blue-400">({computed.label})</span>
-            </div>
-          )}
-        </div>
-      )}
 
-      {/* ── Octave band ── */}
-      {fields.method === 'octave' && (
-        <div className="space-y-3">
-          {avgLp !== null ? (
-            <p className="text-xs text-blue-600 dark:text-blue-400">
-              L<sub>p,i</sub> is automatisch ingevuld vanuit de gemiddelde octaafbandanalyses van de metingen.
-              Voer de gemiddelde demping <em>m</em> en standaardafwijking <em>s</em> van het datablad in.
-            </p>
-          ) : (
-            <p className="text-xs text-blue-600 dark:text-blue-400">
-              Voer per octaafband het gemeten geluidniveau L<sub>p,i</sub>, de gemiddelde demping <em>m</em> en
-              standaardafwijking <em>s</em> van het datablad in. Minimaal 3 banden vereist.
-            </p>
-          )}
-          <div className="overflow-x-auto rounded-lg border border-blue-200 dark:border-blue-700">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-blue-200 bg-blue-50/80 dark:border-blue-700 dark:bg-blue-900/20">
-                  <th className="px-2 py-2 text-left font-medium text-blue-700 dark:text-blue-300">Band (Hz)</th>
-                  <th className="px-2 py-2 text-right font-medium text-blue-700 dark:text-blue-300">L<sub>p,i</sub></th>
-                  <th className="px-2 py-2 text-right font-medium text-blue-700 dark:text-blue-300"><em>m</em></th>
-                  <th className="px-2 py-2 text-right font-medium text-blue-700 dark:text-blue-300"><em>s</em></th>
-                  <th className="px-2 py-2 text-right font-medium text-blue-500 dark:text-blue-400">L′<sub>A,i</sub></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-blue-100 dark:divide-blue-800/50">
-                {OCTAVE_BANDS.map((freq, i) => {
-                  const bands = (fields.octaveBands ?? Array.from({ length: 8 }, () => ({}))) as { lp?: number; m?: number; s?: number }[];
-                  const b  = bands[i] ?? {};
-                  const br = octaveResult?.bandResults[i];
-                  const numCls = 'w-14 rounded border border-blue-200 bg-white px-1.5 py-1 text-right font-mono text-xs outline-none focus:border-orange-400 dark:border-blue-700 dark:bg-zinc-800 dark:text-zinc-100';
-                  return (
-                    <tr key={freq} className="bg-white dark:bg-zinc-900">
-                      <td className="px-2 py-1.5 font-mono font-medium text-blue-600 dark:text-blue-400">{freq}</td>
-                      <td className="px-2 py-1">
-                        <input type="number" step={0.1} value={b.lp ?? ''}
-                          onChange={(e) => updateBand(i, { lp: e.target.value === '' ? undefined : parseFloat(e.target.value) })}
-                          className={numCls} />
-                      </td>
-                      <td className="px-2 py-1">
-                        <input type="number" step={0.1} min={0} value={b.m ?? ''}
-                          onChange={(e) => updateBand(i, { m: e.target.value === '' ? undefined : parseFloat(e.target.value) })}
-                          className={numCls} />
-                      </td>
-                      <td className="px-2 py-1">
-                        <input type="number" step={0.1} min={0} value={b.s ?? ''}
-                          onChange={(e) => updateBand(i, { s: e.target.value === '' ? undefined : parseFloat(e.target.value) })}
-                          className={numCls} />
-                      </td>
-                      <td className="px-2 py-1.5 text-right font-mono font-medium text-blue-700 dark:text-blue-200">
-                        {br != null ? br.lProtectedA.toFixed(1) : '—'}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-              {octaveResult && (
-                <tfoot>
-                  <tr className="border-t border-blue-200 bg-blue-50/80 dark:border-blue-700 dark:bg-blue-900/20 font-medium">
-                    <td className="px-2 py-2 text-blue-700 dark:text-blue-300">Totaal</td>
-                    <td colSpan={3} className="px-2 py-2 text-right font-mono text-blue-700 dark:text-blue-200">
-                      L<sub>p,A</sub> = {octaveResult.lA.toFixed(1)} dB(A)
-                    </td>
-                    <td className="px-2 py-2 text-right font-mono text-blue-700 dark:text-blue-200">
-                      L′<sub>A</sub> = {octaveResult.lPrime.toFixed(1)} dB(A)
-                    </td>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
-          </div>
-          {octaveResult && (
-            <div className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs dark:border-blue-700 dark:bg-zinc-800">
-              <span className="text-blue-500">Berekende <Abbr id="APF">APF</Abbr>:</span>
-              <span className="ml-2 font-mono font-semibold text-blue-800 dark:text-blue-200">{octaveResult.apf.toFixed(1)} dB</span>
+          {/* APF result */}
+          {computedAPF !== null && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs dark:border-amber-700/50 dark:bg-amber-900/10">
+              <span className="text-amber-600 dark:text-amber-400">
+                Berekende <Abbr id="APF">APF</Abbr> (SNR÷2):
+              </span>
+              <span className="ml-2 font-mono font-semibold text-amber-800 dark:text-amber-200">
+                {computedAPF} dB
+              </span>
             </div>
           )}
         </div>
@@ -729,12 +491,12 @@ function PPEDeviceForm({
                 className={`w-20 ${inputCls}`}
               />
               <span className="text-xs text-blue-600 dark:text-blue-400">dB</span>
-              {isOverridden && computed && (
+              {isOverridden && computedAPF !== null && (
                 <button
-                  onClick={() => onUpdate(setPPEFields(heg, slot, { ...fields, attenuation: computed.apf }))}
+                  onClick={() => onUpdate(setPPEFields(heg, slot, { ...fields, attenuation: computedAPF }))}
                   className="text-xs text-blue-500 hover:text-blue-800 dark:hover:text-blue-100"
                 >
-                  Reset naar {computed.apf} dB
+                  Reset naar {computedAPF} dB
                 </button>
               )}
             </div>
@@ -774,11 +536,12 @@ function PPEDeviceForm({
 /** Returns true when PPE has been added for this HEG (form is open) */
 function hasPPEConfigured(heg: SoundHEG): boolean {
   return !!(
-    heg.ppeMethod != null ||
     heg.ppeSNRUnknown ||
     heg.ppeSNR != null ||
     heg.ppeAttenuation != null ||
     heg.ppeNotes ||
+    // Legacy: also detect old HEGs configured with HML/octave methods
+    heg.ppeMethod != null ||
     heg.ppeH != null || heg.ppeM != null || heg.ppeL != null ||
     (heg.ppeOctaveBands ?? []).some((b) => b.m != null || b.s != null)
   );
@@ -787,11 +550,11 @@ function hasPPEConfigured(heg: SoundHEG): boolean {
 /** Clear all PPE fields (both slots) on a HEG */
 function clearPPE(): Partial<SoundHEG> {
   return {
-    ppeMethod: undefined, ppeSNR: undefined, ppeSNRUnknown: undefined,
+    ppeMethod: undefined, ppeSNR: undefined, ppeLpC: undefined, ppeSNRUnknown: undefined,
     ppeOctaveBands: undefined, ppeH: undefined, ppeM: undefined, ppeL: undefined,
     ppeSpectralChar: undefined, ppeAttenuation: undefined, ppeNotes: undefined,
     ppeDouble: undefined,
-    ppe2Method: undefined, ppe2SNR: undefined, ppe2SNRUnknown: undefined,
+    ppe2Method: undefined, ppe2SNR: undefined, ppe2LpC: undefined, ppe2SNRUnknown: undefined,
     ppe2OctaveBands: undefined, ppe2H: undefined, ppe2M: undefined, ppe2L: undefined,
     ppe2SpectralChar: undefined, ppe2Attenuation: undefined, ppe2Notes: undefined,
   };
@@ -799,19 +562,15 @@ function clearPPE(): Partial<SoundHEG> {
 
 function HEGPPESection({
   heg,
-  measurements,
   onUpdateHEG,
   onGoToStep,
 }: {
   heg: SoundHEG;
-  measurements: SoundInvestigation['measurements'];
   onUpdateHEG: (partial: Partial<SoundHEG>) => void;
   onGoToStep: (step: number) => void;
 }) {
   const configured = hasPPEConfigured(heg);
-  const hegMeasurements = measurements.filter((m) => m.hegId === heg.id && !m.excluded);
-  const avgLp = averageOctaveBands(hegMeasurements);
-  const combined = computeCombinedAttenuation(heg, avgLp);
+  const combined = computeCombinedAttenuation(heg, null);
   const methodLabel: Record<string, string> = {
     'single':        'Enkelvoudig',
     'double-snr':    'Dubbel — SNR-methode',
@@ -857,12 +616,25 @@ function HEGPPESection({
       {/* PPE form — only when configured */}
       {configured && (
         <div className="space-y-4 border-t border-zinc-200 bg-blue-50/40 px-4 pb-5 pt-4 dark:border-zinc-700 dark:bg-blue-900/10">
+          {/* PFRE disclaimer */}
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs dark:border-amber-700/40 dark:bg-amber-900/10">
+            <p className="font-medium text-amber-800 dark:text-amber-300">
+              Praktijkdemping (<abbr title="Performance of Field Real-world use: werkelijke demping in de praktijk" className="cursor-help underline decoration-dotted decoration-amber-500 underline-offset-2">PFRE</abbr>)
+            </p>
+            <p className="mt-0.5 text-amber-700 dark:text-amber-400">
+              De werkelijke demping in de praktijk is gemiddeld 50–60% van de nominale SNR-waarde (EN 458:2025 Annex B).
+              SNR÷2 wordt hier als standaard gebruikt — een conservatieve en in de praktijk realistische benadering.
+              Dit sluit aan bij de strekking van <abbr title="ISO 9612:2009: Acoustics — Determination of occupational noise exposure" className="cursor-help underline decoration-dotted decoration-amber-500 underline-offset-2">ISO 9612</abbr>{' '}
+              dat <abbr title="Persoonlijk beschermingsmiddel" className="cursor-help underline decoration-dotted decoration-amber-500 underline-offset-2">PBM</abbr> buiten de meetmethode houdt (§4.1).
+            </p>
+          </div>
+
           {/* Gehoorbeschermer 1 */}
           <div>
             <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-400">
               Gehoorbeschermer 1
             </p>
-            <PPEDeviceForm heg={heg} slot={1} measurements={measurements} onUpdate={(partial) => onUpdateHEG(partial)} />
+            <PPEDeviceForm heg={heg} slot={1} onUpdate={(partial) => onUpdateHEG(partial)} />
           </div>
 
           {/* Dubbele gehoorbescherming */}
@@ -881,20 +653,27 @@ function HEGPPESection({
 
             {heg.ppeDouble && (
               <div className="mt-4 space-y-4">
-                <InfoBox title="Dubbele gehoorbescherming — EN 458:2016" variant="blue">
-                  <p>
-                    Dempingswaarden worden <strong>niet opgeteld</strong>. De gecombineerde demping is begrensd op{' '}
-                    <strong>35 dB(A)</strong> vanwege de bijdrage van botgeleiding (EN 458:2016).
-                    Bij dubbele bescherming wordt de hoogste individuele demping gebruikt als basis,
-                    met een praktijkbonus van 5 dB — tot het maximum van 35 dB(A).
-                  </p>
+                <InfoBox title="Dubbele gehoorbescherming — EN 458:2025 §6.2.4" variant="blue">
+                  <div className="space-y-1.5">
+                    <p>
+                      <strong>EN 458:2025 §6.2.4</strong> schrijft het gebruik van <strong>fabricantcombinaties</strong> voor.
+                      De norm geeft geen rekenformule; gemeten bonuswaarden liggen typisch tussen <strong>1 en 12 dB</strong>{' '}
+                      boven de demping van de betere beschermer.
+                    </p>
+                    <p className="text-amber-600 dark:text-amber-400">
+                      <strong>Afwijking:</strong> bij ontbrekende fabricantdata schat de app de gecombineerde{' '}
+                      <Abbr id="APF">APF</Abbr> als max(APF₁, APF₂) + 5 dB (gemiddelde van praktijkwaarden),
+                      begrensd op <strong>35 dB(A)</strong> (botgeleiding; informatieve grens,
+                      niet als vaste waarde in EN 458:2025).
+                    </p>
+                  </div>
                 </InfoBox>
 
                 <div>
                   <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-400">
                     Gehoorbeschermer 2
                   </p>
-                  <PPEDeviceForm heg={heg} slot={2} measurements={measurements} onUpdate={(partial) => onUpdateHEG(partial)} />
+                  <PPEDeviceForm heg={heg} slot={2} onUpdate={(partial) => onUpdateHEG(partial)} />
                 </div>
 
                 {/* Combined result */}
@@ -919,7 +698,7 @@ function HEGPPESection({
                     </div>
                     {combined.capped && (
                       <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-                        ⚠ Maximum van 35 dB(A) bereikt (botgeleiding — EN 458:2016).
+                        ⚠ Maximum van 35 dB(A) bereikt (informatieve botgeleidingsgrens — EN 458:2025 §6.2.4).
                       </p>
                     )}
                     <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
@@ -1149,8 +928,9 @@ export default function SoundStep4b_Equipment({ investigation, onUpdate, onGoToS
                       <strong>Art. 6.9:</strong> Gehoorbescherming moet de blootstelling aan het oor (<Formula math="L_{EX,8h,oor}" />) terugbrengen tot onder de grenswaarde (87 dB(A)).
                     </p>
                     <p>
-                      <strong>EN 458:2016:</strong> Drie rekenmethoden, oplopend in nauwkeurigheid:{' '}
-                      SNR/2 (methode 1) · HML (methode 2) · octaafband (methode 3).
+                      <strong>SNR÷2 methode:</strong> De <abbr title="Assumed Protection Factor: nominale dempingswaarde conform EN 458" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">APF</abbr> wordt berekend als SNR÷2 —
+                      een conservatieve benadering die rekening houdt met de <abbr title="Performance of Field Real-world use: werkelijke demping in de praktijk" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">PFRE</abbr> (praktijkdemping ≈ 50–60% van nominale SNR, EN 458:2025 Annex B).
+                      Voor een formele selectierapportage conform EN 458:2025 (§A.5 SNR-methode, §A.4 HML of §A.2 octaafband) is een apart EN 458-rapport vereist.
                     </p>
                   </div>
               }
@@ -1161,7 +941,6 @@ export default function SoundStep4b_Equipment({ investigation, onUpdate, onGoToS
             <HEGPPESection
               key={heg.id}
               heg={heg}
-              measurements={investigation.measurements}
               onUpdateHEG={(partial) => updateHEG(partial, heg.id)}
               onGoToStep={onGoToStep}
             />

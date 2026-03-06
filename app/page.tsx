@@ -26,6 +26,7 @@ export default async function Home() {
     const ov = themeOverrides[i];
     return {
       slug: theme.slug,
+      active: theme.active,
       name: ov['name'] ?? theme.name,
       description: ov['description'] ?? theme.description,
       originalName: theme.name,

@@ -1,6 +1,7 @@
 export const themes = [
   {
     slug: 'sound',
+    active: true,
     name: 'Geluid',
     description: 'Geluidsbelasting, gehoorschade en RI&E geluid op de werkplek.',
     intro:
@@ -15,6 +16,7 @@ export const themes = [
   },
   {
     slug: 'bio-agents',
+    active: false,
     name: 'Biologische agentia',
     description: 'Blootstelling aan micro-organismen, endotoxinen en allergenen.',
     intro:
@@ -31,6 +33,7 @@ export const themes = [
   },
   {
     slug: 'hazardous-substances',
+    active: false,
     name: 'Gevaarlijke stoffen',
     description: 'Chemische blootstellingslimieten, GHS/CMR en vervangingsplicht.',
     intro:
@@ -45,6 +48,7 @@ export const themes = [
   },
   {
     slug: 'lighting',
+    active: false,
     name: 'Verlichting',
     description: 'Werkplekverlichting, verlichtingssterkte en visueel comfort.',
     intro:
@@ -59,6 +63,7 @@ export const themes = [
   },
   {
     slug: 'physical-load',
+    active: false,
     name: 'Fysieke belasting',
     description: 'Ergonomie, tilnormen en beoordeling van fysieke arbeidsbelasting.',
     intro:
@@ -73,6 +78,7 @@ export const themes = [
   },
   {
     slug: 'climate',
+    active: false,
     name: 'Klimaat',
     description: 'Thermisch comfort, WBGT en beoordeling van werkplekklimaat.',
     intro:
@@ -87,6 +93,7 @@ export const themes = [
   },
   {
     slug: 'vibration',
+    active: false,
     name: 'Trillingen',
     description: 'Hand-armtrillingen, hele-lichaamstrillingen en Richtlijn 2002/44/EG.',
     intro:
@@ -101,6 +108,7 @@ export const themes = [
   },
   {
     slug: 'radiation',
+    active: false,
     name: 'Straling',
     description: 'Ioniserende en niet-ioniserende straling: dosimetrie, EMV en optische straling.',
     intro:

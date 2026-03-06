@@ -1,8 +1,6 @@
 'use client';
 
 import type { SoundInvestigation, SoundStatistics, SoundActionLevel, SoundHEG } from '@/lib/sound-investigation-types';
-import { averageOctaveBands, buildMergedBands, calcOctaveAPF } from '@/lib/sound-ppe';
-import type { SoundMeasurement } from '@/lib/sound-investigation-types';
 import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
 import { LegalRef } from '@/components/LegalRef';
@@ -303,7 +301,9 @@ function PPEReadOnlySummary({
         ) : apf != null ? (
           <span className="font-mono text-blue-700 dark:text-blue-300">
             <Abbr id="APF">APF</Abbr> = {apf.toFixed(1)} dB
-            {snr != null && <span className="ml-1 text-zinc-400 dark:text-zinc-500">(SNR {snr} dB)</span>}
+            {snr != null && (
+              <span className="ml-1 text-zinc-400 dark:text-zinc-500">(SNR {snr}÷2)</span>
+            )}
           </span>
         ) : (
           <span className="text-zinc-400 dark:text-zinc-500">bescherming nog niet berekend</span>
@@ -380,41 +380,17 @@ function PPEReadOnlySummary({
               {' '}— {stat.elvPpeCompliant ? '✓ onder grenswaarde' : '✗ grenswaarde overschreden'}
             </p>
           )}
+
+          {/* PFRE reminder */}
+          <p className="pt-0.5 text-zinc-400 dark:text-zinc-500">
+            <abbr title="Performance of Field Real-world use: werkelijke demping in de praktijk ≈ 50–60% van nominale SNR (EN 458:2025 Annex B)" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">PFRE</abbr>:{' '}
+            APF = SNR÷2 houdt rekening met praktijkdemping. Toetsing grenswaarde conform Arbobesluit art. 6.6 lid 2.
+          </p>
         </div>
       )}
     </div>
   );
 }
-
-/**
- * Returns true only when the stored ppeAttenuation is backed by actual
- * frequency-specific data that supports the calculation:
- * - HML: all three values (H, M, L) present + spectral character chosen
- * - Octave: the octave-band calculation must actually produce a result
- *   (≥ 3 bands fully filled: Lp,i + m + s)
- *
- * Method 1 (SNR/2) and manual entry are excluded — they don't use
- * frequency data so cannot support a frequency-based APF claim.
- */
-function isAPFFrequencyBased(heg: SoundHEG, avgLp: number[] | null): boolean {
-  if (!heg.ppeAttenuation || heg.ppeAttenuation <= 0) return false;
-  if (heg.ppeSNRUnknown) return false;
-
-  switch (heg.ppeMethod ?? 'snr') {
-    case 'hml': {
-      const hasAllValues = heg.ppeH != null && heg.ppeM != null && heg.ppeL != null;
-      const hasChar      = heg.ppeSpectralChar != null;
-      return hasAllValues && hasChar;
-    }
-    case 'octave': {
-      const merged = buildMergedBands(heg.ppeOctaveBands, avgLp);
-      return calcOctaveAPF(merged) !== null;
-    }
-    default:
-      return false;
-  }
-}
-
 
 // NPR 3438:2007 Tabel 4 — concentratiekwalificaties (exact conform de norm)
 const NPR_THRESHOLDS_UI: Record<string, { kwalificatie: string; voorbeelden: string; streef: number; max: number }> = {
@@ -641,7 +617,6 @@ function AudiometrySection({
 function HEGAssessment({
   stat,
   heg,
-  measurements,
   onUpdateHEG,
   onGoToStep,
   index,
@@ -649,7 +624,6 @@ function HEGAssessment({
 }: {
   stat: SoundStatistics;
   heg: SoundHEG;
-  measurements: SoundMeasurement[];
   onUpdateHEG: (updated: SoundHEG) => void;
   onGoToStep: (step: number) => void;
   index: number;
@@ -661,23 +635,14 @@ function HEGAssessment({
   const peakColors = hasPeak ? LEVEL_COLORS[stat.peakVerdict!] : null;
   const peakObs = hasPeak ? PEAK_OBLIGATIONS[stat.peakVerdict!] : null;
 
-  // APF-corrected values for exposure bars.
-  // L_EX,8h,oor: taken from stat (includes combined dual-PPE attenuation computed in Step 9).
-  // L_p,Cpeak,oor: requires frequency-specific data (HML or octave) because
-  // peak assessment depends on spectral composition of the noise.
-  const ppeMethod    = heg.ppeMethod ?? 'snr';
-  const avgLpForHEG  = averageOctaveBands(measurements);
-  const apfFreqBased = isAPFFrequencyBased(heg, avgLpForHEG);
-  const attenuation  = heg.ppeSNRUnknown ? 0 : (heg.ppeAttenuation ?? 0);
-  // Use pre-computed stat value (includes combined dual-PPE logic from sound-stats.ts)
-  const lEx8h_oor    = stat.lEx8h_95pct_oor;
-  const lCpeak_oor   = apfFreqBased && attenuation > 0 && stat.lCpeak !== undefined
-    ? stat.lCpeak - attenuation
-    : undefined;
-
-  // Show peak-frequency caveat when PPE is configured but no frequency-based
-  // APF is available (method 1, manual, or incomplete method 2/3 data).
-  const showPeakFreqNote = hasPeak && attenuation > 0 && !apfFreqBased;
+  const attenuation = heg.ppeSNRUnknown ? 0 : (heg.ppeAttenuation ?? 0);
+  // L_EX,8h,oor: pre-computed by sound-stats.ts (includes combined dual-PPE logic)
+  const lEx8h_oor = stat.lEx8h_95pct_oor;
+  // L_p,Cpeak,oor: SNR is a broadband value and does not describe spectral peak composition.
+  // Peak correction is not computed — always undefined when using SNR-only APF.
+  const lCpeak_oor = undefined;
+  // Always show peak note when PPE is configured (SNR cannot correct peak exposure).
+  const showPeakFreqNote = hasPeak && attenuation > 0;
 
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700">
@@ -766,13 +731,9 @@ function HEGAssessment({
               {showPeakFreqNote && (
                 <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">
                   <strong className="text-zinc-500 dark:text-zinc-400">Let op:</strong>{' '}
-                  het beoordelen van de invloed van gehoorbescherming op piekgeluid (<Formula math="L_{p,Cpeak,oor}" />) is niet volledig
-                  mogelijk zonder kennis van de frequentiesamenstelling en de afzonderlijke frequenties van het gemeten piekgeluid.{' '}
-                  {ppeMethod === 'hml'
-                    ? 'Vul alle HML-waarden en het spectraal karakter volledig in.'
-                    : ppeMethod === 'octave'
-                    ? 'Vul minimaal 3 octaafbanden volledig in (Lp,i · m · s) voor een geldig resultaat.'
-                    : 'Gebruik methode 2 (HML) of methode 3 (octaafband) voor een nauwkeuriger beoordeling.'}
+                  de invloed van gehoorbescherming op piekgeluid (<Formula math="L_{p,Cpeak,oor}" />) is niet berekend.
+                  SNR is een breedband-waarde en beschrijft de spectrale samenstelling van piekgeluid niet.
+                  Voor een formele beoordeling van piekgeluid met PBM is een EN 458-rapport met octaafband- of HML-methode vereist.
                 </p>
               )}
               <table className="mt-4 w-full text-xs">
@@ -938,7 +899,7 @@ function HEGAssessment({
 }
 
 export default function SoundStep8_Assessment({ investigation, onUpdate, onGoToStep, contentOverrides }: Props) {
-  const { hegs, statistics, measurements: allMeasurements } = investigation;
+  const { hegs, statistics } = investigation;
 
   const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
   const desc = contentOverrides?.[`${STEP_KEY}.desc`];
@@ -1071,13 +1032,11 @@ export default function SoundStep8_Assessment({ investigation, onUpdate, onGoToS
             {statistics.map((stat, idx) => {
               const heg = hegs.find((h) => h.id === stat.hegId);
               if (!heg) return null;
-              const hegMeasurements = allMeasurements.filter((m) => m.hegId === stat.hegId);
               return (
                 <HEGAssessment
                   key={stat.hegId}
                   stat={stat}
                   heg={heg}
-                  measurements={hegMeasurements}
                   onUpdateHEG={updateHEG}
                   onGoToStep={onGoToStep}
                   index={idx + 1}
