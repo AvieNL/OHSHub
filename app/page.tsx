@@ -84,9 +84,6 @@ export default async function Home() {
 
       {/* ── Feature pillars ──────────────────────────────────────────────────── */}
       <section>
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
-          Mogelijkheden
-        </h2>
         <div className="grid gap-5 sm:grid-cols-3">
 
           {/* Kennisportaal */}
