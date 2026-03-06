@@ -170,8 +170,8 @@ export function computeCombinedAttenuation(
   const hasHML2 = heg.ppe2H != null && heg.ppe2M != null && heg.ppe2L != null && hmlVal2 != null;
 
   if (hasHML1 && hasHML2) {
-    const pnr1 = hmlVal1! / 2;
-    const pnr2 = hmlVal2! / 2;
+    const pnr1 = hmlVal1!;
+    const pnr2 = hmlVal2!;
     const raw = Math.max(pnr1, pnr2) + 5;
     const capped = raw > 35;
     return {

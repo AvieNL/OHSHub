@@ -440,8 +440,8 @@ function computeAPFFromFields(
       const val  = char === 'high' ? fields.h : char === 'low' ? fields.l : fields.m;
       const key  = char === 'high' ? 'H' : char === 'low' ? 'L' : 'M';
       if (!val) return null;
-      const apf = parseFloat((val / 2).toFixed(1));
-      return { apf, label: `${key} ${val} ÷ 2 = ${apf} dB` };
+      const apf = val;
+      return { apf, label: `${key} = ${apf} dB (PNR direct)` };
     }
     case 'octave': {
       const merged = buildMergedBands(fields.octaveBands, avgLp);

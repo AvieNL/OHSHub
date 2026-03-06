@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: 'Versiehistorie en informatie over OHSHub.',
 };
 
-const HARDCODED_VERSION = '0.22.1';
+const HARDCODED_VERSION = '0.22.2';
 
 const CHANGELOG: {
   version: string;
@@ -20,6 +20,16 @@ const CHANGELOG: {
   modules: string[];
   changes: string[];
 }[] = [
+  {
+    version: '0.22.2',
+    date: '2026-03-06',
+    type: 'patch',
+    title: 'Fix: HML-methode gehoorbescherming (EN 458)',
+    modules: ['Geluid'],
+    changes: [
+      'Geluid: HML-waarden (H, M, L) worden nu direct als PNR gebruikt conform EN 458:2016, i.p.v. onterecht gedeeld door 2. Geldt voor enkelvoudige én dubbele bescherming.',
+    ],
+  },
   {
     version: '0.22.1',
     date: '2026-03-06',
