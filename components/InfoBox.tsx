@@ -22,10 +22,13 @@ export function InfoBox({ title, children, variant = 'zinc', defaultOpen = false
 
   return (
     <div className={`rounded-lg text-xs ${base}`}>
-      <button
-        type="button"
+      {/* div i.p.v. button zodat InlineEdit (of andere buttons) in de title-prop mogelijk zijn */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setOpen((o) => !o)}
-        className={`flex w-full items-center justify-between gap-2 px-4 py-2.5 font-medium ${base}`}
+        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setOpen((o) => !o)}
+        className={`flex w-full cursor-pointer items-center justify-between gap-2 px-4 py-2.5 font-medium ${base}`}
       >
         <span>{title}</span>
         <svg
@@ -37,7 +40,7 @@ export function InfoBox({ title, children, variant = 'zinc', defaultOpen = false
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
-      </button>
+      </div>
 
       {open && (
         <div className={`border-t px-4 pb-3 pt-2.5 ${
