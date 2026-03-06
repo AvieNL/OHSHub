@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: 'Versiehistorie en informatie over OHSHub.',
 };
 
-const HARDCODED_VERSION = '0.22.0';
+const HARDCODED_VERSION = '0.22.1';
 
 const CHANGELOG: {
   version: string;
@@ -20,6 +20,16 @@ const CHANGELOG: {
   modules: string[];
   changes: string[];
 }[] = [
+  {
+    version: '0.22.1',
+    date: '2026-03-06',
+    type: 'patch',
+    title: 'Volledige onderzoekstegels klikbaar',
+    modules: ['Home'],
+    changes: [
+      'Home: volledige onderzoekstegel is klikbaar (niet alleen het kleine pijltje voor admins).',
+    ],
+  },
   {
     version: '0.22.0',
     date: '2026-03-05',
