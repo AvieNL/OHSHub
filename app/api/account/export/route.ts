@@ -14,7 +14,7 @@ export async function GET() {
       .order('updated_at', { ascending: false }),
     supabase
       .from('user_roles')
-      .select('role, privacy_version_accepted, privacy_accepted_at')
+      .select('role, privacy_version_accepted, privacy_accepted_at, disclaimer_version_accepted, disclaimer_accepted_at')
       .eq('user_id', user.id)
       .single(),
     supabase
@@ -34,6 +34,8 @@ export async function GET() {
     role: roleRow?.role ?? 'gebruiker',
     privacy_version_accepted: roleRow?.privacy_version_accepted ?? null,
     privacy_accepted_at: roleRow?.privacy_accepted_at ?? null,
+    disclaimer_version_accepted: roleRow?.disclaimer_version_accepted ?? null,
+    disclaimer_accepted_at: roleRow?.disclaimer_accepted_at ?? null,
     profile: {
       first_name: profileRow?.first_name ?? null,
       tussenvoegsel: profileRow?.tussenvoegsel ?? null,

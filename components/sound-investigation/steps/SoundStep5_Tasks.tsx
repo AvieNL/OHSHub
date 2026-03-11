@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import type { SoundInvestigation, SoundTask, SoundEquipment } from '@/lib/sound-investigation-types';
 import { newSoundId } from '@/lib/sound-investigation-storage';
+import { downloadMeasurementPlanPDF } from '@/lib/sound-pdf-html';
 import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
-import { SectionRef } from '@/components/SectionRef';
 import { InfoBox } from '@/components/InfoBox';
 import { Alert, Button, Icon, Input, Select } from '@/components/ui';
 import InlineStepHeader from '@/components/InlineStepHeader';
@@ -32,8 +32,18 @@ function minWorkers(hegSize: number): number {
 // §10.2 Table 3: minimum cumulative measurement duration for job-based
 function minDurationJobBased(hegSize: number): string {
   if (hegSize <= 15) return `6 + (${hegSize} - 1) × 1 = ${6 + (hegSize - 1)} uur`;
-  if (hegSize <= 40) return `20 + (${hegSize} - 15) × 0.75 uur`;
+  if (hegSize <= 40) {
+    const h = 20 + (hegSize - 15) * 0.75;
+    return `20 + (${hegSize} - 15) × 0,75 = ${Number.isInteger(h) ? h : h.toFixed(2)} uur`;
+  }
   return '40 uur of splits de groep';
+}
+
+// §10.2: minimum number of 45-min samples for job-based (ceil of min cumulative duration / 45 min)
+function minSamplesJobBased(hegSize: number): number | null {
+  if (hegSize > 40) return null;
+  const hours = hegSize <= 15 ? 6 + (hegSize - 1) : 20 + (hegSize - 15) * 0.75;
+  return Math.ceil(hours / 0.75);
 }
 
 // Table 2 (§10.2): minimum workers to sample for job-based
@@ -63,7 +73,7 @@ function fromMin(raw: string): number | undefined {
 const STEP_KEY = 'step.6';
 const NS = 'investigation.sound';
 const FALLBACK_TITLE = 'Stap 7 — Meetplan & taken';
-const FALLBACK_DESC = 'Stel voor taakgerichte metingen de taken en hun duur vast (§9.2). Voor functie- of volledigedagmeting: bekijk het vereiste aantal steekproeven hieronder.';
+const FALLBACK_DESC = 'Stel voor taakgerichte metingen de taken en hun duur vast. Voor functie- of volledigedagmeting: bekijk het vereiste aantal steekproeven hieronder.';
 
 function equipmentCategoryShort(cat: SoundEquipment['category']): string {
   const map: Record<SoundEquipment['category'], string> = {
@@ -104,7 +114,7 @@ function TaskRow({
 
   return (
     <tr>
-      <td className="px-3 py-2">
+      <td className="px-3 py-2 align-top">
         <Input
           type="text"
           size="xs"
@@ -113,8 +123,17 @@ function TaskRow({
           placeholder="Taaknaam"
           className="w-full"
         />
+        <label className="mt-1 flex cursor-pointer items-center gap-1.5 whitespace-nowrap text-[10px] text-zinc-500 dark:text-zinc-400">
+          <input
+            type="checkbox"
+            checked={task.isCyclic ?? false}
+            onChange={(e) => onUpdate({ ...task, isCyclic: e.target.checked })}
+            className="accent-orange-500"
+          />
+          Cyclisch geluid
+        </label>
       </td>
-      <td className="px-3 py-2">
+      <td className="px-3 py-2 align-top">
         <div className="flex items-center gap-1">
           <Input
             type="number"
@@ -133,7 +152,7 @@ function TaskRow({
           <span className="text-xs text-zinc-400">min</span>
         </div>
       </td>
-      <td className="px-3 py-2">
+      <td className="px-3 py-2 align-top">
         <div className="flex items-center gap-1">
           <Input
             type="number"
@@ -165,13 +184,18 @@ function TaskRow({
             <Formula math="u_{1b}" /> = {u1b_min} min
           </p>
         )}
+        {task.isCyclic && (
+          <p className="mt-0.5 text-[10px] font-medium text-orange-500">
+            ≥ 3 cycli · min. 3 min/meting
+          </p>
+        )}
         {task.durationMin == null && task.durationMax == null && (
           <p className="mt-0.5 text-[10px] italic text-zinc-300 dark:text-zinc-600">
             aanbevolen: min/max → <Formula math="u_{1b}" /> (§C.5)
           </p>
         )}
       </td>
-      <td className="px-3 py-2">
+      <td className="px-3 py-2 align-top">
         <Input
           type="text"
           size="xs"
@@ -206,7 +230,7 @@ function TaskRow({
           </div>
         )}
       </td>
-      <td className="px-2 py-2">
+      <td className="px-2 py-2 align-top">
         <button
           onClick={onRemove}
           className="text-zinc-400 hover:text-red-500"
@@ -326,20 +350,30 @@ export default function SoundStep5_Tasks({ investigation, onUpdate, onGoToStep, 
 
   return (
     <div className="space-y-6">
-      <div>
-        <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
-        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
-          initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
-          {desc
-            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-                <MarkdownContent>{desc}</MarkdownContent>
-              </p>
-            : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-                Stel voor taakgerichte metingen de taken en hun duur vast (<SectionRef id="§9.2">§9.2</SectionRef>). Voor functie- of
-                volledigedagmeting: bekijk het vereiste aantal steekproeven hieronder.
-              </p>
-          }
-        </InlineEdit>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <InlineStepHeader namespace={NS} stepKey={STEP_KEY} fallbackTitle={FALLBACK_TITLE} title={title} />
+          <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
+            initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
+            {desc
+              ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  <MarkdownContent>{desc}</MarkdownContent>
+                </p>
+              : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  Stel voor taakgerichte metingen de taken en hun duur vast. Voor functie- of
+                  volledigedagmeting: bekijk het vereiste aantal steekproeven hieronder.
+                </p>
+            }
+          </InlineEdit>
+        </div>
+        <Button
+          variant="secondary"
+          onClick={() => downloadMeasurementPlanPDF(investigation)}
+          leftIcon={<Icon name="printer" size="sm" />}
+          className="shrink-0"
+        >
+          Meetplan PDF
+        </Button>
       </div>
 
       <div className="space-y-4">
@@ -375,10 +409,12 @@ export default function SoundStep5_Tasks({ investigation, onUpdate, onGoToStep, 
                   {heg.strategy === 'task-based' ? (
                     /* Task-based panel */
                     <div className="space-y-4">
-                      <InfoBox title="§9.3.2 — Minimumaantal medewerkers & metingen" variant="blue">
-                        <SectionRef id="§9.3.2">§9.3.2</SectionRef>: Minimaal {minWorkers(heg.workerCount)} medewerker{minWorkers(heg.workerCount) > 1 ? 's' : ''} bemeten
-                        (<Abbr id="HEG">HEG</Abbr> = {heg.workerCount}). Per taak: ≥ 3 metingen (1 medewerker) of ≥ 5 metingen (meerdere).
-                        Max. spreiding: &le; 3 dB (1 medewerker) of &le; 5 dB (groep).
+                      <InfoBox title="Meetplan taakgericht" variant="blue">
+                        <ul className="space-y-0.5">
+                          <li>• Min. {minWorkers(heg.workerCount)} mw. bemeten (<Abbr id="HEG">HEG</Abbr> = {heg.workerCount}); per taak ≥ 3 metingen (1 mw.) of ≥ 5 metingen (meerdere mw.)</li>
+                          <li>• Handgereedschap en pneumatisch gereedschap: behandel als <strong>aparte taak</strong></li>
+                          <li>• Cyclisch / impulsgeluid: markeer de taak als "Cyclisch" — meet dan ≥ 3 volledige cycli, min. 3 min</li>
+                        </ul>
                       </InfoBox>
 
                       {/* Copy tasks bar */}
@@ -447,29 +483,22 @@ export default function SoundStep5_Tasks({ investigation, onUpdate, onGoToStep, 
                     /* Job-based / full-day guidance */
                     <div className="space-y-3 text-sm">
                       <InfoBox
-                        title={heg.strategy === 'job-based' ? '§10.2 — Meetplan functiegericht' : '§11.3 — Meetplan volledige dag'}
+                        title={heg.strategy === 'job-based' ? 'Meetplan functiegericht' : 'Meetplan volledige dag'}
                         variant="blue"
                       >
                         {heg.strategy === 'job-based' ? (
-                          <>
-                            <p><SectionRef id="§10.2">§10.2 Meetplan functiegericht</SectionRef>:</p>
-                            <ul className="mt-1 space-y-0.5">
-                              <li>• Min. {minWorkersJobBased(heg.workerCount)} medewerker{minWorkersJobBased(heg.workerCount) > 1 ? 's' : ''} bemeten (<Abbr id="HEG">HEG</Abbr> = {heg.workerCount})</li>
-                              <li>• Min. cumulatieve meetduur: {minDurationJobBased(heg.workerCount)}</li>
-                              <li>• Aanbevolen steekproefduur: 45 min (min. 15 min, max. 1 uur)</li>
-                              <li>• Verdeel steekproeven willekeurig over medewerkers en werktijd</li>
-                            </ul>
-                          </>
+                          <ul className="space-y-0.5">
+                            <li>• Min. {minWorkersJobBased(heg.workerCount)} mw. bemeten (<Abbr id="HEG">HEG</Abbr> = {heg.workerCount})</li>
+                            <li>• Min. {minSamplesJobBased(heg.workerCount) ?? '—'} steekproeven van 45 min (cumulatief ≥ {minDurationJobBased(heg.workerCount)})</li>
+                            <li>• Steekproefduur: 15–60 min; verdeel willekeurig over medewerkers en werktijd</li>
+                          </ul>
                         ) : (
-                          <>
-                            <p><SectionRef id="§11.3">§11.3 Meetplan volledige dag</SectionRef>:</p>
-                            <ul className="mt-1 space-y-0.5">
-                              <li>• Min. {minWorkersJobBased(heg.workerCount)} medewerker{minWorkersJobBased(heg.workerCount) > 1 ? 's' : ''} bemeten (<Abbr id="HEG">HEG</Abbr> = {heg.workerCount})</li>
-                              <li>• Min. 3 volledige-dagmetingen (bij spreiding &lt; 3 dB en <Formula math="c_1 u_1" /> ≤ 3,5 dB)</li>
-                              <li>• Meting dekt ≥ 75% van de nominale werkdag</li>
-                              <li>• Gebruik bij voorkeur een loggend instrument (<SectionRef id="§11.2">§11.2</SectionRef>)</li>
-                            </ul>
-                          </>
+                          <ul className="space-y-0.5">
+                            <li>• Min. {minWorkersJobBased(heg.workerCount)} mw. bemeten (<Abbr id="HEG">HEG</Abbr> = {heg.workerCount})</li>
+                            <li>• Min. 3 volledige-dagmetingen; bij spreiding ≥ 3 dB of <Formula math="c_1 u_1" /> &gt; 3,5 dB na analyse: ≥ 2 extra metingen vereist</li>
+                            <li>• Elke meting dekt ≥ 75% van de nominale werkdag</li>
+                            <li>• Gebruik bij voorkeur een loggend instrument</li>
+                          </ul>
                         )}
                       </InfoBox>
                       <p className="text-xs text-zinc-400">

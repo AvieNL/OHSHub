@@ -14,6 +14,8 @@ type ExportData = {
   role: string;
   privacy_version_accepted: string | null;
   privacy_accepted_at: string | null;
+  disclaimer_version_accepted: string | null;
+  disclaimer_accepted_at: string | null;
   investigations: unknown[];
 };
 
@@ -229,6 +231,21 @@ export default function AccountPage() {
                         v{exportData.privacy_version_accepted}
                       </a>
                       {' — '}{fmtDate(exportData.privacy_accepted_at)}
+                    </>
+                  )
+                  : '—'}
+              </dd>
+            </div>
+            <div className="flex items-center justify-between">
+              <dt className="text-zinc-500 dark:text-zinc-400">Disclaimer geaccepteerd</dt>
+              <dd className="text-zinc-700 dark:text-zinc-300">
+                {exportData?.disclaimer_version_accepted
+                  ? (
+                    <>
+                      <a href="/disclaimer" className="font-mono text-orange-600 hover:underline dark:text-orange-400">
+                        v{exportData.disclaimer_version_accepted}
+                      </a>
+                      {' — '}{fmtDate(exportData.disclaimer_accepted_at)}
                     </>
                   )
                   : '—'}

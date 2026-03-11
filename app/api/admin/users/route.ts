@@ -10,12 +10,12 @@ export async function GET() {
   const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
   if (usersError) return NextResponse.json({ error: usersError.message }, { status: 500 });
 
-  // Get all roles + privacy consent
+  // Get all roles + privacy/disclaimer consent
   const { data: roles } = await supabaseAdmin
     .from('user_roles')
-    .select('user_id, role, privacy_version_accepted, privacy_accepted_at, privacy_required_version');
+    .select('user_id, role, privacy_version_accepted, privacy_accepted_at, privacy_required_version, disclaimer_version_accepted, disclaimer_accepted_at, disclaimer_required_version');
 
-  const roleMap = new Map((roles ?? []).map((r: { user_id: string; role: string; privacy_version_accepted: string | null; privacy_accepted_at: string | null; privacy_required_version: string | null }) => [r.user_id, r]));
+  const roleMap = new Map((roles ?? []).map((r: { user_id: string; role: string; privacy_version_accepted: string | null; privacy_accepted_at: string | null; privacy_required_version: string | null; disclaimer_version_accepted: string | null; disclaimer_accepted_at: string | null; disclaimer_required_version: string | null }) => [r.user_id, r]));
 
   // Get all profiles
   const { data: profiles } = await supabaseAdmin
@@ -45,6 +45,9 @@ export async function GET() {
       privacy_version_accepted: roleRow?.privacy_version_accepted ?? null,
       privacy_accepted_at: roleRow?.privacy_accepted_at ?? null,
       privacy_required_version: roleRow?.privacy_required_version ?? null,
+      disclaimer_version_accepted: roleRow?.disclaimer_version_accepted ?? null,
+      disclaimer_accepted_at: roleRow?.disclaimer_accepted_at ?? null,
+      disclaimer_required_version: roleRow?.disclaimer_required_version ?? null,
       first_name: profileRow?.first_name ?? null,
       tussenvoegsel: profileRow?.tussenvoegsel ?? null,
       last_name: profileRow?.last_name ?? null,

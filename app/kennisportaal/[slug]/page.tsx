@@ -5,6 +5,9 @@ import { themes } from '@/lib/themes';
 import { getNamespaceContent } from '@/lib/content';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { THEME_LEGAL_INFO, parseLegalItems, parseLegalJson } from '@/lib/theme-legal-info';
+import type { ThemeLimitGroup } from '@/lib/theme-legal-info';
+import ThemeLegalContent from '@/components/ThemeLegalContent';
 import MarkdownContent from '@/components/MarkdownContent';
 import InlineEdit from '@/components/InlineEdit';
 import FaqInlineManager from '@/components/kennisportaal/FaqInlineManager';
@@ -23,10 +26,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+// Vrije markdown CMS-secties die naast het wettelijk kader staan
 const SECTIONS = [
-  { key: 'normen',    label: 'Normen & grenswaarden' },
   { key: 'methoden',  label: 'Meetmethoden & strategie' },
-  { key: 'wetgeving', label: 'Wetgeving & regelgeving' },
   { key: 'praktijk',  label: 'Praktische tips' },
   { key: 'bronnen',   label: 'Bronnen' },
 ] as const;
@@ -48,9 +50,10 @@ export default async function KennisThemePage({ params }: Props) {
     }
   } catch { /* niet kritiek */ }
 
-  // Haal CMS-inhoud + FAQ-items parallel op
-  const [content, { data: faqItems }] = await Promise.all([
+  // Haal CMS-inhoud + juridische overrides + FAQ-items parallel op
+  const [content, legalOverrides, { data: faqItems }] = await Promise.all([
     getNamespaceContent(`knowledge.${slug}`),
+    getNamespaceContent(`theme-legal.${slug}`),
     supabaseAdmin
       .from('faq_items')
       .select('id, question, answer, theme_slug')
@@ -60,6 +63,20 @@ export default async function KennisThemePage({ params }: Props) {
   ]);
 
   const intro = content['intro'] ?? theme.intro;
+
+  // Wettelijk kader — zelfde databron als de investigation tab
+  const legalFallback = THEME_LEGAL_INFO[theme.slug as keyof typeof THEME_LEGAL_INFO];
+  const legislation = parseLegalItems(legalOverrides['legislation'], legalFallback.legislation);
+  const norms = parseLegalItems(legalOverrides['norms'], legalFallback.norms);
+  const limitGroups = parseLegalJson<ThemeLimitGroup[] | undefined>(
+    legalOverrides['limitGroups'],
+    legalFallback.limitGroups,
+  );
+  const comfortGroups = parseLegalJson<ThemeLimitGroup[] | undefined>(
+    legalOverrides['comfortGroups'],
+    legalFallback.comfortGroups,
+  );
+
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
@@ -107,7 +124,22 @@ export default async function KennisThemePage({ params }: Props) {
         </InlineEdit>
       </section>
 
-      {/* Optionele CMS-secties — alleen zichtbaar als er inhoud is (of voor admin) */}
+      {/* Wettelijk kader & normen — gedeelde bron met de investigation tab */}
+      <section className="mb-10">
+        <h2 className={`mb-3 text-base font-semibold ${theme.iconClass}`}>
+          Wettelijk kader &amp; normen
+        </h2>
+        <ThemeLegalContent
+          legislation={legislation}
+          norms={norms}
+          limitGroups={limitGroups}
+          comfortGroups={comfortGroups}
+          color={legalFallback.color}
+          namespace={`theme-legal.${slug}`}
+        />
+      </section>
+
+      {/* Optionele vrije CMS-secties — alleen zichtbaar als er inhoud is (of voor admin) */}
       {SECTIONS.map(({ key, label }) => {
         const value = content[key] ?? '';
         if (!value && !isAdmin) return null;
@@ -144,8 +176,8 @@ export default async function KennisThemePage({ params }: Props) {
           <h2 className={`mb-4 text-base font-semibold ${theme.iconClass}`}>
             Veelgestelde vragen
           </h2>
-          <div className="rounded-xl border border-zinc-200 px-6 dark:border-zinc-800">
-            <FaqInlineManager items={faqItems ?? []} themeSlug={theme.slug} />
+          <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+            <FaqInlineManager items={faqItems ?? []} themeSlug={theme.slug} showSearch />
           </div>
         </section>
       )}

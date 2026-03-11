@@ -12,12 +12,12 @@ import type {
 import { computeAllStatistics } from '@/lib/sound-stats';
 import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
-import { InfoBox } from '@/components/InfoBox';
 import { SectionRef } from '@/components/SectionRef';
 import { Alert, Button, Icon } from '@/components/ui';
 import InlineStepHeader from '@/components/InlineStepHeader';
 import InlineEdit from '@/components/InlineEdit';
 import MarkdownContent from '@/components/MarkdownContent';
+import SoundCompliancePanel from '@/components/sound-investigation/SoundCompliancePanel';
 
 interface Props {
   investigation: SoundInvestigation;
@@ -54,9 +54,8 @@ const VERDICT_COLORS = {
 
 const STEP_KEY = 'step.8';
 const NS = 'investigation.sound';
-const FALLBACK_TITLE = 'Stap 9 — L_EX,8h & onzekerheid (Bijlage C)';
+const FALLBACK_TITLE = 'Stap 9 — Dagelijkse blootstelling & onzekerheid';
 const FALLBACK_DESC = 'Berekening van de dagelijkse geluidblootstelling en de uitgebreide onzekerheid conform NEN-EN-ISO 9612:2025.';
-const FALLBACK_IB0_TITLE = '§9.2 / §9.3 / §12.2 / §15.d — Meetprocedure & eisen (NEN-EN-ISO 9612)';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -93,7 +92,9 @@ function MeasurementDurationPlan({
     const expectedPerMeas =
       heg.strategy === 'task-based'
         ? task ? (task.durationHours * 60 >= 5 ? 5 : task.durationHours * 60) : 5
-        : heg.effectiveDayHours * 60;
+        : heg.strategy === 'job-based'
+          ? 45 // §10.2: aanbevolen 45 min per steekproef
+          : heg.effectiveDayHours * 60 * 0.75; // full-day: ≥ 75% van Te
     return {
       label: `Reeks ${idx + 1}`,
       taskName: heg.strategy === 'task-based' ? (task?.name ?? '(onbekende taak)') : null,
@@ -117,7 +118,7 @@ function MeasurementDurationPlan({
     return (
       <div className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-          Meetduur per taak — <SectionRef id="§9.3.2">§9.3.2</SectionRef> / Tabel 2 (NEN-EN-ISO 9612)
+          Meetduur per taak
         </p>
 
         {/* Per-task minimum requirements */}
@@ -221,17 +222,20 @@ function MeasurementDurationPlan({
   }
 
   // ── Strategy 2 / 3 — job-based or full-day ───────────────────────────────────
-  const teMin     = heg.effectiveDayHours * 60;
-  const minTotal  = 3 * teMin;
-  const actualN   = hegMeas.length;
-  const ok        = actualN >= 3;
-  const sectionId = heg.strategy === 'job-based' ? '§10.4' : '§11.4';
-  const stratLabel = heg.strategy === 'job-based' ? 'Functiegericht' : 'Volledige dag';
+  const isJobBased  = heg.strategy === 'job-based';
+  const teMin       = heg.effectiveDayHours * 60;
+  // §10.2: job-based 15–60 min per steekproef (aanbevolen 45 min); full-day: ≥ 75% van Te (§11.2/9.4)
+  const minDurPerMeas = isJobBased ? 45 : 0.75 * teMin;
+  const minN        = isJobBased ? 5 : 3;
+  const minTotal    = minN * minDurPerMeas;
+  const actualN     = hegMeas.length;
+  const ok          = actualN >= minN;
+  const stratLabel  = isJobBased ? 'Functiegericht' : 'Volledige dag';
 
   return (
     <div className="space-y-3">
       <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-        Meetduur steekproeven — <SectionRef id={sectionId}>{sectionId}</SectionRef> / Tabel 2 (NEN-EN-ISO 9612)
+        Meetduur steekproeven
       </p>
 
       <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
@@ -250,8 +254,10 @@ function MeasurementDurationPlan({
             <tr>
               <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{stratLabel}</td>
               <td className="px-3 py-2 text-right font-mono text-zinc-500">{formatMin(teMin)}</td>
-              <td className="px-3 py-2 text-right font-mono text-zinc-700 dark:text-zinc-300">≥&nbsp;{formatMin(teMin)}</td>
-              <td className="px-3 py-2 text-right font-mono text-zinc-500">≥&nbsp;3</td>
+              <td className="px-3 py-2 text-right font-mono text-zinc-700 dark:text-zinc-300">
+                {isJobBased ? '15–60 min *' : `≥\u00A0${formatMin(minDurPerMeas)}`}
+              </td>
+              <td className="px-3 py-2 text-right font-mono text-zinc-500">≥&nbsp;{minN}</td>
               <td className="px-3 py-2 text-right font-mono font-semibold text-zinc-900 dark:text-zinc-50">
                 ≥&nbsp;{formatMin(minTotal)}
               </td>
@@ -294,6 +300,17 @@ function MeasurementDurationPlan({
             </tbody>
           </table>
         </div>
+      )}
+
+      {isJobBased && (
+        <p className="text-xs text-zinc-400">
+          * §10.2: meetduur per steekproef 15–60 min; aanbevolen 45 min. Minimaal 5 steekproeven (Tabel C.4, Noot 1).
+        </p>
+      )}
+      {!isJobBased && (
+        <p className="text-xs text-zinc-400">
+          Min. duur per dagmeting = 75% van T<sub>e</sub> = {formatMin(minDurPerMeas)} (§9.4).
+        </p>
       )}
     </div>
   );
@@ -425,9 +442,11 @@ function HEGResult({
         {/* Job/full-day energy average */}
         {stat.lpa_eqTe !== undefined && (
           <StatTable
-            label="Energiegemiddelde (Formule 7)"
+            label={stat.strategy === 'full-day'
+              ? 'Energiegemiddelde — Formule (7) → Formule (9)'
+              : 'Energiegemiddelde — Formule (7) → Formule (8)'}
             rows={[
-              ['Aantal steekproeven N', String(stat.n)],
+              [stat.strategy === 'full-day' ? 'Aantal dagmetingen N' : 'Aantal steekproeven N', String(stat.n)],
               [<><Formula math="L_{p,A,eqT_e}" />{' — energiegemiddelde'}</>, `${fmt1(stat.lpa_eqTe)} dB`, 'Formule (7)'],
             ]}
           />
@@ -443,7 +462,7 @@ function HEGResult({
 
         {/* Uncertainty budget */}
         <StatTable
-          label="Onzekerheidsbudget (Bijlage C)"
+          label="Onzekerheidsbudget"
           rows={[
             [<><Formula math="u_1" />{' — bemonsteringsonzekerheid'}</>, `${fmt2(stat.u1)} dB`,
               stat.strategy === 'task-based' ? 'Formule C.6' : 'Formule C.12'],
@@ -452,43 +471,15 @@ function HEGResult({
               : []),
             [<><Formula math="u_2" />{' — instrumentonzekerheid'}</>, `${fmt2(stat.u2)} dB`, 'Tabel C.5'],
             [<><Formula math="u_3" />{' — microfoonpositie'}</>, `${fmt2(stat.u3)} dB`, '§C.6'],
-            [<><Formula math="u" />{' — gecombineerde standaardonzekerheid'}</>, `${fmt2(stat.u)} dB`, 'Formule C.1'],
+            [<><Formula math="u" />{' — gecombineerde standaardonzekerheid'}</>, `${fmt2(stat.u)} dB`,
+              stat.strategy === 'task-based' ? 'Formule C.3' : 'Formule C.9'],
             [<><Formula math="U" />{' — uitgebreide onzekerheid (k=1,65)'}</>, `${fmt1(stat.U)} dB`, '95% eenzijdig'],
             [<><Formula math="L_{EX,8h,95\%} = L_{EX,8h} + U" /></>, `${fmt1(stat.lEx8h_95pct)} dB(A)`, 'Formule (10)'],
           ]}
         />
 
-        {stat.c1u1Excessive && (
-          <Alert variant="error">
-            <strong>⚠ H-4 — <Formula math="c_1 u_1" /> &gt; 3,5 dB: meetplan herzien</strong>{' '}
-            (Tabel C.4 / <SectionRef id="§10.4">§10.4</SectionRef> NEN-EN-ISO 9612:2025). De bemonsteringsonzekerheid is te groot voor een
-            betrouwbare uitspraak. Voeg extra steekproeven toe, verkleiner de{' '}
-            <Abbr id="HEG">HEG</Abbr>, of gebruik een andere meetstrategie.
-          </Alert>
-        )}
-
-        {/* K-3 / K-5 — task warnings (task-based strategy only) */}
-        {stat.taskWarnings && stat.taskWarnings.length > 0 && (
-          <Alert variant="warning">
-            {stat.taskWarnings.map((w, i) => (
-              <p key={i}>⚠ {w}</p>
-            ))}
-          </Alert>
-        )}
-        {stat.spreadWarnings && stat.spreadWarnings.length > 0 && (
-          <Alert variant="warning">
-            <p className="mb-1 font-semibold">
-              ⚠ K-5 — Spreiding te groot (Bijlage E NEN-EN-ISO 9612:2025):
-            </p>
-            <ul className="space-y-0.5 pl-2">
-              {stat.spreadWarnings.map((sw) => (
-                <li key={sw.taskId}>
-                  Taak &apos;{sw.taskName}&apos;: spreiding {sw.spread.toFixed(1)} dB (grens {sw.limit} dB).
-                  Vergroot de steekproef of onderzoek de oorzaak van de variatie.
-                </li>
-              ))}
-            </ul>
-          </Alert>
+        {stat.complianceChecks && stat.complianceChecks.length > 0 && (
+          <SoundCompliancePanel checks={stat.complianceChecks} />
         )}
 
         {/* Peak */}
@@ -535,8 +526,6 @@ export default function SoundStep7_Calculation({ investigation, onUpdate, onGoTo
 
   const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
   const desc = contentOverrides?.[`${STEP_KEY}.desc`];
-  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
-  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
 
   const hegMap        = Object.fromEntries(hegs.map((h) => [h.id, h.name]));
   const hasTaskBased  = hegs.some((h) => h.strategy === 'task-based');
@@ -555,8 +544,6 @@ export default function SoundStep7_Calculation({ investigation, onUpdate, onGoTo
       </div>
     );
   }
-
-  const noResults = statistics.length === 0;
 
   // HEGs with verdict ≥ LAV but no PPE data — prompt user to enter it in Step 6
   const hegsWithoutPPE = statistics
@@ -586,75 +573,6 @@ export default function SoundStep7_Calculation({ investigation, onUpdate, onGoTo
           Herberekenen
         </Button>
       </div>
-
-      <InfoBox title={
-        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
-          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
-          {ib0Title}
-        </InlineEdit>
-      }>
-        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
-          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
-          {ib0Content
-            ? <MarkdownContent>{ib0Content}</MarkdownContent>
-            : <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
-                {/* Meetduur */}
-                <div>
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                    Meetduur <SectionRef id="§9.3.2">§9.3.2</SectionRef>
-                  </p>
-                  <ul className="space-y-0.5 text-xs">
-                    <li>→ Minimaal <strong>5 minuten</strong> per meting</li>
-                    <li>→ Taak korter dan 5 min? Meet de <strong>volledige taak</strong></li>
-                    <li>→ <strong>Stabiliteitcriterium:</strong> meting mag eerder stoppen als{' '}
-                      <abbr title="Equivalent geluidniveau A-gewogen over meetduur" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">
-                        L<sub>p,A,eq</sub>
-                      </abbr>{' '}
-                      gedurende <strong>30 s niet meer dan 0,2 dB</strong> varieert (alleen bij stationaire bronnen)</li>
-                    <li>→ Start <strong>ná aanlooptijd</strong> — wacht tot bron stabiel draait</li>
-                  </ul>
-                </div>
-
-                {/* Meetpositie */}
-                <div>
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                    Meetpositie <SectionRef id="§9.2">§9.2</SectionRef>
-                  </p>
-                  <ul className="space-y-0.5 text-xs">
-                    <li>→ Microfoon op <strong>oorhoogte medewerker</strong>, op ± 0,1–0,2 m van het oor</li>
-                    <li>→ Medewerker in <strong>normale werkhouding</strong></li>
-                    <li>→ Microfoon niet beschaduwd door hoofd of schouder</li>
-                    <li>→ Windkap gebruiken bij luchtbeweging &gt; 1 m/s</li>
-                  </ul>
-                </div>
-
-                {/* Omstandigheden */}
-                <div>
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                    Omstandigheden <SectionRef id="§9.3.1">§9.3.1</SectionRef> / <SectionRef id="§15.d.4">§15.d.4</SectionRef>
-                  </p>
-                  <ul className="space-y-0.5 text-xs">
-                    <li>→ Meten tijdens <strong>representatieve, normale werkzaamheden</strong></li>
-                    <li>→ Alle geluidbronnen actief die normaal aanwezig zijn</li>
-                    <li>→ Afwijkingen vastleggen per meting via de <strong>OB-knop</strong> <SectionRef id="§15.d.5">§15.d.5</SectionRef></li>
-                  </ul>
-                </div>
-
-                {/* Kalibratie & aantallen */}
-                <div>
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                    Kalibratie & aantallen <SectionRef id="§12.2">§12.2</SectionRef> / <SectionRef id="§9.3">§9.3</SectionRef>
-                  </p>
-                  <ul className="space-y-0.5 text-xs">
-                    <li>→ <strong>Vóór en ná</strong> elke meetserie een veldkalibratie uitvoeren</li>
-                    <li>→ Kalibratiefout &gt; 0,5 dB → serie <strong>automatisch uitgesloten</strong></li>
-                    <li>→ Per taak: ≥ <strong>3 metingen</strong> verplicht; ≥ <strong>5 aanbevolen</strong> bij meerdere medewerkers</li>
-                  </ul>
-                </div>
-              </div>
-          }
-        </InlineEdit>
-      </InfoBox>
 
       {hegsWithoutPPE.length > 0 && (
         <Alert variant="info" size="md">
@@ -798,37 +716,35 @@ export default function SoundStep7_Calculation({ investigation, onUpdate, onGoTo
         )}
       </div>
 
-      {noResults ? (
-        <Alert variant="warning" size="md">
-          Geen berekeningen mogelijk. Zorg dat voor elke <Abbr id="HEG">HEG</Abbr> minimaal 3 geldige meetwaarden zijn ingevoerd in{' '}
-          <Button variant="link" type="button" onClick={() => onGoToStep(7)}>stap 8</Button>.
-        </Alert>
-      ) : (
-        <div className="space-y-6">
-          {statistics.map((stat) => {
-            const heg = hegs.find((h) => h.id === stat.hegId)!;
+      <div className="space-y-6">
+        {hegs.map((heg) => {
+          const stat = statistics.find((s) => s.hegId === heg.id);
+          if (stat) {
             return (
-            <HEGResult
-              key={stat.hegId}
-              stat={stat}
-              hegName={hegMap[stat.hegId] ?? stat.hegId}
-              heg={heg}
-              tasks={tasks}
-              measurements={measurements}
-              measurementSeries={measurementSeries}
-            />
+              <HEGResult
+                key={heg.id}
+                stat={stat}
+                hegName={heg.name}
+                heg={heg}
+                tasks={tasks}
+                measurements={measurements}
+                measurementSeries={measurementSeries}
+              />
+            );
+          }
+          return (
+            <div key={heg.id} className="rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/30">
+              <div className="border-b border-zinc-200 px-5 py-3 dark:border-zinc-700">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{heg.name}</p>
+              </div>
+              <div className="px-5 py-4 text-sm text-zinc-500 dark:text-zinc-400">
+                Geen meetresultaten beschikbaar. Voer metingen in via{' '}
+                <Button variant="link" type="button" onClick={() => onGoToStep(7)}>stap 8</Button>.
+              </div>
+            </div>
           );
-          })}
-        </div>
-      )}
-
-      {hegs.length > statistics.length && (
-        <Alert variant="warning">
-          {hegs.length - statistics.length} <Abbr id="HEG">HEG</Abbr>{hegs.length - statistics.length !== 1 ? '\'s' : ''} heeft onvoldoende meetwaarden (minimaal 3 nodig).
-          Voer meer metingen in bij{' '}
-          <Button variant="link" type="button" onClick={() => onGoToStep(7)}>stap 8</Button>.
-        </Alert>
-      )}
+        })}
+      </div>
     </div>
   );
 }

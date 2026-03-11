@@ -11,6 +11,9 @@ type UserRow = {
   privacy_version_accepted: string | null;
   privacy_accepted_at: string | null;
   privacy_required_version: string | null;
+  disclaimer_version_accepted: string | null;
+  disclaimer_accepted_at: string | null;
+  disclaimer_required_version: string | null;
   first_name: string | null;
   tussenvoegsel: string | null;
   last_name: string | null;
@@ -61,6 +64,8 @@ export default function AdminPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [privacyLoading, setPrivacyLoading] = useState<string | null>(null);
+  const [disclaimerLoading, setDisclaimerLoading] = useState<string | null>(null);
+  const [disclaimerPushError, setDisclaimerPushError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/admin/users')
@@ -104,6 +109,29 @@ export default function AdminPage() {
     setPrivacyLoading(null);
   }
 
+  async function handleDisclaimerPush(userId: string, hasPending: boolean) {
+    setDisclaimerLoading(userId);
+    setDisclaimerPushError(null);
+    const res = await fetch(`/api/admin/users/${userId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: hasPending ? 'disclaimer-clear' : 'disclaimer-push' }),
+    });
+    const json = await res.json().catch(() => ({}));
+    setDisclaimerLoading(null);
+    if (!res.ok) {
+      setDisclaimerPushError((json as { error?: string }).error ?? 'Onbekende fout');
+      return;
+    }
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId
+          ? { ...u, disclaimer_required_version: hasPending ? null : ((json as { version?: string }).version ?? null) }
+          : u
+      )
+    );
+  }
+
   return (
     <>
       {/* Verwijder-bevestigingsdialoog */}
@@ -139,6 +167,17 @@ export default function AdminPage() {
         </p>
       </div>
 
+      {disclaimerPushError && (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800/50 dark:bg-red-900/10 dark:text-red-300">
+          <span><strong>Disclaimer push mislukt:</strong> {disclaimerPushError}</span>
+          <button onClick={() => setDisclaimerPushError(null)} className="shrink-0 text-red-400 hover:text-red-600">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex h-32 items-center justify-center text-sm text-zinc-400">Laden…</div>
       ) : (
@@ -153,6 +192,7 @@ export default function AdminPage() {
                   <th className="px-4 py-3 text-left whitespace-nowrap">Aangemeld</th>
                   <th className="px-4 py-3 text-left whitespace-nowrap">Laatste login</th>
                   <th className="px-4 py-3 text-left">Privacy</th>
+                  <th className="px-4 py-3 text-left">Disclaimer</th>
                   <th className="px-4 py-3 text-right whitespace-nowrap">Onderzoeken</th>
                   <th className="px-4 py-3" />
                 </tr>
@@ -225,6 +265,43 @@ export default function AdminPage() {
                           }`}
                         >
                           {user.privacy_required_version ? <XIcon /> : <BellIcon />}
+                        </button>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
+                        <div>
+                          {user.disclaimer_version_accepted ? (
+                            <span className="font-mono text-xs text-zinc-700 dark:text-zinc-300">
+                              v{user.disclaimer_version_accepted}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-amber-600 dark:text-amber-400" title="Disclaimer nog niet geregistreerd">—</span>
+                          )}
+                          {user.disclaimer_accepted_at && (
+                            <p className="whitespace-nowrap text-xs text-zinc-400 dark:text-zinc-500">
+                              {fmtDate(user.disclaimer_accepted_at)}
+                            </p>
+                          )}
+                          {user.disclaimer_required_version && (
+                            <p className="whitespace-nowrap text-xs font-medium text-orange-600 dark:text-orange-400">
+                              herbevestiging vereist
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleDisclaimerPush(user.id, !!user.disclaimer_required_version)}
+                          disabled={disclaimerLoading === user.id}
+                          title={user.disclaimer_required_version
+                            ? `Verzoek intrekken (v${user.disclaimer_required_version})`
+                            : 'Herbevestiging disclaimer verplichten'}
+                          className={`shrink-0 rounded-lg p-1.5 disabled:opacity-50 ${
+                            user.disclaimer_required_version
+                              ? 'text-orange-500 hover:bg-orange-50 hover:text-orange-700 dark:hover:bg-orange-900/20'
+                              : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800'
+                          }`}
+                        >
+                          {user.disclaimer_required_version ? <XIcon /> : <BellIcon />}
                         </button>
                       </div>
                     </td>

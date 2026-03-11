@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     'Onderzoeksinstrument voor biologische agentia conform Richtlijn 2000/54/EG en Arbobesluit art. 4.85–4.114.',
 };
 
-const { legislation, norms, limitGroups, adminObligations } = THEME_LEGAL_INFO['bio-agents'];
+const { legislation, norms, limitGroups } = THEME_LEGAL_INFO['bio-agents'];
 const theme = themes.find((t) => t.slug === 'bio-agents')!;
 
 const FALLBACK_TITLE = 'Biologische agentia';
@@ -42,7 +42,6 @@ export default async function BioAgentsPage() {
       legislation={legislation}
       norms={norms}
       limitGroups={limitGroups}
-      adminObligations={adminObligations}
       steps={[
         { title: 'Vooronderzoek', desc: 'Sectorspecifieke vragenlijst: aard van de werkzaamheden, bekende biologische agentia, incidenthistorie en bestaande maatregelen.' },
         { title: 'Opdracht & kaders', desc: 'Opdrachtgever, uitvoerende deskundige, betrokken werkplekken en afdelingen, onderzoeksperiode.' },

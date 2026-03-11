@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { ThemeNorm, ThemeLimitGroup } from '@/lib/theme-legal-info';
+import type { ThemeLegalItem, ThemeLimitGroup } from '@/lib/theme-legal-info';
 import ThemeLegalInfo from '@/components/ThemeLegalInfo';
 import InlineEdit from '@/components/InlineEdit';
 
@@ -24,10 +24,9 @@ export interface InvestigationPlaceholderProps {
     limitBg: string;      // e.g. 'bg-rose-50 dark:bg-rose-950/30'
     limitBorder: string;  // e.g. 'border-rose-200 dark:border-rose-900'
   };
-  legislation: string[];
-  norms: ThemeNorm[];
+  legislation: ThemeLegalItem[];
+  norms: ThemeLegalItem[];
   limitGroups?: ThemeLimitGroup[];
-  adminObligations?: string[];
   steps: PlaceholderStep[];
 }
 
@@ -44,7 +43,6 @@ export default function InvestigationPlaceholder({
   legislation,
   norms,
   limitGroups,
-  adminObligations = [],
   steps,
 }: InvestigationPlaceholderProps) {
   const iconColor = color.dot.replace('bg-', 'text-');
@@ -111,7 +109,6 @@ export default function InvestigationPlaceholder({
         legislation={legislation}
         norms={norms}
         limitGroups={limitGroups}
-        adminObligations={adminObligations}
         className="mt-8"
         contentOverrides={legalOverrides}
         namespace={legalNamespace}

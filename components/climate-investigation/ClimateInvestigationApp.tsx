@@ -397,11 +397,6 @@ export default function ClimateInvestigationApp({ stepContent }: ClimateInvestig
           </div>
         )}
 
-        {!loading && investigations.length > 0 && (
-          <p className="mt-4 text-center text-xs text-zinc-400 dark:text-zinc-500">
-            Gegevens worden opgeslagen in de cloud.
-          </p>
-        )}
       </div>
     </>
   );

@@ -323,6 +323,11 @@ function buildManagementSummary(inv: SoundInvestigation, chapterNum = '2'): stri
   const { statistics, hegs, measures } = inv;
   if (statistics.length === 0) return '';
 
+  const missingHegs = hegs.filter((h) => !statistics.find((s) => s.hegId === h.id));
+  const allComplianceChecks = statistics.flatMap((s) => s.complianceChecks ?? []);
+  const complianceFails = allComplianceChecks.filter((c) => c.status === 'fail');
+  const complianceWarnings = allComplianceChecks.filter((c) => c.status === 'warning');
+
   const verdictOrder = ['below-lav', 'lav', 'uav', 'above-elv'];
   const worst = statistics.reduce<string>(
     (w, s) => verdictOrder.indexOf(s.verdict) > verdictOrder.indexOf(w) ? s.verdict : w,
@@ -330,10 +335,10 @@ function buildManagementSummary(inv: SoundInvestigation, chapterNum = '2'): stri
   );
 
   const verdictIntro: Record<string, string> = {
-    'below-lav': `De geluidblootstelling is bij alle onderzochte homogene blootstellingsgroepen (HEG's) onder de onderste actiewaarde van 80 dB(A). Er zijn geen wettelijke verplichtingen op grond van het Arbobesluit art. 6.6. Het is aanbevolen de resultaten op te nemen in de RI&amp;E.`,
-    'lav':       `De geluidblootstelling overschrijdt bij één of meer HEG's de onderste actiewaarde (LAV, 80 dB(A)). Een maatregelenprogramma ter vermindering van de geluidblootstelling is vereist conform Arbobesluit art. 6.6 lid 1a.`,
-    'uav':       `De geluidblootstelling overschrijdt bij één of meer HEG's de bovenste actiewaarde (UAV, 85 dB(A)). Gebruik van gehoorbescherming is verplicht; er moet een geluidzone worden aangewezen. Periodiek gehooronderzoek is verplicht (art. 6.10).`,
-    'above-elv': `De geluidgrenswaarde (87 dB(A)) wordt bij één of meer HEG's overschreden. <strong>Onmiddellijke actie is vereist</strong> om de blootstelling terug te brengen tot onder de grenswaarde (Arbobesluit art. 6.6 lid 2).`,
+    'below-lav': `De geluidblootstelling is bij alle onderzochte homogene blootstellingsgroepen (HEG's) onder de onderste actiewaarde van 80 dB(A). Er zijn geen verplichtingen op grond van Arbobesluit art. 6.8. Het is aanbevolen de resultaten op te nemen in de RI&amp;E.`,
+    'lav':       `De geluidblootstelling overschrijdt bij één of meer HEG's de onderste actiewaarde (LAV, 80 dB(A)). Een maatregelenprogramma ter vermindering van de geluidblootstelling is vereist conform Arbobesluit art. 6.8 lid 1.`,
+    'uav':       `De geluidblootstelling overschrijdt bij één of meer HEG's de bovenste actiewaarde (UAV, 85 dB(A)). Gebruik van gehoorbescherming is verplicht; er moet een geluidzone worden aangewezen (art. 6.8 lid 4). Periodiek audiometrisch onderzoek is verplicht (art. 6.10 lid 2).`,
+    'above-elv': `De geluidgrenswaarde (87 dB(A)) wordt bij één of meer HEG's overschreden. <strong>Onmiddellijke actie is vereist</strong> om de blootstelling terug te brengen tot onder de grenswaarde (Arbobesluit art. 6.8 lid 11a).`,
   };
 
   const col = VERDICT_COLOR[worst] ?? '#555';
@@ -379,28 +384,41 @@ function buildManagementSummary(inv: SoundInvestigation, chapterNum = '2'): stri
   // Immediate actions
   const actions: string[] = [];
   if (worst === 'above-elv') {
-    actions.push('Onmiddellijk maatregelen treffen — grenswaarde overschreden (art. 6.6 lid 2).');
-    actions.push('Gehoorbescherming verplicht totdat blootstelling onder 87 dB(A) is gebracht.');
+    actions.push('Onmiddellijk maatregelen treffen — grenswaarde overschreden (art. 6.8 lid 11a).');
+    actions.push('Gehoorbescherming verplicht totdat blootstelling onder 87 dB(A) is gebracht (art. 6.8 lid 9).');
   }
   if (worst === 'uav' || worst === 'above-elv') {
-    actions.push('Geluidzone aanwijzen met signalering en afbakening (art. 6.6 lid 1c).');
-    actions.push('Periodiek audiometrisch onderzoek verplicht aanbieden via bedrijfsarts (art. 6.10).');
+    actions.push('Geluidzone aanwijzen met signalering en afbakening (art. 6.8 lid 4).');
+    actions.push('Periodiek audiometrisch onderzoek verplicht aanbieden via bedrijfsarts (art. 6.10 lid 2).');
   }
   if (worst !== 'below-lav') {
-    actions.push('Maatregelenprogramma opstellen ter vermindering van geluidblootstelling (art. 6.6 lid 1a).');
-    actions.push("Voorlichting en opleiding geven over gehoorrisico's en beschermende maatregelen (art. 6.8).");
+    actions.push('Maatregelenprogramma opstellen ter vermindering van geluidblootstelling (art. 6.8 lid 1).');
+    actions.push("Voorlichting en opleiding geven over gehoorrisico's en beschermende maatregelen (art. 6.11).");
   }
 
   const pendingCount = measures.filter((m) => m.status !== 'completed').length;
 
+  // Missing HEG rows in summary table
+  const missingHegRows = missingHegs.map((h) => `
+    <tr style="background:#fffbeb">
+      <td style="font-weight:600">${esc(h.name)}</td>
+      <td class="mono right" colspan="2" style="color:#92400e;font-style:italic">Onvoldoende meetresultaten</td>
+      <td style="color:#92400e;font-weight:600">⚠ Niet beoordeeld</td>
+    </tr>`).join('');
+
+  const verdictLabel = missingHegs.length > 0
+    ? (worst === 'above-elv' ? 'Eindoordeel: grenswaarde overschreden — onmiddellijke actie vereist'
+      : worst === 'uav'      ? 'Eindoordeel: bovenste actiewaarde overschreden — maatregelen verplicht'
+      : worst === 'lav'      ? 'Eindoordeel: onderste actiewaarde overschreden — maatregelenprogramma vereist'
+      :                        'Eindoordeel: onbekend — niet alle HEG\'s beoordeeld')
+    : (worst === 'above-elv' ? 'Eindoordeel: grenswaarde overschreden — onmiddellijke actie vereist'
+      : worst === 'uav'      ? 'Eindoordeel: bovenste actiewaarde overschreden — maatregelen verplicht'
+      : worst === 'lav'      ? 'Eindoordeel: onderste actiewaarde overschreden — maatregelenprogramma vereist'
+      :                        'Eindoordeel: voldoet — geen actiewaarde bereikt');
+
   let html = `
     <div style="background:${bg};border-left:4px solid ${col};border-radius:3px;padding:3mm 4mm;margin-bottom:4mm">
-      <div style="font-size:9.5pt;font-weight:700;color:${col};margin-bottom:1mm">${esc(
-        worst === 'above-elv' ? 'Eindoordeel: grenswaarde overschreden — onmiddellijke actie vereist'
-        : worst === 'uav'     ? 'Eindoordeel: bovenste actiewaarde overschreden — maatregelen verplicht'
-        : worst === 'lav'     ? 'Eindoordeel: onderste actiewaarde overschreden — maatregelenprogramma vereist'
-        :                       'Eindoordeel: voldoet — geen actiewaarde bereikt',
-      )}</div>
+      <div style="font-size:9.5pt;font-weight:700;color:${col};margin-bottom:1mm">${esc(verdictLabel)}</div>
       <div style="font-size:8.5pt;color:#333;line-height:1.6">${verdictIntro[worst] ?? ''}</div>
     </div>
     <table>
@@ -412,7 +430,7 @@ function buildManagementSummary(inv: SoundInvestigation, chapterNum = '2'): stri
           <th>Oordeel</th>
         </tr>
       </thead>
-      <tbody>${hegRows}</tbody>
+      <tbody>${hegRows}${missingHegRows}</tbody>
     </table>
     <div style="font-size:7.5pt;color:#888;margin-bottom:3mm">
       ${tex('L_{EX,8h,95\\%}')} = dagelijkse blootstelling inclusief meetonzekerheid (eenzijdig 95%-interval, Formule 10).
@@ -429,9 +447,32 @@ function buildManagementSummary(inv: SoundInvestigation, chapterNum = '2'): stri
       </div>`;
   }
 
+  if (missingHegs.length > 0) {
+    html += `
+      <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:3px;padding:2.5mm 3.5mm;margin-bottom:3mm">
+        <div style="font-size:8.5pt;font-weight:700;color:#92400e;margin-bottom:1mm">⚠ Onvoldoende meetresultaten</div>
+        <div style="font-size:8pt;color:#78350f">
+          ${missingHegs.length} HEG${missingHegs.length !== 1 ? '\'s zijn' : ' is'} niet beoordeeld wegens onvoldoende meetresultaten:
+          ${missingHegs.map((h) => esc(h.name)).join(', ')}.
+          Het eindoordeel is niet volledig vast te stellen. Zie hoofdstuk Statistische berekeningen.
+        </div>
+      </div>`;
+  }
+
+  if (complianceFails.length > 0 || complianceWarnings.length > 0) {
+    const items = [...complianceFails, ...complianceWarnings];
+    html += `
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:3px;padding:2.5mm 3.5mm;margin-bottom:3mm">
+        <div style="font-size:8.5pt;font-weight:700;color:#991b1b;margin-bottom:1mm">Normafwijkingen NEN-EN-ISO 9612:2025</div>
+        <ul style="margin:0;padding-left:4mm;font-size:8pt;color:#7f1d1d;line-height:1.7">
+          ${items.map((c) => `<li><strong>${esc(c.label)}</strong>${c.ref ? ` <span style="color:#999">(${esc(c.ref)})</span>` : ''}: ${esc(c.detail)}</li>`).join('')}
+        </ul>
+      </div>`;
+  }
+
   if (pendingCount > 0) {
     html += `<div class="infobox" style="font-size:8pt">
-      ${pendingCount} beheersmaatregel${pendingCount !== 1 ? 'en' : ''} staan open of lopen. Zie hoofdstuk 8 — Beheersmaatregelen.
+      ${pendingCount} beheersmaatregel${pendingCount !== 1 ? 'en' : ''} staan open of lopen. Zie hoofdstuk Beheersmaatregelen.
     </div>`;
   }
 
@@ -464,8 +505,8 @@ function buildCover(inv: SoundInvestigation): string {
         ${rows.map((r) => `<div>${r}</div>`).join('')}
       </div>
       <div class="cover-norm">
-        NEN-EN-ISO 9612:2025 — Akoestiek — Bepaling van de blootstelling aan lawaai op de werkplek (Third edition)<br>
-        Arbobesluit art. 6.5–6.11 — Geluid op de arbeidsplaats
+        NEN-EN-ISO 9612:2025 — Akoestiek — Bepaling van de blootstelling aan lawaai op de arbeidsplaats (Third edition)<br>
+        Arbobesluit art. 6.7–6.11 — Geluid op de arbeidsplaats
       </div>
     </div>
   `;
@@ -911,14 +952,14 @@ function buildHEGResult(inv: SoundInvestigation, stat: SoundStatistics): string 
       const elvC  = elvOk ? '#15803d' : '#991b1b';
       const elvBg = elvOk ? '#dcfce7'  : '#fee2e2';
       return `<tr style="background:${elvBg}">
-          <td style="font-weight:600">${tex('L_{EX,8h,oor}')} — mét PBM (art. 6.5 lid 3 Arbobesluit / EN 458)</td>
+          <td style="font-weight:600">${tex('L_{EX,8h,oor}')} — mét PBM (Arbobesluit art. 6.8 lid 9 / EN 458)</td>
           <td class="mono right" style="font-weight:700;color:${elvC}">${fmt1(stat.lEx8h_95pct_oor)} dB(A)</td>
           <td style="font-size:8pt;font-weight:600;color:${elvC}">${elvOk ? '✓ GW niet overschreden' : '✗ GW overschreden — direct ingrijpen'}</td>
         </tr>`;
     }
     if (heg?.ppeSNRUnknown) {
       return `<tr>
-          <td>${tex('L_{EX,8h,oor}')} — mét PBM (art. 6.5 lid 3 Arbobesluit / EN 458)</td>
+          <td>${tex('L_{EX,8h,oor}')} — mét PBM (Arbobesluit art. 6.8 lid 9 / EN 458)</td>
           <td class="mono right" style="color:#92400e">— SNR onbekend</td>
           <td style="font-size:8pt;color:#92400e">Niet bepaald — SNR datablad ontbreekt</td>
         </tr>`;
@@ -1003,14 +1044,14 @@ function buildHEGResult(inv: SoundInvestigation, stat: SoundStatistics): string 
   if (heg?.ppeSNRUnknown && (heg.ppeMethod ?? 'snr') === 'snr') {
     html += `
       <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:3px;padding:2mm 3mm;font-size:8pt;margin-top:2mm">
-        <strong>PBM in gebruik — SNR onbekend (Arbobesluit art. 6.9 / EN 458:2016):</strong><br>
+        <strong>PBM in gebruik — SNR onbekend (Arbobesluit art. 6.8 lid 7 / EN 458:2016):</strong><br>
         ${heg.ppeNotes ? `Type/merk/model: <em>${esc(heg.ppeNotes)}</em><br>` : ''}
         De <abbr title="Single Number Rating">SNR</abbr>-waarde van de gehoorbeschermer is (nog) niet vastgesteld
         (datablad niet beschikbaar). De blootstelling aan het oor bij gebruik van de gehoorbescherming kan
         daardoor niet worden bepaald.<br>
         <strong>De beoordeling is gebaseerd op de onbeschermde
         ${tex('L_{EX,8h,95\\%}')} = ${fmt1(stat.lEx8h_95pct)} dB(A).</strong>
-        Zodra de SNR-waarde bekend is dient de grenswaarde-toetsing (art. 6.5 lid 3) te worden herhaald.
+        Zodra de SNR-waarde bekend is dient de grenswaarde-toetsing (art. 6.8 lid 9) te worden herhaald.
       </div>
     `;
   }
@@ -1108,7 +1149,7 @@ function buildHEGResult(inv: SoundInvestigation, stat: SoundStatistics): string 
 
     html += `
       <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:3px;padding:2mm 3mm;font-size:8pt;margin-top:2mm">
-        <strong>PBM-correctie (EN 458:2016 / Arbobesluit art. 6.9):</strong>
+        <strong>PBM-correctie (EN 458:2016 / Arbobesluit art. 6.8):</strong>
         ${isDouble ? `<span style="margin-left:4mm;background:#dbeafe;color:#1e40af;border-radius:3px;padding:0.5mm 2mm;font-size:7.5pt;font-weight:600">
           ${esc(combinedMethodLabel[stat.ppeCombinedMethod!] ?? stat.ppeCombinedMethod!)}
         </span>` : ''}
@@ -1135,7 +1176,7 @@ function buildHEGResult(inv: SoundInvestigation, stat: SoundStatistics): string 
           Dempingswaarden zijn gebaseerd op fabrikantgegevens (EN 458:2016).${isDouble
             ? ' Bij dubbele gehoorbescherming worden waarden niet opgeteld; totale demping is begrensd op 35 dB(A) vanwege botgeleiding.'
             : ''}
-          Waarden zijn schattingen, geen garantie. Periodieke pasvormcontrole, voorlichting en onderhoud blijven vereist (art. 6.9 Arbobesluit).
+          Waarden zijn schattingen, geen garantie. Periodieke pasvormcontrole, voorlichting en onderhoud blijven vereist (Arbobesluit art. 6.8 / art. 6.11).
         </div>
       </div>
     `;
@@ -1439,26 +1480,28 @@ function buildObligations(inv: SoundInvestigation): string {
       { art: '—', text: 'Geen actiewaarde bereikt. Geen specifieke wettelijke verplichtingen; verwerk resultaten in de RI&E.' },
     ],
     'lav': [
-      { art: 'Art. 6.6 lid 1a', text: 'Maatregelenprogramma opstellen ter vermindering van geluidblootstelling.' },
-      { art: 'Art. 6.6 lid 1b', text: 'Gehoorbeschermers ter beschikking stellen op verzoek.' },
-      { art: 'Art. 6.7',        text: 'Gehooronderzoek aanbieden op verzoek.' },
-      { art: 'Art. 6.8',        text: 'Voorlichting en opleiding over risico\'s en beschermende maatregelen.' },
+      { art: 'Art. 6.8 lid 1',  text: 'Maatregelenprogramma opstellen ter vermindering van de geluidblootstelling aan de bron.' },
+      { art: 'Art. 6.8 lid 7',  text: 'Individuele gehoorbeschermers ter beschikking stellen.' },
+      { art: 'Art. 6.7',        text: 'Lawaainiveaus beoordelen en meten; resultaten registreren; beoordeling herhalen bij ingrijpende wijzigingen.' },
+      { art: 'Art. 6.10 lid 3', text: 'Audiometrisch onderzoek aanbieden indien de beoordeling en meting een gezondheidsrisico aantonen.' },
+      { art: 'Art. 6.11',       text: 'Voorlichting en onderricht geven over risico\'s, maatregelen, actiewaarden en gebruik van gehoorbeschermers.' },
     ],
     'uav': [
-      { art: 'Art. 6.6 lid 1a', text: 'Maatregelenprogramma opstellen én uitvoeren.' },
-      { art: 'Art. 6.6 lid 1b', text: 'Gehoorbeschermers beschikbaar stellen; gebruik is verplicht.' },
-      { art: 'Art. 6.6 lid 1c', text: 'Geluidzone aanwijzen met signalering, afbakening en toegangsbeperking.' },
-      { art: 'Art. 6.7',        text: 'Periodiek gehooronderzoek verplicht aanbieden.' },
-      { art: 'Art. 6.8',        text: 'Voorlichting en opleiding (verplicht).' },
-      { art: 'Art. 6.9',        text: 'Kwaliteitseisen gehoorbeschermer: oor-niveau moet onder 87 dB(A) blijven.' },
-      { art: 'Art. 6.10',       text: 'Periodiek preventief gehooronderzoek door of onder toezicht van bedrijfsarts.' },
+      { art: 'Art. 6.8 lid 3',  text: 'Technische en/of organisatorische maatregelen opstellen én uitvoeren om blootstelling te minimaliseren.' },
+      { art: 'Art. 6.8 lid 4',  text: 'Werkplekken duidelijk aanwijzen met signalering en afbakening; toegang beperken indien van toepassing.' },
+      { art: 'Art. 6.8 lid 9',  text: 'Individuele gehoorbeschermers ter beschikking stellen; dragen is verplicht.' },
+      { art: 'Art. 6.7',        text: 'Lawaainiveaus beoordelen en meten; resultaten registreren; beoordeling herhalen bij ingrijpende wijzigingen.' },
+      { art: 'Art. 6.10 lid 2', text: 'Periodiek audiometrisch onderzoek aanbieden.' },
+      { art: 'Art. 6.11',       text: 'Voorlichting en onderricht geven (verplicht) over risico\'s, maatregelen, actiewaarden en gebruik van gehoorbeschermers.' },
     ],
     'above-elv': [
-      { art: 'Art. 6.6 lid 2',  text: 'ONMIDDELLIJK maatregelen nemen om blootstelling tot onder grenswaarde te brengen.' },
-      { art: 'Art. 6.6 lid 2',  text: 'Oorzaak overschrijding bepalen; gedocumenteerde corrigerende maatregelen treffen.' },
-      { art: 'Art. 6.6 lid 2',  text: 'Gebruik gehoorbescherming verplicht totdat grenswaarde niet langer wordt overschreden.' },
-      { art: 'Art. 6.6 lid 1',  text: 'Alle verplichtingen van de LAV en UAV zijn tevens van kracht.' },
-      { art: 'Art. 6.10a',      text: 'Indien gehoorverlies vastgesteld: informeer werknemer, pas maatregelenprogramma aan.' },
+      { art: 'Art. 6.8 lid 11a', text: 'Onmiddellijk maatregelen nemen om blootstelling terug te brengen tot onder de grenswaarde.' },
+      { art: 'Art. 6.8 lid 11b', text: 'Oorzaak van de overmatige blootstelling vaststellen.' },
+      { art: 'Art. 6.8 lid 11c', text: 'Maatregelen aanpassen om herhaling te voorkomen.' },
+      { art: 'Art. 6.8 lid 1–9', text: 'Alle verplichtingen van de onderste en bovenste actiewaarde blijven van kracht.' },
+      { art: 'Art. 6.10 lid 2',  text: 'Periodiek audiometrisch onderzoek aanbieden.' },
+      { art: 'Art. 6.10a',       text: 'Indien audiometrie gehoorschade aantoont: beoordeling en meting herhalen, maatregelen herzien, en betrokken werknemers opnieuw audiometrisch onderzoek aanbieden.' },
+      { art: 'Art. 6.11',        text: 'Voorlichting en onderricht geven over risico\'s, maatregelen, actiewaarden en beschikbaarheid van gehooronderzoek.' },
     ],
   };
 
@@ -1482,7 +1525,7 @@ function buildObligations(inv: SoundInvestigation): string {
     </ul>
   `;
 
-  return section('Beoordeling actiewaarden (Arbobesluit art. 6.5–6.11)', html);
+  return section('Beoordeling actiewaarden (Arbobesluit art. 6.7–6.11)', html);
 }
 
 // ─── Control measures ─────────────────────────────────────────────────────────
@@ -1550,8 +1593,14 @@ function buildConclusion(inv: SoundInvestigation): string {
   }
 
   // Auto-generated conformiteitsverklaring per NEN-EN-ISO 9612:2025 §15.e.7
-  if (inv.statistics.length > 0) {
+  if (inv.statistics.length > 0 || inv.hegs.length > 0) {
     const today = new Date().toLocaleDateString('nl-NL', { year: 'numeric', month: 'long', day: 'numeric' });
+    const missingHegs = inv.hegs.filter((h) => !inv.statistics.find((s) => s.hegId === h.id));
+    const allChecks = inv.statistics.flatMap((s) => s.complianceChecks ?? []);
+    const hasFails = allChecks.some((c) => c.status === 'fail') || missingHegs.length > 0;
+    const hasWarnings = allChecks.some((c) => c.status === 'warning');
+    const isConform = !hasFails && !hasWarnings && missingHegs.length === 0 && inv.statistics.length > 0;
+
     const verdictRows = inv.statistics.map((stat) => {
       const heg   = inv.hegs.find((h) => h.id === stat.hegId);
       const col   = VERDICT_COLOR[stat.verdict] ?? '#555';
@@ -1563,23 +1612,53 @@ function buildConclusion(inv: SoundInvestigation): string {
         : stat.lEx8h_95pct_oor != null
         ? ` &nbsp;·&nbsp; ${tex('L_{EX,8h,oor}')} = ${fmt1(stat.lEx8h_95pct_oor)} dB(A) (mét PBM${stat.ppeCapped ? ', 35 dB-cap' : ''})`
         : '';
+      // Compliance deviations for this HEG
+      const hegChecks = stat.complianceChecks ?? [];
+      const failNotes = hegChecks
+        .filter((c) => c.status === 'fail' || c.status === 'warning')
+        .map((c) => `<div style="font-size:7.5pt;color:${c.status === 'fail' ? '#991b1b' : '#92400e'};padding-left:2mm">
+          ${c.status === 'fail' ? '✗' : '⚠'} ${esc(c.label)}: ${esc(c.detail)}</div>`)
+        .join('');
       return `
         <tr>
           <td style="font-weight:600">${esc(heg?.name ?? stat.hegId)}</td>
           <td class="mono right">${fmt1(stat.lEx8h)} dB(A)</td>
           <td class="mono right" style="font-weight:700">${fmt1(stat.lEx8h_95pct)} dB(A)</td>
-          <td style="color:${col};font-weight:600">${icon} ${esc(stat.verdictLabel)}${ppeTxt}</td>
+          <td style="color:${col};font-weight:600">${icon} ${esc(stat.verdictLabel)}${ppeTxt}${failNotes}</td>
         </tr>`;
     }).join('');
 
+    const missingRows = missingHegs.map((h) => `
+      <tr style="background:#fffbeb">
+        <td style="font-weight:600">${esc(h.name)}</td>
+        <td class="mono right" colspan="2" style="color:#92400e;font-style:italic">Onvoldoende meetresultaten</td>
+        <td style="color:#92400e;font-weight:600">⚠ Niet beoordeeld</td>
+      </tr>`).join('');
+
+    const conformText = isConform
+      ? `Ondergetekende verklaart dat de geluidblootstelling is bepaald conform NEN-EN-ISO 9612:2025 — Akoestiek — Bepaling van de blootstelling aan lawaai op de arbeidsplaats (Third edition)`
+      : `Ondergetekende verklaart dat de geluidblootstelling is bepaald met toepassing van NEN-EN-ISO 9612:2025 — Akoestiek — Bepaling van de blootstelling aan lawaai op de arbeidsplaats (Third edition), <strong>met afwijkingen van de norm</strong> (zie normafwijkingen hieronder)`;
+
+    const deviationsBlock = (!isConform && (allChecks.filter(c => c.status !== 'pass').length > 0 || missingHegs.length > 0))
+      ? `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:3px;padding:2mm 3mm;margin-top:2mm;font-size:7.5pt">
+          <strong style="color:#991b1b">Normafwijkingen:</strong>
+          <ul style="margin:1mm 0 0 4mm;padding:0;line-height:1.7;color:#7f1d1d">
+            ${allChecks.filter(c => c.status !== 'pass').map(c =>
+              `<li>${c.status === 'fail' ? '✗' : '⚠'} <strong>${esc(c.label)}</strong>${c.ref ? ` (${esc(c.ref)})` : ''}: ${esc(c.detail)}</li>`
+            ).join('')}
+            ${missingHegs.map(h => `<li>⚠ ${esc(h.name)}: niet beoordeeld — onvoldoende meetresultaten</li>`).join('')}
+          </ul>
+        </div>`
+      : '';
+
     html += `
-      <div style="border:1px solid #e5e7eb;border-radius:4px;padding:3mm 4mm;margin-bottom:4mm;page-break-inside:avoid">
+      <div style="border:1px solid ${hasFails ? '#fecaca' : hasWarnings ? '#fcd34d' : '#e5e7eb'};border-radius:4px;padding:3mm 4mm;margin-bottom:4mm;page-break-inside:avoid">
         <div style="font-size:8.5pt;font-weight:700;margin-bottom:2mm">Conformiteitsverklaring — NEN-EN-ISO 9612:2025 §15.e.7</div>
         <div style="font-size:8pt;color:#333;margin-bottom:2.5mm;line-height:1.6">
-          Ondergetekende verklaart dat de geluidblootstelling is bepaald conform NEN-EN-ISO 9612:2025
+          ${conformText}
           en dat onderstaande waarden de dagelijkse blootstelling (${tex('L_{EX,8h}')}) vertegenwoordigen inclusief
           meetonzekerheid (${tex('U')}, eenzijdig 95%-interval): ${tex('L_{EX,8h,95\\%}')} = ${tex('L_{EX,8h}')} + ${tex('U')}.
-          Toetsing is uitgevoerd aan de actiewaarden en grenswaarden uit het Arbobesluit art. 6.5 lid 1 en 2.
+          Toetsing is uitgevoerd aan de actiewaarden en grenswaarden uit Arbobesluit art. 6.6 en art. 6.8.
         </div>
         <table style="margin-bottom:2mm">
           <thead>
@@ -1587,12 +1666,13 @@ function buildConclusion(inv: SoundInvestigation): string {
               <th>HEG</th>
               <th class="right">${tex('L_{EX,8h}')} (dB(A))</th>
               <th class="right">${tex('L_{EX,8h,95\\%}')} (dB(A))</th>
-              <th>Oordeel Arbobesluit art. 6.6</th>
+              <th>Oordeel Arbobesluit art. 6.8</th>
             </tr>
           </thead>
-          <tbody>${verdictRows}</tbody>
+          <tbody>${verdictRows}${missingRows}</tbody>
         </table>
-        <div style="font-size:7.5pt;color:#888">Rapportdatum: ${today}</div>
+        ${deviationsBlock}
+        <div style="font-size:7.5pt;color:#888;margin-top:2mm">Rapportdatum: ${today}</div>
       </div>`;
   }
 
@@ -1788,7 +1868,7 @@ function buildReport(inv: SoundInvestigation): string {
 
     // 7/8. Action-level assessment
     obligContent
-      ? chapter(String(7 + o), 'Beoordeling actiewaarden', 'Arbobesluit art. 6.5–6.11', obligContent, true)
+      ? chapter(String(7 + o), 'Beoordeling actiewaarden', 'Arbobesluit art. 6.7–6.11', obligContent, true)
       : '',
 
     // 8/9. Control measures
@@ -1813,7 +1893,7 @@ function buildReport(inv: SoundInvestigation): string {
     buildSignature(inv),
 
     `<div style="margin-top:10mm;border-top:1px solid #e5e7eb;padding-top:3mm;font-size:7.5pt;color:#888">
-      Gegenereerd door OHSHub op ${today} · NEN-EN-ISO 9612:2025 · Arbobesluit art. 6.5–6.11
+      Gegenereerd door OHSHub op ${today} · NEN-EN-ISO 9612:2025 · Arbobesluit art. 6.7–6.11
     </div>`,
 
     '</div>',
@@ -1858,11 +1938,16 @@ const PLAN_CSS = `
   .note-line { border-bottom: 0.5pt solid #ccc; height: 9mm; margin-bottom: 1.5mm; }
   .note-label { font-size: 7.5pt; font-weight: 700; color: #555; margin-bottom: 1.5mm; }
 
-  .sign-block { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; margin-top: 8mm; }
-  .sign-box { border-top: 0.5pt solid #555; padding-top: 1.5mm; font-size: 7.5pt; color: #555; }
-
   .plan-footer { margin-top: 6mm; padding-top: 3mm; border-top: 0.5pt solid #ddd; font-size: 7pt; color: #999; text-align: right; }
   .page-break { page-break-before: always; }
+
+  .proc-section { border: 0.5pt solid #fb923c; border-radius: 1.5mm; padding: 3mm 4mm; margin-bottom: 5mm; background: #fff7ed; }
+  .proc-title { font-size: 9pt; font-weight: 700; color: #c2410c; border-bottom: 0.5pt solid #fdba74; padding-bottom: 1.5mm; margin-bottom: 2.5mm; }
+  .proc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5mm 6mm; }
+  .proc-head { font-size: 7pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4pt; color: #555; margin-bottom: 1.5mm; }
+  .proc-section ul { list-style: none; padding: 0; }
+  .proc-section li { font-size: 7.5pt; line-height: 1.55; padding-left: 3mm; }
+  .proc-section li::before { content: "→ "; color: #f97316; font-weight: 700; }
 `;
 
 function fmtMinutes(m: number): string {
@@ -1879,9 +1964,9 @@ function buildMeasurementPlan(inv: SoundInvestigation): string {
   const today = new Date().toLocaleDateString('nl-NL', { year: 'numeric', month: 'long', day: 'numeric' });
 
   const strategyLabel: Record<string, string> = {
-    'task-based': 'Taakgericht (Strategie 1, §9)',
-    'job-based':  'Functiegericht (Strategie 2, §10)',
-    'full-day':   'Volledige dag (Strategie 3, §11)',
+    'task-based': 'Taakgericht (Strategie 1)',
+    'job-based':  'Functiegericht (Strategie 2)',
+    'full-day':   'Volledige dag (Strategie 3)',
   };
 
   const instrLine = (id: string): string => {
@@ -1898,7 +1983,7 @@ function buildMeasurementPlan(inv: SoundInvestigation): string {
 
   const header = `
     <div class="plan-header">
-      <div><div class="logo">OHS<span>Hub</span></div><div class="doc-sub">ohs-hub.vercel.app</div></div>
+      <div><div class="logo">OHS<span>Hub</span></div><div class="doc-sub">ohshub.app</div></div>
       <div class="doc-right">
         <div class="doc-title">Meetplan — Geluidblootstelling</div>
         <div class="doc-sub">NEN-EN-ISO 9612:2025 — Veldregistratieformulier</div>
@@ -1919,22 +2004,21 @@ function buildMeasurementPlan(inv: SoundInvestigation): string {
   const measRow = (i: number) => `
     <tr>
       <td class="idx">${i}</td>
-      <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+      <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
     </tr>`;
 
   const blankRow = `
     <tr style="border-top:0.5pt dashed #ccc">
       <td class="idx" style="color:#ccc">+</td>
-      <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+      <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
     </tr>`;
 
-  const measHead = (includeTask: boolean) => `
+  const measHead = `
     <tr>
       <th class="center" style="width:7mm">#</th>
       <th style="width:20mm">Datum</th>
       <th style="width:28mm">Medewerker</th>
       <th style="width:12mm">Reeks nr.</th>
-      ${includeTask ? '' : ''}
       <th style="width:14mm">Start</th>
       <th style="width:14mm">Einde</th>
       <th style="width:16mm">Duur (min)</th>
@@ -1955,6 +2039,46 @@ function buildMeasurementPlan(inv: SoundInvestigation): string {
       <th>Voldoet? (&lt;&nbsp;0,5&nbsp;dB)</th>
     </tr>`;
 
+  const procedures = `
+    <div class="proc-section">
+      <div class="proc-title">Meetprocedure &amp; werkinstructies — NEN-EN-ISO 9612:2025</div>
+      <div class="proc-grid">
+        <div>
+          <p class="proc-head">Kalibratie &amp; aantallen</p>
+          <ul>
+            <li>Vóór <strong>en</strong> ná elke meetserie een veldkalibratie uitvoeren met gekalibreerde geluidkalibrateur</li>
+            <li>Kalibratiefout &gt; 0,5 dB → meetserie <strong>uitsluiten</strong> van analyse</li>
+            <li>Per taak (taakgericht): ≥ <strong>3 metingen</strong>; ≥ <strong>5 metingen</strong> verplicht als meerdere medewerkers worden bemeten</li>
+          </ul>
+        </div>
+        <div>
+          <p class="proc-head">Meetduur</p>
+          <ul>
+            <li>Minimaal <strong>5 minuten</strong> per meting (of volledige taak als T<sub>m</sub> &lt; 5 min)</li>
+            <li>Cyclisch / impulsief geluid: ≥ <strong>3 volledige cycli</strong>, minimaal 3 min per meting</li>
+            <li>Stabiel geluid: meting mag stoppen als L<sub>p,A,eq</sub> gedurende 30 s niet meer dan 0,2 dB varieert</li>
+          </ul>
+        </div>
+        <div>
+          <p class="proc-head">Meetpositie</p>
+          <ul>
+            <li>Microfoon op <strong>oorhoogte medewerker</strong>, op ± 0,1–0,2 m van het oor</li>
+            <li>Medewerker in <strong>normale werkhouding</strong> tijdens de meting</li>
+            <li>Microfoon niet beschaduwd door hoofd of schouder</li>
+            <li>Windkap gebruiken bij luchtbeweging &gt; 1 m/s</li>
+          </ul>
+        </div>
+        <div>
+          <p class="proc-head">Omstandigheden</p>
+          <ul>
+            <li>Meten tijdens <strong>representatieve, normale werkzaamheden</strong></li>
+            <li>Alle geluidbronnen actief die normaal aanwezig zijn</li>
+            <li>Niet-representatief? Vermeld dit in de kolom <strong>Opmerkingen / OB</strong> van dat meetveld</li>
+          </ul>
+        </div>
+      </div>
+    </div>`;
+
   let hegSections = '';
 
   hegs.forEach((heg, hegIdx) => {
@@ -1962,27 +2086,38 @@ function buildMeasurementPlan(inv: SoundInvestigation): string {
     const hegSeries = measurementSeries.filter((s) => s.hegId === heg.id);
     const calibCount = Math.max(hegSeries.length, 3);
 
+    // Build strategy-specific meta rows
+    let stratExtraRows = '';
+    if (heg.strategy === 'job-based') {
+      const nc   = heg.workerCount;
+      const minH = nc <= 15 ? 6 + (nc - 1) : nc <= 40 ? 20 + (nc - 15) * 0.75 : null;
+      const minSamp = minH !== null ? Math.ceil(minH / 0.75) : null;
+      const minDurStr = minH !== null
+        ? `${Number.isInteger(minH) ? minH : minH.toFixed(2)} uur`
+        : '&gt; 40 uur — splits de groep';
+      stratExtraRows = `
+        <div class="meta-row"><div class="meta-label">Min. steekproeven:</div><div><strong>${minSamp ?? '—'}</strong> × 15–60 min (aanbevolen 45 min), willekeurig verdeeld</div></div>
+        <div class="meta-row"><div class="meta-label">Min. cumulatief:</div><div><strong>≥ ${minDurStr}</strong></div></div>`;
+    } else if (heg.strategy === 'full-day') {
+      const teMin = heg.effectiveDayHours * 60;
+      stratExtraRows = `
+        <div class="meta-row"><div class="meta-label">Min. metingen:</div><div><strong>3</strong> volledige-dagmetingen, elk ≥ <strong>${fmtMinutes(Math.round(teMin * 0.75))}</strong> (75% T<sub>e</sub>)</div></div>
+        <div class="meta-row" style="grid-column:span 2"><div class="meta-label">Opmerking:</div><div>Bij spreiding ≥ 3 dB of c<sub>1</sub>u<sub>1</sub> &gt; 3,5 dB: 2 extra metingen toevoegen</div></div>`;
+    }
+
     const hegMeta = `
       <h2>${hegIdx + 1}. HEG: ${esc(heg.name)}</h2>
       <div class="meta-grid">
         <div class="meta-row"><div class="meta-label">Strategie:</div><div>${esc(strategyLabel[heg.strategy] ?? heg.strategy)}</div></div>
         <div class="meta-row"><div class="meta-label">Medewerkers:</div><div>${heg.workerCount} personen</div></div>
         <div class="meta-row"><div class="meta-label">T<sub>e</sub> (werkdag):</div><div>${fmtMinutes(heg.effectiveDayHours * 60)}</div></div>
-        <div class="meta-row"><div class="meta-label">Functiomschrijving:</div><div>${esc(heg.jobTitle)}</div></div>
+        <div class="meta-row"><div class="meta-label">Functiebeschrijving:</div><div>${esc(heg.jobTitle)}</div></div>
+        ${stratExtraRows}
       </div>`;
 
     let tables = '';
 
     if (heg.strategy === 'task-based') {
-      const totalMin = hegTasks.reduce((s, t) => { const tm = t.durationHours * 60; return s + 3 * (tm >= 5 ? 5 : tm); }, 0);
-      tables += `
-        <div class="req-box">
-          <strong>NEN-EN-ISO 9612 §9.3.2 / Arbobesluit art. 6.9</strong> &nbsp;—&nbsp;
-          Per taak: ≥&nbsp;<strong>3 metingen</strong>, elk ≥&nbsp;<strong>5 min</strong> (of volledige taak als T<sub>m</sub> &lt; 5 min).
-          Minimale totale meettijd voor deze HEG: ≥&nbsp;<strong>${fmtMinutes(totalMin)}</strong>.
-          Kalibreer vóór en ná elke meetserie (§12.2). Drift &gt; 0,5&nbsp;dB: reeks uitsluiten.
-        </div>`;
-
       if (hegTasks.length === 0) {
         tables += `<p style="color:#888;font-size:8pt;margin:2mm 0;">Geen taken gedefinieerd in stap 5.</p>`;
       } else {
@@ -1991,33 +2126,39 @@ function buildMeasurementPlan(inv: SoundInvestigation): string {
           const tmMin      = task.durationHours * 60;
           const minPerMeas = tmMin >= 5 ? 5 : tmMin;
           const normNote   = tmMin < 5 ? ' <em>(volledige taak; T<sub>m</sub> &lt; 5 min)</em>' : '';
-          const recNote    = heg.workerCount === 1 ? '≥&nbsp;<strong>3</strong>' : '≥&nbsp;<strong>3</strong> (aanbevolen: <strong>5</strong>)';
+          const recNote    = heg.workerCount === 1 ? '≥&nbsp;<strong>3</strong>' : '≥&nbsp;<strong>5</strong> (meerdere medewerkers)';
+          const durNote    = task.isCyclic
+            ? '≥&nbsp;<strong>3 volledige cycli</strong>, min. 3 min per meting'
+            : `≥&nbsp;<strong>${fmtMinutes(minPerMeas)}</strong>${normNote}`;
+          const totalNote  = task.isCyclic
+            ? '≥&nbsp;<strong>9 min</strong> (cyclisch)'
+            : `≥&nbsp;<strong>${fmtMinutes(nRows * minPerMeas)}</strong>`;
           tables += `
-            <h3>Taak: ${esc(task.name || '(naamloos)')}</h3>
+            <h3>Taak: ${esc(task.name || '(naamloos)')}${task.isCyclic ? ' <span style="color:#f97316;font-size:7pt">[cyclisch/impulsief]</span>' : ''}</h3>
             <div class="req-box green">
               T<sub>m</sub> = <strong>${fmtMinutes(tmMin)}</strong> &nbsp;·&nbsp;
-              Min. meetduur / meting: ≥&nbsp;<strong>${fmtMinutes(minPerMeas)}</strong>${normNote} &nbsp;·&nbsp;
+              Min. meetduur / meting: ${durNote} &nbsp;·&nbsp;
               Aantal: ${recNote} &nbsp;·&nbsp;
-              Min. totaal: ≥&nbsp;<strong>${fmtMinutes(nRows * minPerMeas)}</strong>
+              Min. totaal: ${totalNote}
             </div>
-            <table><thead>${measHead(false)}</thead><tbody>
+            <table><thead>${measHead}</thead><tbody>
               ${Array.from({ length: nRows }, (_, i) => measRow(i + 1)).join('')}
               ${blankRow}${blankRow}
             </tbody></table>`;
         }
       }
-    } else {
-      const teMin    = heg.effectiveDayHours * 60;
-      const secRef   = heg.strategy === 'job-based' ? '§10.4' : '§11.4';
+    } else if (heg.strategy === 'job-based') {
+      const nc      = heg.workerCount;
+      const minH    = nc <= 15 ? 6 + (nc - 1) : nc <= 40 ? 20 + (nc - 15) * 0.75 : null;
+      const minSamp = minH !== null ? Math.ceil(minH / 0.75) : null;
       tables += `
-        <div class="req-box">
-          <strong>NEN-EN-ISO 9612 ${secRef} / Arbobesluit art. 6.9</strong> &nbsp;—&nbsp;
-          ≥&nbsp;<strong>3 steekproeven</strong>, elk de volledige werkdag
-          (T<sub>e</sub> = <strong>${fmtMinutes(teMin)}</strong>).
-          Minimale totale meettijd: ≥&nbsp;<strong>${fmtMinutes(3 * teMin)}</strong>.
-          Kalibreer vóór en ná elke meetserie (§12.2).
-        </div>
-        <table><thead>${measHead(false)}</thead><tbody>
+        <table><thead>${measHead}</thead><tbody>
+          ${Array.from({ length: Math.min(minSamp ?? 5, 8) }, (_, i) => measRow(i + 1)).join('')}
+          ${blankRow}${blankRow}
+        </tbody></table>`;
+    } else {
+      tables += `
+        <table><thead>${measHead}</thead><tbody>
           ${[1,2,3,4,5].map(measRow).join('')}
         </tbody></table>`;
     }
@@ -2034,15 +2175,12 @@ function buildMeasurementPlan(inv: SoundInvestigation): string {
     }).join('');
 
     const calibSection = `
-      <h3>Kalibratie meetreeksen (§12.2 NEN-EN-ISO 9612)</h3>
-      <div class="req-box">
-        Vóór en ná elke meetserie een veldkalibratie met gekalibreerde geluidkalibrateur. Drift &gt; 0,5&nbsp;dB → reeks <strong>uitsluiten</strong>.
-      </div>
+      <h3>Kalibratie meetreeksen</h3>
       <table><thead>${calibHead}</thead><tbody>${calibRows}</tbody></table>`;
 
     const notes = `
       <div class="note-lines">
-        <div class="note-label">Opmerkingen / afwijkingen van representatieve omstandigheden (§15.d.4):</div>
+        <div class="note-label">Opmerkingen / afwijkingen van representatieve omstandigheden:</div>
         <div class="note-line"></div>
         <div class="note-line"></div>
       </div>`;
@@ -2050,15 +2188,9 @@ function buildMeasurementPlan(inv: SoundInvestigation): string {
     hegSections += `${hegIdx > 0 ? '<div class="page-break"></div>' : ''}${hegMeta}${tables}${calibSection}${notes}`;
   });
 
-  const signatures = `
-    <div class="sign-block">
-      <div class="sign-box">Handtekening onderzoeker &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Datum: _______________</div>
-      <div class="sign-box">Handtekening leidinggevende &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Datum: _______________</div>
-    </div>`;
+  const footer = `<div class="plan-footer">OHSHub — NEN-EN-ISO 9612:2025 — Gegenereerd op ${today} — ohshub.app</div>`;
 
-  const footer = `<div class="plan-footer">OHSHub — NEN-EN-ISO 9612:2025 / Arbobesluit art. 6.6–6.9 — Gegenereerd op ${today}</div>`;
-
-  return [header, meta, hegSections, signatures, footer].join('\n');
+  return [header, meta, procedures, hegSections, footer].join('\n');
 }
 
 // ─── Export ────────────────────────────────────────────────────────────────────

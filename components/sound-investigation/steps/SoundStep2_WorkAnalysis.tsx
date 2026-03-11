@@ -5,9 +5,7 @@ import type { SoundInvestigation, SoundHEG, SoundStrategy, WorkPattern } from '@
 import { newSoundId } from '@/lib/sound-investigation-storage';
 import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
-import { SectionRef } from '@/components/SectionRef';
-import { InfoBox } from '@/components/InfoBox';
-import { Alert, Badge, Button, Card, FieldLabel, FormGrid, Icon, Input, Select, Textarea } from '@/components/ui';
+import { Badge, Button, Card, FieldLabel, FormGrid, Icon, Input, Select, Textarea } from '@/components/ui';
 import InlineStepHeader from '@/components/InlineStepHeader';
 import InlineEdit from '@/components/InlineEdit';
 import MarkdownContent from '@/components/MarkdownContent';
@@ -21,17 +19,18 @@ interface Props {
 
 const STEP_KEY = 'step.2';
 const NS = 'investigation.sound';
-const FALLBACK_TITLE = 'Stap 3 — Werkanalyse (§7 NEN-EN-ISO 9612:2025)';
-const FALLBACK_DESC = 'Stel Homogene Blootstellingsgroepen (HBG / HEG) vast. Een HEG omvat medewerkers die dezelfde soort werk uitvoeren en daardoor vergelijkbare geluidsblootstelling hebben (§7.2).';
-const FALLBACK_IB0_TITLE = '§7.2 — HEG-definitie';
+const FALLBACK_TITLE = 'Stap 3 — Werkanalyse';
+const FALLBACK_DESC = 'Stel Homogene Blootstellingsgroepen (HEG) vast. Een HEG omvat medewerkers die dezelfde soort werk uitvoeren en daardoor vergelijkbare geluidsblootstelling hebben.';
 
 const WORK_PATTERNS: { value: WorkPattern; label: string }[] = [
-  { value: 'stationary-simple',      label: 'Vaste werkplek — eenvoudige of enkelvoudige taak' },
-  { value: 'stationary-complex',     label: 'Vaste werkplek — meerdere of complexe taken' },
-  { value: 'mobile-predictable-small', label: 'Mobiele medewerker — voorspelbaar patroon, weinig taken' },
-  { value: 'mobile-predictable-large', label: 'Mobiele medewerker — voorspelbaar patroon, veel/complexe taken' },
-  { value: 'mobile-unpredictable',   label: 'Mobiele medewerker — onvoorspelbaar werkpatroon' },
-  { value: 'unspecified',            label: 'Niet nader bepaald' },
+  { value: 'stationary-simple',          label: 'Vaste werkplek — eenvoudige of enkelvoudige taak' },
+  { value: 'stationary-complex',         label: 'Vaste werkplek — meerdere of complexe taken' },
+  { value: 'mobile-predictable-small',   label: 'Mobiele medewerker — voorspelbaar patroon, weinig taken' },
+  { value: 'mobile-predictable-large',   label: 'Mobiele medewerker — voorspelbaar patroon, veel/complexe taken' },
+  { value: 'mobile-unpredictable',       label: 'Mobiele medewerker — onvoorspelbaar werkpatroon' },
+  { value: 'multiple-tasks-unspecified', label: 'Meerdere taken — taaklengtes onbekend of variabel' },
+  { value: 'no-tasks-assigned',          label: 'Geen vaste taken toegewezen' },
+  { value: 'unspecified',                label: 'Niet nader bepaald' },
 ];
 
 const STRATEGY_LABELS: Record<SoundStrategy, string> = {
@@ -39,6 +38,15 @@ const STRATEGY_LABELS: Record<SoundStrategy, string> = {
   'job-based':  'Strategie 2 — Functiegericht (§10)',
   'full-day':   'Strategie 3 — Volledigedagmeting (§11)',
 };
+
+const GROUPING_CRITERIA_OPTIONS = [
+  { value: '',                   label: '— selecteer criterium —' },
+  { value: 'job-title',          label: 'Functietitel / beroepsprofiel' },
+  { value: 'work-area',          label: 'Werkzone / afdeling' },
+  { value: 'production-process', label: 'Productieproces of activiteit' },
+  { value: 'profession',         label: 'Beroep of vak' },
+  { value: 'other',              label: 'Combinatie / anders' },
+];
 
 function HEGForm({
   heg,
@@ -63,6 +71,7 @@ function HEGForm({
         {form.id && heg.name ? `HEG bewerken: ${heg.name}` : 'Nieuwe HEG toevoegen'}
       </h4>
 
+      {/* Identificatie */}
       <FormGrid>
         <div>
           <FieldLabel>Naam HEG <span className="text-red-500">*</span></FieldLabel>
@@ -83,6 +92,18 @@ function HEGForm({
             placeholder="Bijv. Constructielasser MIG/MAG"
             className="w-full"
           />
+        </div>
+        <div>
+          <FieldLabel>Indelingscriterium HEG</FieldLabel>
+          <Select
+            value={form.groupingCriteria ?? ''}
+            onChange={(e) => upd({ groupingCriteria: e.target.value || undefined })}
+            className="w-full"
+          >
+            {GROUPING_CRITERIA_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </Select>
         </div>
         <div>
           <FieldLabel>Aantal medewerkers in de HEG</FieldLabel>
@@ -111,10 +132,9 @@ function HEGForm({
         </div>
       </FormGrid>
 
+      {/* Werkpatroon & strategie */}
       <div>
-        <FieldLabel>
-          Werkpatroon (<SectionRef id="§8">§8</SectionRef>, <SectionRef id="Bijlage B">Bijlage B</SectionRef> Tabel B.1)
-        </FieldLabel>
+        <FieldLabel>Werkpatroon</FieldLabel>
         <Select
           value={form.workPattern ?? 'unspecified'}
           onChange={(e) => upd({ workPattern: e.target.value as WorkPattern })}
@@ -148,7 +168,53 @@ function HEGForm({
         </div>
       </div>
 
+      {/* Werkanalyse-inhoud */}
+      <div>
+        <FieldLabel>Beschrijving werkzaamheden</FieldLabel>
+        <Textarea
+          rows={2}
+          value={form.workDescription ?? ''}
+          onChange={(e) => upd({ workDescription: e.target.value })}
+          placeholder="Beschrijf welke werkzaamheden de medewerkers in deze HEG uitvoeren…"
+          className="w-full"
+        />
+      </div>
+
+      <div>
+        <FieldLabel>Geluidsbronnen</FieldLabel>
+        <Textarea
+          rows={2}
+          value={form.noiseSources ?? ''}
+          onChange={(e) => upd({ noiseSources: e.target.value })}
+          placeholder="Beschrijf de aanwezige geluidsbronnen en blootstellingssituatie…"
+          className="w-full"
+        />
+      </div>
+
+      <div>
+        <FieldLabel>Beschrijving nominale werkdag</FieldLabel>
+        <Textarea
+          rows={3}
+          value={form.nominalDayDescription ?? ''}
+          onChange={(e) => upd({ nominalDayDescription: e.target.value })}
+          placeholder="Beschrijf de typische werkdag: welke taken, in welke volgorde, hoe lang (inclusief pauzes en niet-blootgestelde periodes)…"
+          className="w-full"
+        />
+      </div>
+
+      {/* Piekgebeurtenissen & audiologie */}
       <div className="flex flex-wrap gap-4">
+        <label className="flex cursor-pointer items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={form.hasPeakEvents ?? false}
+            onChange={(e) => upd({ hasPeakEvents: e.target.checked })}
+            className="accent-orange-500"
+          />
+          <span className="text-zinc-700 dark:text-zinc-300">
+            Significante piekgebeurtenissen aanwezig
+          </span>
+        </label>
         <label className="flex cursor-pointer items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -157,21 +223,23 @@ function HEGForm({
             className="accent-orange-500"
           />
           <span className="text-zinc-700 dark:text-zinc-300">
-            Tinnitus of gehoorklachten gemeld door werknemers <span className="text-zinc-400">(Richtlijn SHT 2020)</span>
+            Tinnitus of gehoorklachten gemeld <span className="text-zinc-400">(Richtlijn SHT 2020)</span>
           </span>
         </label>
       </div>
 
-      <div>
-        <FieldLabel>Geluidsbronnen & werkomschrijving</FieldLabel>
-        <Textarea
-          rows={2}
-          value={form.noiseSources ?? ''}
-          onChange={(e) => upd({ noiseSources: e.target.value })}
-          placeholder="Beschrijf de aanwezige geluidsbronnen en werksituatie…"
-          className="w-full"
-        />
-      </div>
+      {form.hasPeakEvents && (
+        <div>
+          <FieldLabel>Beschrijving piekgebeurtenissen</FieldLabel>
+          <Textarea
+            rows={2}
+            value={form.peakEventsDescription ?? ''}
+            onChange={(e) => upd({ peakEventsDescription: e.target.value })}
+            placeholder="Bijv. pneumatisch slaan, schoten, klapgeluiden — aard, duur en dagelijkse frequentie…"
+            className="w-full"
+          />
+        </div>
+      )}
 
       <div className="flex gap-2">
         <Button
@@ -221,8 +289,6 @@ export default function SoundStep2_WorkAnalysis({ investigation, onUpdate, onGoT
 
   const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
   const desc = contentOverrides?.[`${STEP_KEY}.desc`];
-  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
-  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
 
   const newId = '__new__';
   const isAddingNew = editingId === newId;
@@ -244,29 +310,12 @@ export default function SoundStep2_WorkAnalysis({ investigation, onUpdate, onGoT
                 <MarkdownContent>{desc}</MarkdownContent>
               </p>
             : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-                Stel Homogene Blootstellingsgroepen (HBG / <Abbr id="HEG">HEG</Abbr>) vast. Een <Abbr id="HEG">HEG</Abbr> omvat medewerkers die
-                dezelfde soort werk uitvoeren en daardoor vergelijkbare geluidsblootstelling hebben (<SectionRef id="§7.2">§7.2</SectionRef>).
+                Stel <Abbr id="HEG">Homogene Blootstellingsgroepen (HEG)</Abbr> vast. Een <Abbr id="HEG">HEG</Abbr> omvat
+                medewerkers die dezelfde soort werk uitvoeren en daardoor vergelijkbare geluidsblootstelling hebben.
               </p>
           }
         </InlineEdit>
       </div>
-
-      <InfoBox title={
-        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
-          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
-          {ib0Title}
-        </InlineEdit>
-      }>
-        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
-          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
-          {ib0Content
-            ? <MarkdownContent>{ib0Content}</MarkdownContent>
-            : <><SectionRef id="§7.2">§7.2</SectionRef>: Definieer voor elke <Abbr id="HEG">HEG</Abbr>: de samenstelling, het werkpatroon en de
-              nominale werkdag (welke taken, hoe lang). De effectieve werkdag <Formula math="T_e" /> is de som van
-              alle taaklengtes (<SectionRef id="§9.2">§9.2</SectionRef> Formule 2). <Formula math="T_0" /> = 8 uur is de referentieduur.</>
-          }
-        </InlineEdit>
-      </InfoBox>
 
       {/* HEG list */}
       <div className="space-y-4">
@@ -286,6 +335,12 @@ export default function SoundStep2_WorkAnalysis({ investigation, onUpdate, onGoT
                       <span>{heg.workerCount} medewerker{heg.workerCount !== 1 ? 's' : ''}</span>
                       <span>·</span>
                       <span><Formula math="T_e" /> = {heg.effectiveDayHours} uur</span>
+                      {heg.hasPeakEvents && (
+                        <>
+                          <span>·</span>
+                          <Badge variant="amber">⚡ Piekgebeurtenissen</Badge>
+                        </>
+                      )}
                       {heg.tinnitusReported && (
                         <>
                           <span>·</span>
@@ -295,8 +350,11 @@ export default function SoundStep2_WorkAnalysis({ investigation, onUpdate, onGoT
                       <span>·</span>
                       <Badge variant="zinc" shape="square">{STRATEGY_LABELS[heg.strategy]}</Badge>
                     </div>
+                    {heg.workDescription && (
+                      <p className="mt-1.5 text-xs text-zinc-400 line-clamp-2">{heg.workDescription}</p>
+                    )}
                     {heg.noiseSources && (
-                      <p className="mt-1.5 text-xs text-zinc-400">{heg.noiseSources}</p>
+                      <p className="mt-0.5 text-xs text-zinc-400 line-clamp-1">{heg.noiseSources}</p>
                     )}
                   </div>
                   <div className="flex gap-2">

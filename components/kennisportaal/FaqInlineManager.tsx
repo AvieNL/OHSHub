@@ -10,6 +10,7 @@ interface Props {
   items: FaqItem[];
   /** Wordt als theme_slug meegegeven bij nieuwe items; null = Algemeen. */
   themeSlug: string | null;
+  showSearch?: boolean;
 }
 
 const inputCls =
@@ -17,10 +18,11 @@ const inputCls =
 
 const textareaCls = `${inputCls} resize-y`;
 
-export default function FaqInlineManager({ items: initial, themeSlug }: Props) {
+export default function FaqInlineManager({ items: initial, themeSlug, showSearch = false }: Props) {
   const isAdmin = useIsAdmin();
   const [items, setItems] = useState<FaqItem[]>(initial);
   const [open, setOpen] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
 
   // ── Bewerken ──────────────────────────────────────────────────────────────
   const [editId, setEditId] = useState<string | null>(null);
@@ -32,7 +34,7 @@ export default function FaqInlineManager({ items: initial, themeSlug }: Props) {
     setEditId(item.id);
     setEditQ(item.question);
     setEditA(item.answer);
-    setOpen(item.id); // openklappen zodat het formulier zichtbaar is
+    setOpen(item.id);
   }
 
   async function saveEdit() {
@@ -88,8 +90,36 @@ export default function FaqInlineManager({ items: initial, themeSlug }: Props) {
 
   if (items.length === 0 && !isAdmin) return null;
 
+  const q = query.trim().toLowerCase();
+  const visible = showSearch && q
+    ? items.filter(
+        (it) =>
+          it.question.toLowerCase().includes(q) ||
+          it.answer.toLowerCase().includes(q),
+      )
+    : items;
+
   return (
-    <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+    <div>
+      {showSearch && items.length > 0 && (
+        <div className="relative border-b border-zinc-100 px-6 py-3 dark:border-zinc-800">
+          <svg
+            className="absolute left-10 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+          </svg>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Zoek in veelgestelde vragen…"
+            className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 pl-10 pr-3 text-sm text-zinc-800 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-100 dark:focus:ring-orange-900/30"
+          />
+        </div>
+      )}
+
+    <div className="divide-y divide-zinc-100 px-6 dark:divide-zinc-800">
 
       {items.length === 0 && isAdmin && (
         <p className="py-3 text-sm italic text-zinc-400 dark:text-zinc-500">
@@ -97,7 +127,13 @@ export default function FaqInlineManager({ items: initial, themeSlug }: Props) {
         </p>
       )}
 
-      {items.map((item) => (
+      {showSearch && q && visible.length === 0 && (
+        <p className="py-4 text-sm text-zinc-400 dark:text-zinc-500">
+          Geen resultaten voor <span className="font-medium text-zinc-600 dark:text-zinc-300">"{query}"</span>.
+        </p>
+      )}
+
+      {visible.map((item) => (
         <div key={item.id}>
           {/* ── Vraag-rij ── */}
           <div className="flex items-center gap-2 py-4">
@@ -243,6 +279,7 @@ export default function FaqInlineManager({ items: initial, themeSlug }: Props) {
           )}
         </div>
       )}
+    </div>
     </div>
   );
 }

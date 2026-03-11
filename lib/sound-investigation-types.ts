@@ -20,6 +20,8 @@ export type WorkPattern =
   | 'mobile-predictable-small'
   | 'mobile-predictable-large'
   | 'mobile-unpredictable'
+  | 'multiple-tasks-unspecified'   // Tabel B.1 rij 6: meerdere taken, taaklengtes onbekend
+  | 'no-tasks-assigned'            // Tabel B.1 rij 7: geen taken toegewezen
   | 'unspecified';
 
 // ─── Personnel (§15.a.1, §15.a.3, §15.a.4) ───────────────────────────────────
@@ -44,7 +46,18 @@ export interface SoundHEG {
   effectiveDayHours: number;
   strategy: SoundStrategy;
   workPattern?: WorkPattern;
-  noiseSources?: string; // observed noise sources
+  /** §7.1.a / §15.b.1 — description of work activities */
+  workDescription?: string;
+  /** §7.3.b — main noise sources and noisy work areas */
+  noiseSources?: string;
+  /** §7.2 — basis for HEG grouping (job-title | work-area | production-process | profession | other) */
+  groupingCriteria?: string;
+  /** §7.3 / §15.b.3 — description of the nominal day (tasks, order, duration) */
+  nominalDayDescription?: string;
+  /** §7.1.e / §7.3.c — significant noise peak events present */
+  hasPeakEvents?: boolean;
+  /** Description of significant peak events when hasPeakEvents is true */
+  peakEventsDescription?: string;
   /** Method used to determine APF (EN 458:2025) */
   ppeMethod?: 'snr' | 'hml' | 'octave' | 'manual';
   /** Method SNR (EN 458:2025 §A.5) — SNR value from product data sheet */
@@ -140,6 +153,8 @@ export interface SoundTask {
   notes?: string;
   /** References to SoundEquipment.id used during this task */
   equipmentIds?: string[];
+  /** §9.3.3: cyclic/impulsive noise — measurement must cover ≥3 full cycles, ≥3 min */
+  isCyclic?: boolean;
 }
 
 // ─── Equipment — Arbeidsmiddelen (Arbobesluit art. 7.4a / Machinerichtlijn 2006/42/EG) ───────
@@ -186,9 +201,18 @@ export interface SoundInstrument {
   manufacturer?: string;
   model?: string;
   serialNumber?: string;
-  /** Date of last laboratory calibration */
+  /** §15.c.3 / §5.3 — date of last periodic laboratory verification */
   lastLabCalibration?: string;
+  /** §15.c.3 — certificate number or reference of the verification */
   calibrationRef?: string;
+  /** §5.3 / §15.c.3 — name of the laboratory that performed the verification */
+  calibrationLabName?: string;
+  /** §5.3 / §15.c.3 — outcome/result of the periodic verification */
+  calibrationOutcome?: string;
+  /** §5.2 — type/model of the sound calibrator (IEC 60942) */
+  calibratorType?: string;
+  /** §5.2 — serial number of the sound calibrator */
+  calibratorSerialNumber?: string;
   windscreen?: boolean;
   extensionCable?: boolean;
   notes?: string;
@@ -229,6 +253,16 @@ export interface SoundMeasurement {
   octaveBands?: number[];
   /** M-1: Meting uitgevoerd onder representatieve omstandigheden (§15.d.4 NEN-EN-ISO 9612:2025) */
   representativeConditions?: boolean;
+}
+
+// ─── Compliance checks per HEG (computed alongside statistics) ───────────────
+
+export interface SoundComplianceCheck {
+  id: string;
+  status: 'pass' | 'warning' | 'fail';
+  label: string;
+  detail: string;
+  ref?: string;
 }
 
 // ─── Statistics per HEG (computed in Step 7) ─────────────────────────────────
@@ -300,6 +334,8 @@ export interface SoundStatistics {
   taskWarnings?: string[];
   /** K-5: Taken waarvan de spreiding de grens overschrijdt (Bijlage E NEN-EN-ISO 9612:2025) */
   spreadWarnings?: { taskId: string; taskName: string; spread: number; limit: number }[];
+  /** Normconformiteitschecks — altijd berekend, worden getoond in stap 9 én stap 10 */
+  complianceChecks?: SoundComplianceCheck[];
   /** Method used to compute combined PPE attenuation */
   ppeCombinedMethod?: 'single' | 'double-snr' | 'double-hml' | 'double-octave';
   /** True if the 35 dB cap was applied to combined dual-PPE attenuation */
@@ -335,6 +371,8 @@ export interface SoundInvestigationScope extends CommonScopeFields {
   purpose?: string;
   investigationPeriod?: string;
   notes?: string;
+  /** §15.a.6 deviations from or additions to NEN-EN-ISO 9612:2025 */
+  normNotes?: string;
 }
 
 // ─── Report (§15) ─────────────────────────────────────────────────────────────
@@ -368,9 +406,9 @@ export interface SoundPreSurvey {
   respondentName?: string;
   /** ISO date when the pre-survey was completed */
   completedAt?: string;
-  /** Keyed by question id: Q1–Q19 */
+  /** Keyed by question id: Q1–Q17 */
   responses: Record<string, PreSurveyResponse>;
-  /** Q11 — estimated daily exposure duration */
+  /** Q6 — estimated daily exposure duration */
   exposureDuration?: ExposureDuration;
   /** Manual override of the auto-calculated recommendation */
   recommendationOverride?: SurveyRecommendation;

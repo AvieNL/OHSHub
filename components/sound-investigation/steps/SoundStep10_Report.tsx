@@ -21,8 +21,8 @@ interface Props {
 
 const STEP_KEY = 'step.11';
 const NS = 'investigation.sound';
-const FALLBACK_TITLE = 'Stap 12 — Rapport (§15 NEN-EN-ISO 9612:2025)';
-const FALLBACK_DESC = 'Vul de conclusie en conformiteitsverklaring in. Het volledige rapport inclusief alle §15-vereiste gegevens kan worden geëxporteerd als PDF, CSV of JSON.';
+const FALLBACK_TITLE = 'Stap 12 — Rapport';
+const FALLBACK_DESC = 'Vul de conclusie en conformiteitsverklaring in. Het volledige rapport kan worden geëxporteerd als PDF, CSV of markdown.';
 
 function fmt1(n: number): string {
   return isFinite(n) ? n.toFixed(1) : '—';
@@ -154,6 +154,98 @@ function renderComplianceHtml(text: string): string {
     .replace(/\n/g, '<br>');
 }
 
+// ─── Auto-generated conclusion ────────────────────────────────────────────────
+
+function generateConclusion(inv: SoundInvestigation): string {
+  const { hegs, statistics, measures, scope } = inv;
+  const fmt1 = (n: number) => isFinite(n) ? n.toFixed(1) : '—';
+
+  const contextParts = [scope.companyName, scope.workplaceName].filter(Boolean);
+  const contextLine  = contextParts.length > 0 ? ` bij ${contextParts.join(', ')}` : '';
+
+  if (hegs.length === 0) {
+    return `Dit geluidonderzoek${contextLine} is opgestart. Er zijn nog geen HEG's gedefinieerd.`;
+  }
+
+  if (statistics.length === 0) {
+    return `Dit geluidonderzoek${contextLine} heeft ${hegs.length} homogene blootstellingsgroep${hegs.length > 1 ? 'en' : ''} (HEG${hegs.length > 1 ? "'s" : ''}) gedefinieerd. Er zijn nog geen berekeningen uitgevoerd (stap 9).`;
+  }
+
+  const missingHegs = hegs.filter((h) => !statistics.find((s) => s.hegId === h.id));
+  const allFails    = statistics.flatMap((s) => (s.complianceChecks ?? []).filter((c) => c.status === 'fail'));
+  const verdictOrder: string[] = ['below-lav', 'lav', 'uav', 'above-elv'];
+  const worstVerdict = statistics.reduce<string>((w, s) => {
+    return verdictOrder.indexOf(s.verdict) > verdictOrder.indexOf(w) ? s.verdict : w;
+  }, 'below-lav');
+
+  const lines: string[] = [];
+
+  // ── Opening ──────────────────────────────────────────────────────────────────
+  const hegCount = hegs.length;
+  lines.push(
+    `Dit geluidonderzoek${contextLine} is uitgevoerd voor ${hegCount} homogene blootstellingsgroep${hegCount > 1 ? 'en' : ''} (HEG${hegCount > 1 ? "'s" : ''}) conform NEN-EN-ISO 9612:2025.`
+  );
+  lines.push('');
+
+  // ── Results per HEG ──────────────────────────────────────────────────────────
+  lines.push('Resultaten per HEG:');
+  for (const stat of statistics) {
+    const heg = hegs.find((h) => h.id === stat.hegId);
+    let line = `• ${heg?.name ?? stat.hegId}: L_EX,8h,95% = ${fmt1(stat.lEx8h_95pct)} dB(A) — ${stat.verdictLabel}`;
+    if (stat.lCpeak !== undefined && isFinite(stat.lCpeak)) {
+      line += `; L_p,Cpeak = ${fmt1(stat.lCpeak)} dB(C) — ${stat.peakVerdictLabel ?? 'piekgeluid beoordeeld'}`;
+    }
+    if (stat.lEx8h_95pct_oor !== undefined && isFinite(stat.lEx8h_95pct_oor)) {
+      const oorLabel = stat.elvPpeCompliant ? 'onder grenswaarde' : '⚠ grenswaarde OVERSCHREDEN';
+      line += `; met PBM: L_EX,8h,oor = ${fmt1(stat.lEx8h_95pct_oor)} dB(A) — ${oorLabel}`;
+    }
+    lines.push(line);
+  }
+  for (const h of missingHegs) {
+    lines.push(`• ${h.name}: niet beoordeeld — onvoldoende meetresultaten`);
+  }
+  lines.push('');
+
+  // ── Overall verdict ───────────────────────────────────────────────────────────
+  if (missingHegs.length > 0) {
+    lines.push(
+      `Niet alle HEG's zijn volledig beoordeeld — voor ${missingHegs.length} HEG${missingHegs.length > 1 ? "'s" : ''} waren onvoldoende meetresultaten beschikbaar. ` +
+      `Aanvullende metingen zijn vereist om een volledig eindoordeel te kunnen geven.`
+    );
+  } else {
+    const verdictText =
+      worstVerdict === 'below-lav'
+        ? "Alle HEG's voldoen — de blootstelling blijft onder de onderste actiewaarde (80 dB(A)). Er gelden geen wettelijke maatregelverplichtingen. De situatie dient bij proceswijzigingen te worden herbeoordeeld."
+        : worstVerdict === 'lav'
+        ? "Ten minste één HEG overschrijdt de onderste actiewaarde (80 dB(A)). Een maatregelenprogramma is vereist (art. 6.8 lid 1) en gehoorbeschermers dienen beschikbaar te worden gesteld (art. 6.8 lid 7)."
+        : worstVerdict === 'uav'
+        ? "Ten minste één HEG overschrijdt de bovenste actiewaarde (85 dB(A)). Technische en/of organisatorische maatregelen dienen te worden getroffen (art. 6.8 lid 3), de werkplek aangewezen (art. 6.8 lid 4) en het dragen van gehoorbescherming is verplicht (art. 6.8 lid 9)."
+        : "Ten minste één HEG overschrijdt de grenswaarde (87 dB(A)) — ook mét gehoorbescherming. Onmiddellijke maatregelen zijn wettelijk verplicht (art. 6.8 lid 11). Werkzaamheden dienen te worden aangepast totdat de blootstelling onder de grenswaarde is teruggebracht.";
+    lines.push(verdictText);
+  }
+
+  // ── Norm deviations ───────────────────────────────────────────────────────────
+  if (allFails.length > 0) {
+    lines.push('');
+    lines.push(
+      `Normafwijkingen vastgesteld (NEN-EN-ISO 9612:2025): ${allFails.map((c) => c.label).join('; ')}. ` +
+      `De resultaten dienen met voorbehoud te worden geïnterpreteerd; aanvullende of herhaalde metingen worden aanbevolen.`
+    );
+  }
+
+  // ── Open measures ─────────────────────────────────────────────────────────────
+  const openMeasures = measures.filter((m) => m.status !== 'completed');
+  if (openMeasures.length > 0) {
+    lines.push('');
+    lines.push(
+      `Er zijn ${openMeasures.length} openstaande beheersmaatregel${openMeasures.length > 1 ? 'en' : ''} vastgelegd (zie stap 11). ` +
+      `Herbeoordeling is vereist na implementatie.`
+    );
+  }
+
+  return lines.join('\n');
+}
+
 // ─── Auto-generated compliance statement (§15.e.7) ────────────────────────────
 
 const STRATEGY_LABEL_SHORT: Record<string, string> = {
@@ -180,13 +272,23 @@ function generateComplianceStatement(inv: SoundInvestigation): string {
       }).join('; ')
     : 'meetapparatuur conform NEN-EN-ISO 9612:2025 §5';
 
+  // HEGs without statistics (insufficient measurement data)
+  const missingHegs = hegs.filter((h) => !statistics.find((s) => s.hegId === h.id));
+
+  // Collect all compliance check failures and warnings across all assessed HEGs
+  const allFails    = statistics.flatMap((s) => (s.complianceChecks ?? []).filter((c) => c.status === 'fail'));
+  const allWarnings = statistics.flatMap((s) => (s.complianceChecks ?? []).filter((c) => c.status === 'warning'));
+
+  const isFullyConform = missingHegs.length === 0 && allFails.length === 0;
+
   if (statistics.length === 0) {
     return `Dit onderzoek${company}${location} is uitgevoerd conform NEN-EN-ISO 9612:2025 (Third edition). ` +
-           `De meetonzekerheid is bepaald conform Bijlage C (k = 1,65; eenzijdig 95%-betrouwbaarheidsinterval). ` +
+           `De meetonzekerheid zal worden bepaald conform Bijlage C (k = 1,65; eenzijdig 95%-betrouwbaarheidsinterval). ` +
            `Meetapparatuur: ${instLine}. ` +
            `Resultaten worden vastgelegd zodra de berekeningen zijn uitgevoerd (stap 9).`;
   }
 
+  // Per-HEG result lines — include inline norm-deviation notes
   const resultLines = statistics.map((stat) => {
     const heg = hegs.find((h) => h.id === stat.hegId);
     const stratLabel = STRATEGY_LABEL_SHORT[stat.strategy] ?? stat.strategy;
@@ -195,29 +297,57 @@ function generateComplianceStatement(inv: SoundInvestigation): string {
       stat.verdict === 'lav'       ? 'onderste actiewaarde (80 dB(A)) overschreden' :
       stat.verdict === 'uav'       ? 'bovenste actiewaarde (85 dB(A)) overschreden' :
                                      'GRENSWAARDE (87 dB(A)) OVERSCHREDEN';
+    const hegFails = (stat.complianceChecks ?? []).filter((c) => c.status === 'fail');
+    const failNote = hegFails.length > 0
+      ? `\n  ⚠ Normafwijking: ${hegFails.map((c) => c.label).join('; ')}`
+      : '';
     return `• ${heg?.name ?? stat.hegId}: L_EX,8h = ${fmt1(stat.lEx8h)} dB(A), U = ${fmt1(stat.U)} dB, ` +
-           `L_EX,8h,95% = ${fmt1(stat.lEx8h_95pct)} dB(A) [${stratLabel}, n = ${stat.n}] — ${verdict}`;
+           `L_EX,8h,95% = ${fmt1(stat.lEx8h_95pct)} dB(A) [${stratLabel}, n = ${stat.n}] — ${verdict}${failNote}`;
   }).join('\n');
 
+  // Lines for HEGs that could not be assessed
+  const missingLines = missingHegs.length > 0
+    ? '\n' + missingHegs.map((h) => `• ${h.name}: niet beoordeeld — onvoldoende meetresultaten`).join('\n')
+    : '';
+
+  // Overall verdict
   const worstVerdict = statistics.reduce<string>((w, s) => {
     const order = ['below-lav', 'lav', 'uav', 'above-elv'];
     return order.indexOf(s.verdict) > order.indexOf(w) ? s.verdict : w;
   }, 'below-lav');
 
-  const overallVerdict =
-    worstVerdict === 'below-lav' ? 'De blootstelling van alle HEGs blijft onder de actiewaarden.' :
-    worstVerdict === 'lav'       ? 'Ten minste één HEG overschrijdt de onderste actiewaarde; het maatregelenprogramma (art. 6.6 lid 1a) is van toepassing.' :
-    worstVerdict === 'uav'       ? 'Ten minste één HEG overschrijdt de bovenste actiewaarde; directe uitvoering van het maatregelenprogramma en verplicht gebruik van gehoorbescherming (art. 6.6 lid 1b) zijn vereist.' :
-    'Ten minste één HEG overschrijdt de grenswaarde; onmiddellijke maatregelen zijn wettelijk verplicht (art. 6.6 lid 2).';
+  const overallVerdict = missingHegs.length > 0
+    ? `Niet alle HEG's konden worden beoordeeld (${missingHegs.length} HEG${missingHegs.length > 1 ? "'s" : ''} ` +
+      `onvoldoende gemeten). Een eindoordeel over de volledige blootstelling kan niet worden gegeven.`
+    : worstVerdict === 'below-lav' ? 'De blootstelling van alle HEGs blijft onder de actiewaarden.'
+    : worstVerdict === 'lav'       ? 'Ten minste één HEG overschrijdt de onderste actiewaarde; het maatregelenprogramma (art. 6.8 lid 1) is van toepassing.'
+    : worstVerdict === 'uav'       ? 'Ten minste één HEG overschrijdt de bovenste actiewaarde; directe uitvoering van het maatregelenprogramma en verplicht gebruik van gehoorbescherming (art. 6.8 lid 9) zijn vereist.'
+    : 'Ten minste één HEG overschrijdt de grenswaarde; onmiddellijke maatregelen zijn wettelijk verplicht (art. 6.8 lid 11).';
 
-  return `Dit onderzoek${company}${location} is uitgevoerd conform NEN-EN-ISO 9612:2025 (Third edition) — ` +
+  // Deviation section — only when not fully conform
+  const deviationSection = !isFullyConform
+    ? '\n\nVastgestelde normafwijkingen (NEN-EN-ISO 9612:2025):\n' +
+      [
+        ...missingHegs.map((h) => `• ${h.name}: meetdata onvoldoende voor beoordeling conform de norm`),
+        ...allFails.map((c) => `• ${c.label}: ${c.detail}${c.ref ? ` (${c.ref})` : ''}`),
+      ].join('\n') +
+      (allWarnings.length > 0
+        ? '\n\nAandachtspunten:\n' + allWarnings.map((c) => `• ${c.label}: ${c.detail}${c.ref ? ` (${c.ref})` : ''}`).join('\n')
+        : '')
+    : '';
+
+  const conformLabel = isFullyConform
+    ? 'conform NEN-EN-ISO 9612:2025 (Third edition)'
+    : 'uitgevoerd volgens NEN-EN-ISO 9612:2025 (Third edition), met afwijkingen van de norm (zie hieronder)';
+
+  return `Dit onderzoek${company}${location} is ${conformLabel} — ` +
          `Akoestiek — Bepaling van de blootstelling aan lawaai op de arbeidsplaats. ` +
          `Datum rapport: ${today}.\n\n` +
          `Meetapparatuur: ${instLine}.\n\n` +
          `De meetonzekerheid is bepaald conform Bijlage C van NEN-EN-ISO 9612:2025 ` +
          `met uitbreidingsfactor k = 1,65 (eenzijdig 95%-betrouwbaarheidsinterval).\n\n` +
-         `Resultaten per homogene blootstellingsgroep (HEG):\n${resultLines}\n\n` +
-         `${overallVerdict}`;
+         `Resultaten per homogene blootstellingsgroep (HEG):\n${resultLines}${missingLines}\n\n` +
+         `${overallVerdict}${deviationSection}`;
 }
 
 // ─── Markdown export ───────────────────────────────────────────────────────────
@@ -242,7 +372,7 @@ function buildReportMarkdown(inv: SoundInvestigation): string {
   const lines: string[] = [];
 
   lines.push(`# ${inv.name}`);
-  lines.push(`> NEN-EN-ISO 9612:2025 · Arbobesluit art. 6.5–6.11 · OHSHub · ${today}`);
+  lines.push(`> NEN-EN-ISO 9612:2025 · Arbobesluit art. 6.7–6.11 · OHSHub · ${today}`);
   lines.push('');
 
   // ── 1. Vooronderzoek ─────────────────────────────────────────────────────────
@@ -577,12 +707,12 @@ export default function SoundStep10_Report({ investigation, onUpdate, contentOve
     { label: 'Meetstrategie gedocumenteerd',     ok: hegs.every((h) => h.strategy) },
     { label: 'Meetapparatuur geregistreerd',     ok: investigation.instruments.length > 0 },
     { label: 'Meetwaarden ingevoerd',            ok: investigation.measurements.filter((m) => !m.excluded).length >= 3 },
-    { label: 'Berekeningen uitgevoerd',          ok: statistics.length > 0 },
+    { label: 'Berekeningen uitgevoerd voor alle HEG\'s', ok: hegs.length > 0 && statistics.length === hegs.length },
     { label: 'Beheersmaatregelen vastgelegd',    ok: measures.length > 0 },
     { label: 'Conclusie ingevuld',               ok: !!report.conclusion?.trim() },
     { label: 'Conformiteitsverklaring ingevuld', ok: !!report.complianceStatement?.trim() },
-    { label: 'Kwalificatie onderzoeker vastgelegd (art. 14 Arbowet)', ok: investigation.investigators.some((p) => !!p.qualification) },
-    { label: 'Audiometrie gedocumenteerd voor LAV+ HEG\'s (art. 6.10 Arbobesluit)', ok: hegs.every((h) => {
+    { label: 'Kwalificatie onderzoeker vastgelegd', ok: investigation.investigators.some((p) => !!p.qualification) },
+    { label: 'Audiometrie gedocumenteerd voor LAV+ HEG\'s', ok: hegs.every((h) => {
         const stat = statistics.find((s) => s.hegId === h.id);
         if (!stat || stat.verdict === 'below-lav') return true;
         return !!h.audiometryStatus;
@@ -605,12 +735,12 @@ export default function SoundStep10_Report({ investigation, onUpdate, contentOve
         <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.desc`}
           initialValue={desc ?? FALLBACK_DESC} fallback={FALLBACK_DESC} multiline markdown>
           {desc
-            ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+            ? <div className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
                 <MarkdownContent>{desc}</MarkdownContent>
-              </p>
+              </div>
             : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
                 Vul de conclusie en conformiteitsverklaring in. Het volledige rapport inclusief
-                alle <SectionRef id="§15">§15</SectionRef>-vereiste gegevens kan worden geëxporteerd als PDF, CSV of JSON.
+                alle <SectionRef id="§15">§15</SectionRef>-vereiste gegevens kan worden geëxporteerd als PDF, CSV of markdown.
               </p>
           }
         </InlineEdit>
@@ -620,7 +750,7 @@ export default function SoundStep10_Report({ investigation, onUpdate, contentOve
       <Card>
         <div className="mb-3 flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-            Volledigheidscheck (<SectionRef id="§15">§15</SectionRef> vereisten)
+            Volledigheidscheck
           </p>
           <span className="text-xs font-semibold text-zinc-500">{completionPct}%</span>
         </div>
@@ -687,18 +817,42 @@ export default function SoundStep10_Report({ investigation, onUpdate, contentOve
       <div className="space-y-4">
         <SectionTitle>Conclusie & conformiteit</SectionTitle>
         <div>
-          <FieldLabel>Conclusie (<SectionRef id="§15.e.6">§15.e.6</SectionRef>)</FieldLabel>
+          <div className="mb-1 flex items-center justify-between gap-3">
+            <FieldLabel>Conclusie</FieldLabel>
+            <Button
+              type="button"
+              variant="secondary"
+              size="xs"
+              onClick={() => upd({ conclusion: generateConclusion(investigation) })}
+              className="shrink-0"
+            >
+              Genereer op basis van onderzoek
+            </Button>
+          </div>
           <Textarea
             rows={5}
             value={report.conclusion ?? ''}
             onChange={(e) => upd({ conclusion: e.target.value })}
-            placeholder="Samenvatting van de bevindingen en de beoordeling van de geluidblootstelling…"
+            placeholder="Klik 'Genereer op basis van onderzoek' voor een automatisch gegenereerde conclusie, of typ hier een eigen samenvatting."
             className="w-full"
           />
         </div>
         <div>
+          {(() => {
+            const missingCount = hegs.filter((h) => !statistics.find((s) => s.hegId === h.id)).length;
+            const failCount    = statistics.flatMap((s) => (s.complianceChecks ?? []).filter((c) => c.status === 'fail')).length;
+            if (missingCount === 0 && failCount === 0) return null;
+            const parts: string[] = [];
+            if (missingCount > 0) parts.push(`${missingCount} HEG${missingCount > 1 ? "'s" : ''} onvoldoende gemeten`);
+            if (failCount > 0) parts.push(`${failCount} normafwijking${failCount > 1 ? 'en' : ''} (stap 9)`);
+            return (
+              <Alert variant="warning" size="sm" className="mb-3">
+                <strong>Let op:</strong> {parts.join(' · ')}. De gegenereerde conformiteitsverklaring vermeldt deze afwijkingen expliciet.
+              </Alert>
+            );
+          })()}
           <div className="mb-1 flex items-center justify-between gap-3">
-            <FieldLabel>Conformiteitsverklaring (<SectionRef id="§15.e.7">§15.e.7</SectionRef>)</FieldLabel>
+            <FieldLabel>Conformiteitsverklaring</FieldLabel>
             <Button
               type="button"
               variant="secondary"
@@ -774,7 +928,7 @@ export default function SoundStep10_Report({ investigation, onUpdate, contentOve
 
         <div>
           <p className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Herbeoordeling ook vereist bij (<SectionRef id="§9.7">§9.7</SectionRef> / <SectionRef id="§10.5">§10.5</SectionRef> / <SectionRef id="§11.5">§11.5</SectionRef>)
+            Herbeoordeling ook vereist bij
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
             {REVIEW_TRIGGER_OPTIONS.map((t) => (
@@ -829,23 +983,6 @@ export default function SoundStep10_Report({ investigation, onUpdate, contentOve
             leftIcon={<Icon name="arrow-down-tray" size="md" />}
           >
             Excel / CSV
-          </Button>
-
-          <Button
-            onClick={() => {
-              const blob = new Blob([JSON.stringify([investigation], null, 2)], { type: 'application/json' });
-              const url  = URL.createObjectURL(blob);
-              const a    = document.createElement('a');
-              a.href     = url;
-              const slug = investigation.name.replace(/\s+/g, '-').toLowerCase().slice(0, 40);
-              a.download = `ohshub-geluid-${slug}-${new Date().toISOString().slice(0, 10)}.json`;
-              a.click();
-              URL.revokeObjectURL(url);
-            }}
-            variant="secondary"
-            leftIcon={<Icon name="arrow-down-tray" size="md" />}
-          >
-            Opslaan als bestand
           </Button>
 
           <Button

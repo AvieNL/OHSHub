@@ -4,8 +4,7 @@ import type { SoundInvestigation, SoundPerson } from '@/lib/sound-investigation-
 import type { BasePerson, CommonScopeFields } from '@/lib/shared-investigation-types';
 import { newSoundId } from '@/lib/sound-investigation-storage';
 import { Abbr } from '@/components/Abbr';
-import { SectionRef } from '@/components/SectionRef';
-import { InfoBox } from '@/components/InfoBox';
+import { FieldLabel, Textarea } from '@/components/ui';
 import InlineStepHeader from '@/components/InlineStepHeader';
 import InlineEdit from '@/components/InlineEdit';
 import MarkdownContent from '@/components/MarkdownContent';
@@ -30,14 +29,13 @@ const QUALIFICATION_OPTIONS = [
 const STEP_KEY = 'step.1';
 const NS = 'investigation.sound';
 const FALLBACK_TITLE = 'Stap 2 — Opdracht & kaders';
-const FALLBACK_DESC = 'Registreer de opdrachtgever, uitvoerder, meetlocatie en doel van het onderzoek conform NEN-EN-ISO 9612:2025 §15.a.';
-const FALLBACK_IB0_TITLE = 'Norm — NEN-EN-ISO 9612:2025';
+const FALLBACK_DESC = 'Registreer de opdrachtgever, uitvoerder, meetlocatie en doel van het onderzoek conform NEN-EN-ISO 9612:2025.';
 
 export default function SoundStep1_Scope({ investigation, onUpdate, contentOverrides }: Props) {
   const { investigators, clients, scope } = investigation;
   const respondents = investigation.respondents ?? [];
 
-  function updateScope(patch: Partial<CommonScopeFields>) {
+  function updateScope(patch: Partial<CommonScopeFields & { normNotes?: string }>) {
     onUpdate({ scope: { ...scope, ...patch } });
   }
 
@@ -67,8 +65,6 @@ export default function SoundStep1_Scope({ investigation, onUpdate, contentOverr
 
   const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
   const desc = contentOverrides?.[`${STEP_KEY}.desc`];
-  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
-  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
 
   return (
     <div className="space-y-8">
@@ -82,31 +78,15 @@ export default function SoundStep1_Scope({ investigation, onUpdate, contentOverr
               </p>
             : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
                 Registreer de opdrachtgever, uitvoerder, meetlocatie en doel van het onderzoek conform{' '}
-                <Abbr id="NEN9612">NEN-EN-ISO 9612</Abbr>:2025 <SectionRef id="§15.a">§15.a</SectionRef>.
+                <Abbr id="NEN9612">NEN-EN-ISO 9612</Abbr>:2025.
               </p>
           }
         </InlineEdit>
       </div>
 
-      <InfoBox title={
-        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
-          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
-          {ib0Title}
-        </InlineEdit>
-      }>
-        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
-          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
-          {ib0Content
-            ? <MarkdownContent>{ib0Content}</MarkdownContent>
-            : <><strong>Norm:</strong> <Abbr id="NEN9612">NEN-EN-ISO 9612</Abbr>:2025 — Acoustics — Determination of occupational
-              noise exposure — Engineering method (Third edition, supersedes ISO 9612:2009)</>
-          }
-        </InlineEdit>
-      </InfoBox>
-
       {/* Uitvoerders */}
       <PersonSection
-        title={<>Uitvoerder(s) van het onderzoek (<SectionRef id="§15.a.4">§15.a.4</SectionRef>)</>}
+        title="Uitvoerder(s) van het onderzoek"
         persons={investigators as BasePerson[]}
         onAdd={() => onUpdate({ investigators: [...investigators, { id: newSoundId() }] })}
         onUpdate={updateInvestigators}
@@ -118,7 +98,7 @@ export default function SoundStep1_Scope({ investigation, onUpdate, contentOverr
 
       {/* Opdrachtgevers */}
       <PersonSection
-        title={<>Opdrachtgever / klant (<SectionRef id="§15.a.1">§15.a.1</SectionRef>)</>}
+        title="Opdrachtgever / klant"
         persons={clients as BasePerson[]}
         onAdd={() => onUpdate({ clients: [...clients, { id: newSoundId() }] })}
         onUpdate={updateClients}
@@ -128,7 +108,7 @@ export default function SoundStep1_Scope({ investigation, onUpdate, contentOverr
 
       {/* Respondenten */}
       <PersonSection
-        title={<>Respondenten / betrokken medewerkers (<SectionRef id="§15.a.3">§15.a.3</SectionRef>)</>}
+        title="Respondenten / betrokken medewerkers"
         description="Medewerkers die zijn geraadpleegd of waarvan de blootstelling is gemeten. Anonimisering mogelijk."
         persons={respondents as BasePerson[]}
         onAdd={() => onUpdate({ respondents: [...respondents, { id: newSoundId() }] })}
@@ -145,6 +125,34 @@ export default function SoundStep1_Scope({ investigation, onUpdate, contentOverr
           Onderzoeksgegevens
         </h3>
         <ScopeFields scope={scope} onChange={updateScope} />
+      </section>
+
+      {/* Toegepaste norm (§15.a.6) */}
+      <section className="space-y-4">
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+          Toegepaste norm
+        </h3>
+        <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900/50">
+          <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
+            NEN-EN-ISO 9612:2025
+          </p>
+          <p className="mt-0.5 text-sm text-zinc-600 dark:text-zinc-400">
+            Acoustics — Determination of occupational noise exposure — Engineering method
+          </p>
+          <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+            Third edition · Supersedes ISO 9612:2009
+          </p>
+        </div>
+        <div>
+          <FieldLabel>Afwijkingen / aanvullende normen</FieldLabel>
+          <Textarea
+            rows={2}
+            value={scope.normNotes ?? ''}
+            onChange={(e) => updateScope({ normNotes: e.target.value })}
+            placeholder="Eventuele afwijkingen van de norm of aanvullende normen…"
+            className="w-full"
+          />
+        </div>
       </section>
     </div>
   );

@@ -3,8 +3,6 @@
 import type { SoundInvestigation, SoundHEG, SoundStrategy, WorkPattern } from '@/lib/sound-investigation-types';
 import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
-import { SectionRef } from '@/components/SectionRef';
-import { InfoBox } from '@/components/InfoBox';
 import { Alert, Badge, Card, FieldLabel, Textarea } from '@/components/ui';
 import InlineStepHeader from '@/components/InlineStepHeader';
 import InlineEdit from '@/components/InlineEdit';
@@ -19,56 +17,75 @@ interface Props {
 
 const STEP_KEY = 'step.3';
 const NS = 'investigation.sound';
-const FALLBACK_TITLE = 'Stap 4 — Meetstrategie (§8 NEN-EN-ISO 9612:2025)';
-const FALLBACK_DESC = 'Kies per HEG de meetstrategie op basis van het werkpatroon. Bijlage B Tabel B.1 geeft richtlijnen. Documenteer de keuze (§15.b.4 — meetstrategie met normatieve verwijzing).';
-const FALLBACK_IB0_TITLE = '§6 — Methodologie';
+const FALLBACK_TITLE = 'Stap 4 — Meetstrategie';
+const FALLBACK_DESC = 'Kies per HEG de meetstrategie op basis van het werkpatroon. Tabel B.1 van NEN-EN-ISO 9612:2025 geeft de aanbevolen en acceptabele strategieën per situatie.';
 
-// Annex B Table B.1 — recommended strategies per work pattern
-const STRATEGY_GUIDANCE: Record<WorkPattern, { rec: SoundStrategy[]; note: string }> = {
+// Annex B Table B.1 — three tiers: preferred (✓ᵃ), acceptable (✓), not recommended (—)
+const STRATEGY_GUIDANCE: Record<WorkPattern, {
+  preferred: SoundStrategy[];
+  acceptable: SoundStrategy[];
+  note: string;
+}> = {
   'stationary-simple': {
-    rec: ['task-based'],
-    note: 'Taakgerichte meting is aanbevolen (√ᵃ). Vaste werkplek met enkelvoudige taak leent zich goed voor strategie 1.',
+    preferred:  ['task-based'],
+    acceptable: [],
+    note: 'Vaste werkplek met enkelvoudige taak — taakgerichte meting is de enige aanbevolen keuze. Functiegerichte en volledige-dagmeting zijn niet aanbevolen.',
   },
   'stationary-complex': {
-    rec: ['task-based', 'job-based', 'full-day'],
-    note: 'Alle drie strategieën zijn toepasbaar. Taakgerichte meting is aanbevolen voor gedetailleerde taakbijdragen.',
+    preferred:  ['task-based'],
+    acceptable: ['job-based', 'full-day'],
+    note: 'Vaste werkplek met meerdere taken — taakgerichte meting is eerste keuze. Functiegerichte en volledige-dagmeting zijn acceptabele alternatieven.',
   },
   'mobile-predictable-small': {
-    rec: ['task-based', 'job-based', 'full-day'],
-    note: 'Taakgerichte meting is aanbevolen voor mobiele medewerkers met voorspelbaar patroon en weinig taken.',
+    preferred:  ['task-based'],
+    acceptable: ['job-based', 'full-day'],
+    note: 'Mobiele medewerker, voorspelbaar patroon, weinig taken — taakgerichte meting is eerste keuze. De andere strategieën zijn acceptabel.',
   },
   'mobile-predictable-large': {
-    rec: ['task-based', 'job-based', 'full-day'],
-    note: 'Bij veel of complexe taken is volledige-dagmeting (strategie 3) ook aanbevolen voor volledigheid.',
+    preferred:  ['full-day'],
+    acceptable: ['task-based', 'job-based'],
+    note: 'Mobiele medewerker, veel of complexe taken — volledige-dagmeting is eerste keuze. Taakgerichte en functiegerichte meting zijn acceptabele alternatieven.',
   },
   'mobile-unpredictable': {
-    rec: ['job-based', 'full-day'],
-    note: 'Bij onvoorspelbaar werkpatroon is taakgerichte meting niet uitvoerbaar. Gebruik strategie 2 (functioneel) of 3 (volledige dag).',
+    preferred:  ['full-day'],
+    acceptable: ['job-based'],
+    note: 'Onvoorspelbaar werkpatroon — volledige-dagmeting is eerste keuze. Functiegerichte meting is een acceptabel alternatief. Taakgerichte meting is niet aanbevolen.',
+  },
+  'multiple-tasks-unspecified': {
+    preferred:  ['job-based'],
+    acceptable: ['full-day'],
+    note: 'Meerdere taken met onbekende taaklengtes — functiegerichte meting is eerste keuze. Volledige-dagmeting is acceptabel. Taakgerichte meting is niet aanbevolen.',
+  },
+  'no-tasks-assigned': {
+    preferred:  ['job-based'],
+    acceptable: ['full-day'],
+    note: 'Geen vaste taken toegewezen — functiegerichte meting is eerste keuze. Volledige-dagmeting is acceptabel. Taakgerichte meting is niet aanbevolen.',
   },
   'unspecified': {
-    rec: ['task-based', 'job-based', 'full-day'],
-    note: 'Bepaal het werkpatroon in stap 3 voor een gerichte strategieadvies (Bijlage B Tabel B.1).',
+    preferred:  [],
+    acceptable: ['task-based', 'job-based', 'full-day'],
+    note: 'Bepaal het werkpatroon in stap 3 voor een gericht strategieadvies.',
   },
 };
 
 const STRATEGY_DESCRIPTIONS: Record<SoundStrategy, { title: string; when: string; pros: string; cons: string }> = {
   'task-based': {
-    title: '§9 — Taakgerichte meting (Strategie 1)',
-    when: 'Aanbevolen wanneer het werk in goed te definiëren taken kan worden opgedeeld met bekende duur.',
-    pros: 'Geeft inzicht in welke taken het meest bijdragen. Minste meetduur bij grote groepen. Eenvoudig te herhalen bij gewijzigde taken.',
-    cons: 'Vereist gedetailleerde werkanalyse. Niet geschikt bij onbekende taakduur of onvoorspelbare werksituaties.',
+    title: 'Strategie 1 — Taakgerichte meting',
+    when:  'Aanbevolen wanneer het werk in goed te definiëren taken kan worden opgedeeld met bekende duur.',
+    pros:  'Geeft inzicht in welke taken het meest bijdragen. Minste meetduur bij grote groepen. Eenvoudig te herhalen bij gewijzigde taken.',
+    cons:  'Vereist gedetailleerde werkanalyse. Niet geschikt bij onbekende taakduur of onvoorspelbare werksituaties.',
   },
   'job-based': {
-    title: '§10 — Functiegericht meten (Strategie 2)',
-    when: 'Geschikt wanneer taken moeilijk te onderscheiden zijn of de taakduur niet goed te bepalen is.',
-    pros: 'Minder tijdrovende werkanalyse. Minder meetduur dan volledigedagmeting bij grote HEGs.',
-    cons: 'Geen taakbijdragen per taak zichtbaar. Grotere onzekerheid dan strategie 1 bij complexe situaties.',
+    title: 'Strategie 2 — Functiegerichte meting',
+    when:  'Geschikt wanneer taken moeilijk te onderscheiden zijn of de taakduur niet goed te bepalen is.',
+    pros:  'Minder tijdrovende werkanalyse. Minder meetduur dan volledige-dagmeting bij grote HEGs.',
+    cons:  'Geen taakbijdragen per taak zichtbaar. Grotere onzekerheid dan strategie 1 bij complexe situaties.',
   },
   'full-day': {
-    title: '§11 — Volledige-dagmeting (Strategie 3)',
-    when: 'Aanbevolen bij onbekend, onvoorspelbaar of complex werkpatroon. Eenvoudigste werkanalyse.',
-    pros: 'Omvat alle bijdragen van nature. Minste voorkennis werkpatroon vereist. Geschikt als verificatie.',
-    cons: 'Hoogste risico op artefacten (mechanische microfoonimpacten). Logging-instrument sterk aanbevolen.',
+    title: 'Strategie 3 — Volledige-dagmeting',
+    when:  'Aanbevolen bij onbekend, onvoorspelbaar of complex werkpatroon. Eenvoudigste werkanalyse.',
+    pros:  'Omvat alle bijdragen van nature. Minste voorkennis werkpatroon vereist. Geschikt als verificatie.',
+    cons:  'Hoogste risico op artefacten (mechanische microfoonimpacten). Logging-instrument sterk aanbevolen.',
   },
 };
 
@@ -91,17 +108,19 @@ function StrategyCard({
       </div>
 
       <div className="p-5 space-y-4">
-        {/* Guidance note */}
-        <InfoBox title="Bijlage B — meetstrategieadvies" variant="blue">
-          <strong>Bijlage B advies:</strong> {guidance.note}
-        </InfoBox>
+        {/* Bijlage B guidance */}
+        <p className="rounded-lg bg-blue-50 px-3 py-2.5 text-xs text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+          {guidance.note}
+        </p>
 
         {/* Strategy selection */}
         <div className="space-y-2">
           {(['task-based', 'job-based', 'full-day'] as SoundStrategy[]).map((s) => {
             const desc = STRATEGY_DESCRIPTIONS[s];
-            const isSelected = heg.strategy === s;
-            const isRec = guidance.rec.includes(s);
+            const isSelected  = heg.strategy === s;
+            const isPreferred = guidance.preferred.includes(s);
+            const isAcceptable = guidance.acceptable.includes(s);
+            const isNotRec    = !isPreferred && !isAcceptable;
             return (
               <button
                 key={s}
@@ -121,18 +140,16 @@ function StrategyCard({
                         : 'border-zinc-300 dark:border-zinc-600'
                     }`}
                   >
-                    {isSelected && (
-                      <div className="h-1.5 w-1.5 rounded-full bg-white" />
-                    )}
+                    {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <p className={`text-sm font-semibold ${isSelected ? 'text-orange-700 dark:text-orange-300' : 'text-zinc-800 dark:text-zinc-200'}`}>
                         {desc.title}
                       </p>
-                      {isRec && (
-                        <Badge variant="emerald" shape="square">Aanbevolen</Badge>
-                      )}
+                      {isPreferred  && <Badge variant="emerald" shape="square">Aanbevolen</Badge>}
+                      {isAcceptable && <Badge variant="zinc"    shape="square">Acceptabel</Badge>}
+                      {isNotRec     && <Badge variant="amber"   shape="square">Niet aanbevolen</Badge>}
                     </div>
                     <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{desc.when}</p>
                     <div className="mt-2 grid gap-1 text-xs sm:grid-cols-2">
@@ -148,18 +165,15 @@ function StrategyCard({
 
         {/* Justification */}
         <div>
-          <FieldLabel>
-            Motivering keuze meetstrategie (<SectionRef id="§15.b.4">§15.b.4</SectionRef>)
-          </FieldLabel>
+          <FieldLabel>Motivering keuze meetstrategie</FieldLabel>
           <Textarea
             rows={2}
             value={heg.notes ?? ''}
             onChange={(e) => onUpdateHEG({ ...heg, notes: e.target.value })}
-            placeholder="Beschrijf waarom deze strategie is gekozen…"
+            placeholder="Beschrijf waarom deze strategie is gekozen gezien het werkpatroon en de meetomstandigheden…"
             className="w-full"
           />
         </div>
-
       </div>
     </Card>
   );
@@ -169,9 +183,7 @@ export default function SoundStep3_Strategy({ investigation, onUpdate, onGoToSte
   const { hegs } = investigation;
 
   const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
-  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
-  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
-  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
+  const desc  = contentOverrides?.[`${STEP_KEY}.desc`];
 
   function updateHEG(updated: SoundHEG) {
     onUpdate({ hegs: hegs.map((h) => (h.id === updated.id ? updated : h)) });
@@ -201,29 +213,12 @@ export default function SoundStep3_Strategy({ investigation, onUpdate, onGoToSte
                 <MarkdownContent>{desc}</MarkdownContent>
               </p>
             : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-                Kies per <Abbr id="HEG">HEG</Abbr> de meetstrategie op basis van het werkpatroon. Bijlage B Tabel B.1 geeft
-                richtlijnen. Documenteer de keuze (<SectionRef id="§15.b.4">§15.b.4</SectionRef> — meetstrategie met normatieve verwijzing).
+                Kies per <Abbr id="HEG">HEG</Abbr> de meetstrategie op basis van het werkpatroon.
+                Tabel B.1 van <Abbr id="NEN9612">NEN-EN-ISO 9612</Abbr>:2025 geeft de aanbevolen en acceptabele strategieën per situatie.
               </p>
           }
         </InlineEdit>
       </div>
-
-      <InfoBox title={
-        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
-          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
-          {ib0Title}
-        </InlineEdit>
-      }>
-        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
-          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
-          {ib0Content
-            ? <MarkdownContent>{ib0Content}</MarkdownContent>
-            : <><SectionRef id="§6">§6 Methodologie</SectionRef>: Het meetproces bestaat uit 5 stappen: (1) werkanalyse,
-              (2) selectie meetstrategie, (3) metingen, (4) fouten behandelen, (5) berekenen &amp;
-              presenteren inclusief onzekerheid (Bijlage C).</>
-          }
-        </InlineEdit>
-      </InfoBox>
 
       <div className="space-y-5">
         {hegs.map((heg) => (

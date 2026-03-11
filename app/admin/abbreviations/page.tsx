@@ -1,10 +1,9 @@
 import Link from 'next/link';
 import { getNamespaceContent } from '@/lib/content';
-import { ABBR_TITLES } from '@/components/Abbr';
 import AbbreviationsEditor from '@/components/admin/content/AbbreviationsEditor';
 
 export default async function AbbreviationsPage() {
-  const customAbbr = await getNamespaceContent('abbr.list').catch(() => ({}));
+  const items = await getNamespaceContent('abbr.list').catch(() => ({}));
 
   return (
     <>
@@ -19,7 +18,7 @@ export default async function AbbreviationsPage() {
         <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">Afkortingen</h1>
       </div>
 
-      <AbbreviationsEditor customAbbr={customAbbr} hardcoded={ABBR_TITLES} />
+      <AbbreviationsEditor items={items} />
     </>
   );
 }

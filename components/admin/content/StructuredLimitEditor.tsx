@@ -8,6 +8,7 @@ interface Props {
   contentKey: string;
   initialGroups: ThemeLimitGroup[];
   onSaved?: (groups: ThemeLimitGroup[]) => void;
+  valueLabel?: string;
 }
 
 export default function StructuredLimitEditor({
@@ -15,6 +16,7 @@ export default function StructuredLimitEditor({
   contentKey,
   initialGroups,
   onSaved,
+  valueLabel = 'Waarde',
 }: Props) {
   const [groups, setGroups] = useState<ThemeLimitGroup[]>(
     JSON.parse(JSON.stringify(initialGroups)), // deep clone
@@ -83,7 +85,7 @@ export default function StructuredLimitEditor({
   function updateLimit(
     gi: number,
     li: number,
-    field: 'label' | 'value' | 'sublabel',
+    field: 'label' | 'value' | 'sublabel' | 'targetValue',
     val: string,
   ) {
     setGroups((prev) =>
@@ -128,36 +130,52 @@ export default function StructuredLimitEditor({
 
           <div className="space-y-2">
             {group.limits.map((lim, li) => (
-              <div key={li} className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-2">
-                <input
-                  type="text"
-                  value={lim.label}
-                  onChange={(e) => updateLimit(gi, li, 'label', e.target.value)}
-                  placeholder="Label"
-                  className="rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
-                />
-                <input
-                  type="text"
-                  value={lim.sublabel ?? ''}
-                  onChange={(e) => updateLimit(gi, li, 'sublabel', e.target.value)}
-                  placeholder="Sublabel (optioneel)"
-                  className="rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
-                />
-                <input
-                  type="text"
-                  value={lim.value}
-                  onChange={(e) => updateLimit(gi, li, 'value', e.target.value)}
-                  placeholder="Waarde"
-                  className="rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm font-mono dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
-                />
-                <button
-                  onClick={() => removeLimit(gi, li)}
-                  className="rounded p-1 text-zinc-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
-                >
-                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+              <div
+                key={li}
+                className="rounded-lg border border-zinc-100 bg-white p-2 dark:border-zinc-700 dark:bg-zinc-900"
+              >
+                {/* Regel 1: label + verwijderknop */}
+                <div className="mb-1.5 flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    value={lim.label}
+                    onChange={(e) => updateLimit(gi, li, 'label', e.target.value)}
+                    placeholder="Label"
+                    className="min-w-0 flex-1 rounded border border-zinc-200 bg-zinc-50 px-2 py-1 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                  />
+                  <button
+                    onClick={() => removeLimit(gi, li)}
+                    className="shrink-0 rounded p-1 text-zinc-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
+                  >
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                {/* Regel 2: sublabel + waarde + streefwaarde */}
+                <div className="flex gap-1.5">
+                  <input
+                    type="text"
+                    value={lim.sublabel ?? ''}
+                    onChange={(e) => updateLimit(gi, li, 'sublabel', e.target.value)}
+                    placeholder="Sublabel (opt.)"
+                    className="min-w-0 flex-1 rounded border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                  />
+                  <input
+                    type="text"
+                    value={lim.targetValue ?? ''}
+                    onChange={(e) => updateLimit(gi, li, 'targetValue', e.target.value)}
+                    placeholder="Streefwaarde (opt.)"
+                    className="w-24 shrink-0 rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-mono dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-zinc-100"
+                  />
+                  <input
+                    type="text"
+                    value={lim.value}
+                    onChange={(e) => updateLimit(gi, li, 'value', e.target.value)}
+                    placeholder={valueLabel}
+                    className="w-24 shrink-0 rounded border border-sky-200 bg-sky-50 px-2 py-1 text-xs font-mono dark:border-sky-800 dark:bg-sky-950/30 dark:text-zinc-100"
+                  />
+                </div>
               </div>
             ))}
           </div>

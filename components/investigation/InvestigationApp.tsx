@@ -424,12 +424,6 @@ export default function InvestigationApp({ stepContent }: InvestigationAppProps)
           </div>
         )}
 
-        {/* Info note */}
-        {!loading && investigations.length > 0 && (
-          <p className="mt-4 text-center text-xs text-zinc-400 dark:text-zinc-500">
-            Gegevens worden opgeslagen in de cloud.
-          </p>
-        )}
       </div>
     </>
   );

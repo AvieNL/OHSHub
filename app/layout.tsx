@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { AdminContextProvider } from '@/components/AdminContext';
 import AbbrProvider from '@/components/AbbrProvider';
 import PrivacyAcceptModal from '@/components/PrivacyAcceptModal';
+import DisclaimerModal from '@/components/DisclaimerModal';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { getNamespaceContent } from '@/lib/content';
 import './globals.css';
@@ -64,7 +66,9 @@ export default async function RootLayout({
             <AbbrProvider customAbbr={customAbbr}>
               <Navbar />
               {children}
+              <Footer />
               <PrivacyAcceptModal />
+              <DisclaimerModal />
             </AbbrProvider>
           </AdminContextProvider>
         </ThemeProvider>

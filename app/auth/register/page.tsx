@@ -11,16 +11,22 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [currentPrivacyVersion, setCurrentPrivacyVersion] = useState('1.0');
+  const [currentDisclaimerVersion, setCurrentDisclaimerVersion] = useState('1.0');
 
-  // Fetch current live privacy version on mount
+  // Fetch current live privacy + disclaimer version on mount
   useEffect(() => {
     fetch('/api/privacy-version')
       .then((r) => r.json())
       .then((data: { version: string }) => setCurrentPrivacyVersion(data.version))
+      .catch(() => { /* keep default '1.0' */ });
+    fetch('/api/disclaimer-version')
+      .then((r) => r.json())
+      .then((data: { version: string }) => setCurrentDisclaimerVersion(data.version))
       .catch(() => { /* keep default '1.0' */ });
   }, []);
 
@@ -40,6 +46,10 @@ export default function RegisterPage() {
       setError('U dient de privacyverklaring te accepteren om een account aan te maken.');
       return;
     }
+    if (!disclaimerAccepted) {
+      setError('U dient de disclaimer te accepteren om een account aan te maken.');
+      return;
+    }
 
     setLoading(true);
     const supabase = createClient();
@@ -50,6 +60,8 @@ export default function RegisterPage() {
         data: {
           privacy_version_accepted: currentPrivacyVersion,
           privacy_accepted_at: new Date().toISOString(),
+          disclaimer_version_accepted: currentDisclaimerVersion,
+          disclaimer_accepted_at: new Date().toISOString(),
         },
       },
     });
@@ -171,6 +183,26 @@ export default function RegisterPage() {
                 privacyverklaring
               </Link>{' '}
               gelezen en ga akkoord met de verwerking van mijn persoonsgegevens.
+            </span>
+          </label>
+
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={disclaimerAccepted}
+              onChange={(e) => setDisclaimerAccepted(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-300 accent-orange-500 dark:border-zinc-600"
+            />
+            <span className="text-sm text-zinc-600 dark:text-zinc-400">
+              Ik heb de{' '}
+              <Link
+                href="/disclaimer"
+                target="_blank"
+                className="text-orange-500 underline hover:text-orange-600"
+              >
+                disclaimer
+              </Link>{' '}
+              gelezen en begrepen.
             </span>
           </label>
 

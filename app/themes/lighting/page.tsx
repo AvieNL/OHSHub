@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     'Onderzoeksinstrument voor werkplekverlichting conform NEN-EN-12464-1:2021 en Arbobesluit art. 6.29–6.32.',
 };
 
-const { legislation, norms, limitGroups, adminObligations } = THEME_LEGAL_INFO['lighting'];
+const { legislation, norms, limitGroups } = THEME_LEGAL_INFO['lighting'];
 const theme = themes.find((t) => t.slug === 'lighting')!;
 
 const FALLBACK_TITLE = 'Verlichting';
@@ -42,7 +42,6 @@ export default async function LightingPage() {
       legislation={legislation}
       norms={norms}
       limitGroups={limitGroups}
-      adminObligations={adminObligations}
       steps={[
         { title: 'Vooronderzoek', desc: 'Vragenlijst: type werkzaamheden, visuele nauwkeurigheid, klachten (hoofdpijn, oogvermoeidheid), aanwezigheid daglicht en noodverlichting.' },
         { title: 'Opdracht & kaders', desc: 'Opdrachtgever, uitvoerende deskundige, te beoordelen ruimten en functies, onderzoeksperiode en referentiedocumentatie.' },

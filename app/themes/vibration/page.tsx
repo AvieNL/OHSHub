@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     'Onderzoeksinstrument voor hand-armtrillingen (HAV) en hele-lichaamstrillingen (WBV) conform Richtlijn 2002/44/EG en Arbobesluit art. 6.11a–6.11g.',
 };
 
-const { legislation, norms, limitGroups, adminObligations } = THEME_LEGAL_INFO['vibration'];
+const { legislation, norms, limitGroups } = THEME_LEGAL_INFO['vibration'];
 const theme = themes.find((t) => t.slug === 'vibration')!;
 
 const FALLBACK_TITLE = 'Trillingen';
@@ -42,7 +42,6 @@ export default async function VibrationPage() {
       legislation={legislation}
       norms={norms}
       limitGroups={limitGroups}
-      adminObligations={adminObligations}
       steps={[
         { title: 'Vooronderzoek', desc: 'Vragenlijst: inventarisatie van trillende gereedschappen, machines en voertuigen; klachteninventarisatie HAVS/rug.' },
         { title: 'Opdracht & kaders', desc: 'Opdrachtgever, uitvoerende deskundige, werkplek, onderzoeksperiode en referentiedocumentatie.' },

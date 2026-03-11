@@ -12,6 +12,8 @@ import type {
   SoundActionLevel,
   PeakActionLevel,
   InstrumentType,
+  SoundHEG,
+  SoundComplianceCheck,
 } from './sound-investigation-types';
 import { averageOctaveBands, computeCombinedAttenuation } from './sound-ppe';
 
@@ -279,6 +281,8 @@ export function computeHegStatistics(
 
   if (!stat) return null;
 
+  const complianceChecks = buildComplianceChecks(heg, validMeasurements, stat);
+
   // H-1: ELV-toetsing met PBM-correctie (art. 6.6 lid 2 Arbobesluit)
   // LAV (80 dB(A)) en UAV (85 dB(A)) worden beoordeeld ZONDER PBM-aftrek.
   // De grenswaarde (87 dB(A)) MAG worden beoordeeld MÉT PBM-aftrek.
@@ -288,6 +292,7 @@ export function computeHegStatistics(
     const lEx8h_95pct_oor = stat.lEx8h_95pct - ppeResult.attenuation;
     return {
       ...stat,
+      complianceChecks,
       lEx8h_95pct_oor,
       elvPpeCompliant: lEx8h_95pct_oor < 87,
       ppeCombinedMethod: ppeResult.method,
@@ -295,7 +300,168 @@ export function computeHegStatistics(
     };
   }
 
-  return stat;
+  return { ...stat, complianceChecks };
+}
+
+// ─── Normconformiteitschecks ───────────────────────────────────────────────────
+
+function buildComplianceChecks(
+  heg: SoundHEG,
+  validMeasurements: SoundInvestigation['measurements'],
+  stat: SoundStatistics,
+): SoundComplianceCheck[] {
+  const checks: SoundComplianceCheck[] = [];
+  const n = validMeasurements.length;
+
+  // ── K-3: Minimum aantal metingen ──────────────────────────────────────────
+  if (heg.strategy === 'task-based') {
+    if (!stat.taskWarnings || stat.taskWarnings.length === 0) {
+      checks.push({
+        id: 'task-min-count',
+        status: 'pass',
+        label: 'Min. metingen per taak (§9.3.2)',
+        detail: 'Elke taak heeft ≥ 3 metingen.',
+      });
+    } else {
+      checks.push({
+        id: 'task-min-count',
+        status: 'fail',
+        label: 'Min. metingen per taak (§9.3.2)',
+        detail: stat.taskWarnings.join(' — '),
+        ref: '§9.3.2',
+      });
+    }
+  } else if (heg.strategy === 'full-day') {
+    // Tabel C.4 Noot 1: N=3 en N=4 zijn uitsluitend geldig voor dagmetingen
+    if (n >= 3) {
+      checks.push({
+        id: 'min-count',
+        status: 'pass',
+        label: 'Min. aantal dagmetingen (Tabel C.4)',
+        detail: `${n} dagmeting${n !== 1 ? 'en' : ''} — voldoet aan minimum van 3.`,
+      });
+    } else {
+      checks.push({
+        id: 'min-count',
+        status: 'fail',
+        label: 'Min. aantal dagmetingen (Tabel C.4)',
+        detail: `${n} dagmeting${n !== 1 ? 'en' : ''} ingevoerd — minimaal 3 vereist (Tabel C.4). Resultaat is indicatief.`,
+        ref: 'Tabel C.4',
+      });
+    }
+  } else {
+    // job-based: Tabel C.4 Noot 1 — N=3 en N=4 zijn uitsluitend geldig voor dagmetingen; minimum N=5
+    if (n >= 5) {
+      checks.push({
+        id: 'min-count',
+        status: 'pass',
+        label: 'Min. aantal steekproeven (Tabel C.4, Noot 1)',
+        detail: `${n} steekproeven — voldoet aan minimum van 5 voor functiegerichte meting.`,
+      });
+    } else if (n >= 3) {
+      checks.push({
+        id: 'min-count',
+        status: 'fail',
+        label: 'Min. aantal steekproeven (Tabel C.4, Noot 1)',
+        detail: `${n} steekproeven — N=3 en N=4 zijn uitsluitend geldig voor dagmetingen (Tabel C.4, Noot 1). Gebruik minimaal 5 steekproeven voor functiegerichte meting. Resultaat is indicatief.`,
+        ref: 'Tabel C.4',
+      });
+    } else {
+      checks.push({
+        id: 'min-count',
+        status: 'fail',
+        label: 'Min. aantal steekproeven (Tabel C.4, Noot 1)',
+        detail: `${n} meting${n !== 1 ? 'en' : ''} ingevoerd — minimaal 5 steekproeven vereist voor functiegerichte meting (Tabel C.4, Noot 1). Resultaat is indicatief.`,
+        ref: 'Tabel C.4',
+      });
+    }
+  }
+
+  // ── K-5: Spreiding per taak (taakgericht) ─────────────────────────────────
+  if (heg.strategy === 'task-based') {
+    const sw = stat.spreadWarnings ?? [];
+    const hasSpreadableTask = stat.taskResults?.some((tr) => tr.nMeasurements >= 2) ?? false;
+    if (hasSpreadableTask) {
+      if (sw.length === 0) {
+        checks.push({
+          id: 'task-spread',
+          status: 'pass',
+          label: 'Spreiding per taak (Bijlage E)',
+          detail: 'Spreiding binnen de normgrens voor alle taken.',
+        });
+      } else {
+        const detail = sw
+          .map((s) => `"${s.taskName}": ${s.spread.toFixed(1)} dB (grens ${s.limit} dB)`)
+          .join('; ');
+        checks.push({
+          id: 'task-spread',
+          status: 'warning',
+          label: 'Spreiding per taak (Bijlage E)',
+          detail: `Spreiding te groot bij: ${detail}. Vergroot de steekproef of onderzoek de variatiebron.`,
+          ref: 'Bijlage E',
+        });
+      }
+    }
+  }
+
+  // ── K-dag: Dekking ≥ 75% werkdag (dagmeting) ──────────────────────────────
+  if (heg.strategy === 'full-day') {
+    const Te = heg.effectiveDayHours;
+    const minDurMin = 0.75 * Te * 60;
+    const withDur = validMeasurements.filter((m) => m.durationMin != null);
+    if (withDur.length === 0) {
+      checks.push({
+        id: 'fullday-coverage',
+        status: 'warning',
+        label: 'Meetduur ≥ 75% werkdag (§9.4)',
+        detail: `Geen meetduur geregistreerd — kan niet worden gecontroleerd. Vereiste duur: ≥ ${(minDurMin / 60).toFixed(1)} u bij T_e = ${Te} u.`,
+        ref: '§9.4',
+      });
+    } else {
+      const tooShort = withDur.filter((m) => m.durationMin! < minDurMin);
+      if (tooShort.length === 0) {
+        checks.push({
+          id: 'fullday-coverage',
+          status: 'pass',
+          label: 'Meetduur ≥ 75% werkdag (§9.4)',
+          detail: `Alle ${withDur.length} metingen ≥ ${(minDurMin / 60).toFixed(1)} u (75% van T_e = ${Te} u).`,
+        });
+      } else {
+        checks.push({
+          id: 'fullday-coverage',
+          status: 'fail',
+          label: 'Meetduur ≥ 75% werkdag (§9.4)',
+          detail: `${tooShort.length} van ${withDur.length} metingen is korter dan ${(minDurMin / 60).toFixed(1)} u (75% van T_e = ${Te} u).`,
+          ref: '§9.4',
+        });
+      }
+    }
+  }
+
+  // ── K-rep: Representatieve omstandigheden ─────────────────────────────────
+  const nonRep = validMeasurements.filter((m) => m.representativeConditions === false);
+  if (nonRep.length > 0) {
+    checks.push({
+      id: 'representativeness',
+      status: 'warning',
+      label: 'Representatieve omstandigheden (§15.d.4)',
+      detail: `${nonRep.length} meting${nonRep.length !== 1 ? 'en zijn' : ' is'} als niet-representatief gemarkeerd — beoordeel of deze uitgesloten dienen te worden.`,
+      ref: '§15.d.4',
+    });
+  }
+
+  // ── K-u: Meetonzekerheid c₁u₁ (baangericht / dagmeting) ──────────────────
+  if (stat.c1u1Excessive) {
+    checks.push({
+      id: 'c1u1-excessive',
+      status: 'warning',
+      label: 'Meetonzekerheid c₁u₁ (§10.4)',
+      detail: `c₁u₁ = ${stat.c1u1?.toFixed(1)} dB > 3,5 dB — spreiding te groot voor betrouwbare uitspraak. Overweeg meer metingen of een kleinere HEG.`,
+      ref: '§10.4',
+    });
+  }
+
+  return checks;
 }
 
 function computeTaskBased(
@@ -319,10 +485,10 @@ function computeTaskBased(
 
     if (taskMeas.length === 0) continue;
 
-    // K-3: Minimaal 3 metingen per taak (§9.3.1 NEN-EN-ISO 9612:2025)
+    // K-3: Minimaal 3 metingen per taak (§9.3.2 NEN-EN-ISO 9612:2025)
     if (taskMeas.length < 3) {
       taskWarnings.push(
-        `Taak '${task.name}': ${taskMeas.length} meting${taskMeas.length !== 1 ? 'en' : ''} — minimaal 3 vereist (§9.3.1 NEN-EN-ISO 9612:2025)`,
+        `Taak '${task.name}': ${taskMeas.length} meting${taskMeas.length !== 1 ? 'en' : ''} — minimaal 3 vereist (§9.3.2 NEN-EN-ISO 9612:2025)`,
       );
     }
 
@@ -343,10 +509,11 @@ function computeTaskBased(
         lEx8hm: lEx8hTask(energyAverage(taskMeas), task.durationHours),
         u1a: u1aSampling(taskMeas),
         c1a: 0,
-        // K-1: u1b effectief in dB — taakduurspreiding (§C.5 NEN-EN-ISO 9612:2025)
-        // u1b,eff = (10/ln10) × (Tmax − Tmin) / (2√3 × Tm)   [dB]
+        // K-1: u1b effectief in dB — taakduurspreiding (§C.7 NEN-EN-ISO 9612:2025)
+        // Noot §C.7: u1b,m = 0,5 × (Tmax − Tmin)  [uren]
+        // In dB-domein: (10/ln10) × (Tmax − Tmin) / (2 × Tm)
         u1b: (task.durationMin != null && task.durationMax != null && task.durationHours > 0)
-          ? (10 / Math.LN10) * (task.durationMax - task.durationMin) / (2 * Math.sqrt(3) * task.durationHours)
+          ? (10 / Math.LN10) * (task.durationMax - task.durationMin) / (2 * task.durationHours)
           : 0,
         spread: taskMeas.length >= 2 ? Math.max(...taskMeas) - Math.min(...taskMeas) : 0,
       });
@@ -361,7 +528,7 @@ function computeTaskBased(
         u1a: u1aSampling(taskMeas),
         c1a: 0,
         u1b: (task.durationMin != null && task.durationMax != null && task.durationHours > 0)
-          ? (10 / Math.LN10) * (task.durationMax - task.durationMin) / (2 * Math.sqrt(3) * task.durationHours)
+          ? (10 / Math.LN10) * (task.durationMax - task.durationMin) / (2 * task.durationHours)
           : 0,
         spread: 0,
       });
@@ -453,7 +620,7 @@ function computeJobBased(
   validMeasurements: SoundInvestigation['measurements'],
 ): SoundStatistics | null {
   const samples = validMeasurements.map((m) => m.lpa_eqT);
-  if (samples.length < 3) return null;
+  if (samples.length === 0) return null;
 
   // K-4 fix: strategie van de HEG-instelling, niet afgeleid van meetaantal
   const heg = _inv.hegs.find((h) => h.id === hegId);

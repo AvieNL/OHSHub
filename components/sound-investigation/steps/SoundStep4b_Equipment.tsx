@@ -11,7 +11,6 @@ import { newSoundId } from '@/lib/sound-investigation-storage';
 import { computeCombinedAttenuation } from '@/lib/sound-ppe';
 import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
-import { InfoBox } from '@/components/InfoBox';
 import { Alert, Button, Card, FieldLabel, FormGrid, Icon, Input } from '@/components/ui';
 import InlineStepHeader from '@/components/InlineStepHeader';
 import InlineEdit from '@/components/InlineEdit';
@@ -26,10 +25,8 @@ interface Props {
 
 const STEP_KEY = 'step.5';
 const NS = 'investigation.sound';
-const FALLBACK_TITLE = 'Stap 6 — Arbeidsmiddelen (art. 7.4a Arbobesluit)';
+const FALLBACK_TITLE = 'Stap 6 — Arbeidsmiddelen';
 const FALLBACK_DESC = 'Registreer voertuigen, machines en gereedschappen die gebruikt worden bij de beoordeelde werkzaamheden.';
-const FALLBACK_IB0_TITLE = 'Wettelijke basis — art. 7.4a Arbobesluit / Machinerichtlijn 2006/42/EG';
-const FALLBACK_IB1_TITLE = 'Wettelijke basis — art. 6.6 lid 1b & 6.9 Arbobesluit / EN 458:2025';
 
 const CATEGORY_OPTIONS: { value: EquipmentCategory; label: string; short: string }[] = [
   { value: 'voertuig',        label: 'Voertuig (auto, heftruck, tractor)',      short: 'Voertuig' },
@@ -210,7 +207,7 @@ function EquipmentForm({
             className="accent-orange-500"
           />
           <span className="font-medium text-zinc-700 dark:text-zinc-300">
-            Keuring vereist (<abbr title="Arbeidsbesluit" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">Arbobesluit</abbr> art. 7.4a)
+            Keuring vereist
           </span>
         </label>
 
@@ -325,7 +322,7 @@ function InspectionBadge({ eq }: { eq: SoundEquipment }) {
   if (!eq.inspectionDate && !eq.inspectionExpiry) {
     return (
       <Alert variant="error" size="sm" className="mb-2">
-        ✖ Keuring vereist maar geen keuringsdatum vastgelegd (Arbobesluit art. 7.4a)
+        ✖ Keuring vereist maar geen keuringsdatum vastgelegd
       </Alert>
     );
   }
@@ -337,7 +334,7 @@ function InspectionBadge({ eq }: { eq: SoundEquipment }) {
     if (daysLeft < 0) {
       return (
         <Alert variant="error" size="sm" className="mb-2">
-          ✖ Keuring verlopen op {new Date(eq.inspectionExpiry + 'T12:00:00').toLocaleDateString('nl-NL')} — arbeidsmiddel mag niet worden gebruikt (art. 7.4a Arbobesluit)
+          ✖ Keuring verlopen op {new Date(eq.inspectionExpiry + 'T12:00:00').toLocaleDateString('nl-NL')} — arbeidsmiddel mag niet worden gebruikt
         </Alert>
       );
     }
@@ -361,16 +358,34 @@ type PPESlot = 1 | 2;
 /** Extract PPE fields for slot 1 or 2 from a HEG */
 function getPPEFields(heg: SoundHEG, slot: PPESlot) {
   if (slot === 1) {
+    // Infer method from stored data when not explicitly set (backward compat)
+    const method = heg.ppeMethod ??
+      (heg.ppeM != null || heg.ppeL != null ? 'hml' as const :
+       heg.ppeSNR != null ? 'snr' as const : 'manual' as const);
     return {
+      method,
       snr:         heg.ppeSNR,
-      snrUnknown:  heg.ppeSNRUnknown ?? false,
+      /** Spectral correction Lp,C − Lp,A (dB) — used for SNR method APV calculation */
+      lpC:         heg.ppeLpC,
+      hmlH:        heg.ppeH,
+      hmlM:        heg.ppeM,
+      hmlL:        heg.ppeL,
+      spectralChar: heg.ppeSpectralChar,
       attenuation: heg.ppeAttenuation,
       notes:       heg.ppeNotes,
     };
   }
+  const method2 = heg.ppe2Method ??
+    (heg.ppe2M != null || heg.ppe2L != null ? 'hml' as const :
+     heg.ppe2SNR != null ? 'snr' as const : 'manual' as const);
   return {
+    method:      method2,
     snr:         heg.ppe2SNR,
-    snrUnknown:  heg.ppe2SNRUnknown ?? false,
+    lpC:         heg.ppe2LpC,
+    hmlH:        heg.ppe2H,
+    hmlM:        heg.ppe2M,
+    hmlL:        heg.ppe2L,
+    spectralChar: heg.ppe2SpectralChar,
     attenuation: heg.ppe2Attenuation,
     notes:       heg.ppe2Notes,
   };
@@ -379,19 +394,37 @@ function getPPEFields(heg: SoundHEG, slot: PPESlot) {
 function setPPEFields(heg: SoundHEG, slot: PPESlot, partial: Partial<ReturnType<typeof getPPEFields>>): Partial<SoundHEG> {
   if (slot === 1) {
     return {
-      ppeSNR:        partial.snr,
-      ppeSNRUnknown: partial.snrUnknown,
-      ppeAttenuation: partial.attenuation,
-      ppeNotes:      partial.notes,
+      ppeMethod:       partial.method,
+      ppeSNR:          partial.snr,
+      ppeLpC:          partial.lpC,
+      ppeH:            partial.hmlH,
+      ppeM:            partial.hmlM,
+      ppeL:            partial.hmlL,
+      ppeSpectralChar: partial.spectralChar,
+      ppeSNRUnknown:   false, // always clear when updated via new UI
+      ppeAttenuation:  partial.attenuation,
+      ppeNotes:        partial.notes,
     };
   }
   return {
-    ppe2SNR:        partial.snr,
-    ppe2SNRUnknown: partial.snrUnknown,
-    ppe2Attenuation: partial.attenuation,
-    ppe2Notes:      partial.notes,
+    ppe2Method:       partial.method,
+    ppe2SNR:          partial.snr,
+    ppe2LpC:          partial.lpC,
+    ppe2H:            partial.hmlH,
+    ppe2M:            partial.hmlM,
+    ppe2L:            partial.hmlL,
+    ppe2SpectralChar: partial.spectralChar,
+    ppe2SNRUnknown:   false,
+    ppe2Attenuation:  partial.attenuation,
+    ppe2Notes:        partial.notes,
   };
 }
+
+const PPE_METHODS = [
+  { value: 'hml'    as const, label: 'HML-check',  desc: 'H/M/L-waarden van datablad' },
+  { value: 'snr'    as const, label: 'SNR-methode', desc: 'SNR + spectraalcorrectie' },
+  { value: 'manual' as const, label: 'Handmatig',   desc: 'APV direct invoeren' },
+];
 
 function PPEDeviceForm({
   heg,
@@ -403,56 +436,238 @@ function PPEDeviceForm({
   onUpdate: (partial: Partial<SoundHEG>) => void;
 }) {
   const fields = getPPEFields(heg, slot);
-  const computedAPF = !fields.snrUnknown && fields.snr != null
-    ? parseFloat((fields.snr / 2).toFixed(1))
-    : null;
-  const isOverridden = computedAPF !== null && fields.attenuation != null
-    && Math.abs(fields.attenuation - computedAPF) > 0.05;
+  const { method } = fields;
 
   const inputCls = 'rounded-lg border border-blue-200 bg-white px-2 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-blue-700 dark:bg-zinc-800 dark:text-zinc-100';
 
-  function upd(partial: Partial<ReturnType<typeof getPPEFields>>) {
-    const merged = { ...fields, ...partial };
-    // Auto-compute APF = SNR÷2 when SNR changes (unless user has manually overridden)
-    if (!merged.snrUnknown && merged.snr != null && !isOverridden) {
-      const apf = parseFloat((merged.snr / 2).toFixed(1));
-      onUpdate(setPPEFields(heg, slot, { ...merged, attenuation: apf }));
-      return;
+  /** Compute APV from current method + inputs. Returns null when data is incomplete. */
+  function computeAPV(f: ReturnType<typeof getPPEFields>): number | null {
+    if (f.method === 'hml') {
+      const val = f.spectralChar === 'high' ? f.hmlH : f.spectralChar === 'low' ? f.hmlL : f.hmlM;
+      return val != null ? val : null;
     }
+    if (f.method === 'snr' && f.snr != null && f.lpC != null) {
+      return parseFloat((f.snr - f.lpC).toFixed(1));
+    }
+    if (f.method === 'manual' && f.snr != null && f.spectralChar != null) {
+      const offset = f.spectralChar === 'high' ? 10 : f.spectralChar === 'medium' ? 7 : 3;
+      return parseFloat((f.snr - offset).toFixed(1));
+    }
+    return null;
+  }
+
+  /** Update fields and auto-populate attenuation for HML, SNR, and manual-preset methods. */
+  function setFields(partial: Partial<ReturnType<typeof getPPEFields>>) {
+    const merged = { ...fields, ...partial };
+    const computed = computeAPV(merged);
+    if (computed !== null) merged.attenuation = computed;
     onUpdate(setPPEFields(heg, slot, merged));
   }
 
-  return (
-    <div className="space-y-3">
-      {/* SNR unknown checkbox */}
-      <label className="flex cursor-pointer items-center gap-2 text-xs text-blue-700 dark:text-blue-300">
-        <input
-          type="checkbox"
-          checked={fields.snrUnknown}
-          onChange={(e) => {
-            if (e.target.checked) {
-              onUpdate(setPPEFields(heg, slot, { ...fields, snrUnknown: true, snr: undefined, attenuation: undefined }));
-            } else {
-              onUpdate(setPPEFields(heg, slot, { ...fields, snrUnknown: false }));
-            }
-          }}
-          className="accent-orange-500"
-        />
-        <Abbr id="SNR">SNR</Abbr>-waarde nog onbekend (datablad niet beschikbaar)
-      </label>
+  function switchMethod(newMethod: typeof method) {
+    onUpdate(setPPEFields(heg, slot, {
+      method: newMethod,
+      snr: undefined, lpC: undefined,
+      hmlH: undefined, hmlM: undefined, hmlL: undefined,
+      spectralChar: undefined,
+      attenuation: undefined,
+      notes: fields.notes,
+    }));
+  }
 
-      {!fields.snrUnknown && (
-        <div className="flex flex-wrap items-end gap-3">
-          {/* SNR input */}
+  const computedAPV = computeAPV(fields);
+
+  return (
+    <div className="space-y-4">
+      {/* Method selector */}
+      <div>
+        <p className="mb-2 text-xs font-medium text-blue-800 dark:text-blue-300">Selectiemethode (EN 458)</p>
+        <div className="grid grid-cols-3 gap-2">
+          {PPE_METHODS.map((pm) => (
+            <button
+              key={pm.value}
+              type="button"
+              onClick={() => method !== pm.value && switchMethod(pm.value)}
+              className={`rounded-lg border px-3 py-1.5 text-left text-xs transition ${
+                method === pm.value
+                  ? 'border-blue-400 bg-blue-100 font-semibold text-blue-800 dark:border-blue-600 dark:bg-blue-900/30 dark:text-blue-200'
+                  : 'border-zinc-200 text-zinc-600 hover:border-blue-300 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-blue-700'
+              }`}
+            >
+              {pm.label}
+              <span className={`ml-1 font-normal ${method === pm.value ? 'text-blue-500 dark:text-blue-400' : 'text-zinc-400'}`}>
+                — {pm.desc}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── HML-check (A.4) ── */}
+      {method === 'hml' && (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-end gap-4">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-blue-800 dark:text-blue-300">
+                H-waarde (datablad)
+              </label>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number" min={0} max={50} step={1}
+                  value={fields.hmlH ?? ''}
+                  onChange={(e) => setFields({ hmlH: parseFloat(e.target.value) || undefined })}
+                  placeholder="bijv. 32"
+                  className={`w-20 ${inputCls}`}
+                />
+                <span className="text-xs text-blue-600 dark:text-blue-400">dB</span>
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-blue-800 dark:text-blue-300">
+                M-waarde (datablad)
+              </label>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number" min={0} max={50} step={1}
+                  value={fields.hmlM ?? ''}
+                  onChange={(e) => setFields({ hmlM: parseFloat(e.target.value) || undefined })}
+                  placeholder="bijv. 26"
+                  className={`w-20 ${inputCls}`}
+                />
+                <span className="text-xs text-blue-600 dark:text-blue-400">dB</span>
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-blue-800 dark:text-blue-300">
+                L-waarde (datablad)
+              </label>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number" min={0} max={50} step={1}
+                  value={fields.hmlL ?? ''}
+                  onChange={(e) => setFields({ hmlL: parseFloat(e.target.value) || undefined })}
+                  placeholder="bijv. 16"
+                  className={`w-20 ${inputCls}`}
+                />
+                <span className="text-xs text-blue-600 dark:text-blue-400">dB</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Noise class */}
+          <div>
+            <p className="mb-1.5 text-xs font-medium text-blue-800 dark:text-blue-300">Geluidskarakter</p>
+            <div className="space-y-1.5">
+              <label className="flex cursor-pointer items-start gap-2 text-xs">
+                <input
+                  type="radio"
+                  checked={fields.spectralChar === 'high'}
+                  onChange={() => setFields({ spectralChar: 'high' })}
+                  className="mt-0.5 accent-orange-500"
+                />
+                <span className="text-blue-700 dark:text-blue-300">
+                  <strong>H-klasse</strong> — hoogfrequent
+                  <span className="ml-1 text-zinc-400">(L<sub>p,C</sub> − L<sub>p,A</sub> &lt; 2 dB)</span>
+                  {fields.hmlH != null && fields.spectralChar === 'high' && (
+                    <span className="ml-2 font-semibold text-emerald-600 dark:text-emerald-400">→ APV = H = {fields.hmlH} dB</span>
+                  )}
+                </span>
+              </label>
+              <label className="flex cursor-pointer items-start gap-2 text-xs">
+                <input
+                  type="radio"
+                  checked={fields.spectralChar === 'medium' || fields.spectralChar == null}
+                  onChange={() => setFields({ spectralChar: 'medium' })}
+                  className="mt-0.5 accent-orange-500"
+                />
+                <span className="text-blue-700 dark:text-blue-300">
+                  <strong>M-klasse</strong> — middenfrequent
+                  <span className="ml-1 text-zinc-400">(2 dB ≤ L<sub>p,C</sub> − L<sub>p,A</sub> &lt; 5 dB)</span>
+                  {fields.hmlM != null && (fields.spectralChar === 'medium' || fields.spectralChar == null) && (
+                    <span className="ml-2 font-semibold text-emerald-600 dark:text-emerald-400">→ APV = M = {fields.hmlM} dB</span>
+                  )}
+                </span>
+              </label>
+              <label className="flex cursor-pointer items-start gap-2 text-xs">
+                <input
+                  type="radio"
+                  checked={fields.spectralChar === 'low'}
+                  onChange={() => setFields({ spectralChar: 'low' })}
+                  className="mt-0.5 accent-orange-500"
+                />
+                <span className="text-blue-700 dark:text-blue-300">
+                  <strong>L-klasse</strong> — laagfrequent
+                  <span className="ml-1 text-zinc-400">(L<sub>p,C</sub> − L<sub>p,A</sub> ≥ 5 dB)</span>
+                  {fields.hmlL != null && fields.spectralChar === 'low' && (
+                    <span className="ml-2 font-semibold text-emerald-600 dark:text-emerald-400">→ APV = L = {fields.hmlL} dB</span>
+                  )}
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── SNR-methode (A.5) ── */}
+      {method === 'snr' && (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-end gap-4">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-blue-800 dark:text-blue-300">
+                <Abbr id="SNR">SNR</Abbr>-waarde (datablad)
+              </label>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number" min={0} max={50} step={1}
+                  value={fields.snr ?? ''}
+                  onChange={(e) => setFields({ snr: parseFloat(e.target.value) || undefined })}
+                  placeholder="bijv. 33"
+                  className={`w-20 ${inputCls}`}
+                />
+                <span className="text-xs text-blue-600 dark:text-blue-400">dB</span>
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-blue-800 dark:text-blue-300">
+                L<sub>p,C</sub> − L<sub>p,A</sub> <span className="font-normal">(spectraalcorrectie)</span>
+              </label>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number" min={0} max={20} step={0.5}
+                  value={fields.lpC ?? ''}
+                  onChange={(e) => setFields({ lpC: parseFloat(e.target.value) || undefined })}
+                  placeholder="bijv. 2"
+                  className={`w-20 ${inputCls}`}
+                />
+                <span className="text-xs text-blue-600 dark:text-blue-400">dB</span>
+              </div>
+            </div>
+          </div>
+          {computedAPV !== null && (
+            <p className="text-xs text-emerald-700 dark:text-emerald-400">
+              APV = SNR − (L<sub>p,C</sub> − L<sub>p,A</sub>) = {fields.snr} − {fields.lpC} = <strong>{computedAPV} dB</strong>
+            </p>
+          )}
+          <p className="text-xs text-zinc-400 dark:text-zinc-500">
+            Meet L<sub>p,C</sub> − L<sub>p,A</sub> op de werkplek of schat op basis van het geluidskarakter
+            (typisch 1–4 dB voor industrieel geluid; hoger bij laagfrequente machines).
+          </p>
+        </div>
+      )}
+
+      {/* ── Handmatig ── */}
+      {method === 'manual' && (
+        <div className="space-y-3">
+          {/* SNR from datashett (optional, enables presets) */}
           <div>
             <label className="mb-1 block text-xs font-medium text-blue-800 dark:text-blue-300">
-              <Abbr id="SNR">SNR</Abbr>-waarde van datablad
+              <Abbr id="SNR">SNR</Abbr>-waarde datablad <span className="font-normal text-zinc-400">(optioneel — maakt schattingen mogelijk)</span>
             </label>
             <div className="flex items-center gap-1.5">
               <input
                 type="number" min={0} max={50} step={1}
                 value={fields.snr ?? ''}
-                onChange={(e) => upd({ snr: parseFloat(e.target.value) || undefined })}
+                onChange={(e) => setFields({ snr: parseFloat(e.target.value) || undefined, spectralChar: undefined })}
                 placeholder="bijv. 33"
                 className={`w-20 ${inputCls}`}
               />
@@ -460,75 +675,99 @@ function PPEDeviceForm({
             </div>
           </div>
 
-          {/* APF result */}
-          {computedAPF !== null && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs dark:border-amber-700/50 dark:bg-amber-900/10">
-              <span className="text-amber-600 dark:text-amber-400">
-                Berekende <Abbr id="APF">APF</Abbr> (SNR÷2):
-              </span>
-              <span className="ml-2 font-mono font-semibold text-amber-800 dark:text-amber-200">
-                {computedAPF} dB
-              </span>
+          {/* Preset options — only when SNR entered */}
+          {fields.snr != null && (
+            <div>
+              <p className="mb-1.5 text-xs font-medium text-blue-800 dark:text-blue-300">Aanname effectieve demping</p>
+              <div className="space-y-1.5">
+                {([
+                  { key: 'low'    as const, label: 'Optimistisch',  offset: 3,  desc: 'SNR − 3 dB' },
+                  { key: 'medium' as const, label: 'Realistisch',   offset: 7,  desc: 'SNR − 7 dB' },
+                  { key: 'high'   as const, label: 'Conservatief',  offset: 10, desc: 'SNR − 10 dB — conform AI-04 aanbeveling' },
+                ] as const).map(({ key, label, offset, desc }) => (
+                  <label key={key} className="flex cursor-pointer items-start gap-2 text-xs">
+                    <input
+                      type="radio"
+                      checked={fields.spectralChar === key}
+                      onChange={() => setFields({ spectralChar: key })}
+                      className="mt-0.5 accent-orange-500"
+                    />
+                    <span className="text-blue-700 dark:text-blue-300">
+                      <strong>{label}</strong> — {desc}
+                      <span className="ml-2 font-semibold text-emerald-600 dark:text-emerald-400">
+                        → APV = {(fields.snr! - offset).toFixed(1)} dB
+                      </span>
+                    </span>
+                  </label>
+                ))}
+                <label className="flex cursor-pointer items-start gap-2 text-xs">
+                  <input
+                    type="radio"
+                    checked={fields.spectralChar == null}
+                    onChange={() => setFields({ spectralChar: undefined })}
+                    className="mt-0.5 accent-orange-500"
+                  />
+                  <span className="text-blue-700 dark:text-blue-300">
+                    <strong>Handmatig</strong> — APV direct invoeren
+                  </span>
+                </label>
+              </div>
+              {fields.spectralChar != null && (
+                <Alert variant="warning" size="sm" className="mt-2">
+                  <strong>Schatting — geen gemeten waarde.</strong>{' '}
+                  AI-04 toont aan dat de werkelijke demping in de praktijk doorgaans 30–60% onder de nominale SNR-waarde ligt.
+                  Voor formele rapportage is een meting conform EN 458 methode A.2 (octaafband), A.3 (HML) of A.4 (HML-check) aanbevolen.
+                </Alert>
+              )}
+            </div>
+          )}
+
+          {/* Direct APV input — shown when no SNR or "handmatig" selected */}
+          {(fields.snr == null || fields.spectralChar == null) && (
+            <div>
+              <label className="mb-1 block text-xs font-medium text-blue-800 dark:text-blue-300">
+                Effectieve demping (<Abbr id="APV">APV</Abbr>)
+              </label>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number" min={0} max={40} step={0.5}
+                  value={fields.attenuation ?? ''}
+                  onChange={(e) => setFields({ attenuation: parseFloat(e.target.value) || undefined, spectralChar: undefined })}
+                  placeholder="dB"
+                  className={`w-20 ${inputCls}`}
+                />
+                <span className="text-xs text-blue-600 dark:text-blue-400">dB</span>
+              </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Effective APF + notes */}
-      {!fields.snrUnknown && (
-        <div className="flex flex-wrap items-end gap-4">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-blue-800 dark:text-blue-300">
-              Effectieve demping (<Abbr id="APF">APF</Abbr>)
-              {isOverridden && <span className="ml-2 text-[10px] font-normal text-orange-500">handmatig overschreven</span>}
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number" min={0} max={40} step={0.5}
-                value={fields.attenuation ?? ''}
-                onChange={(e) => onUpdate(setPPEFields(heg, slot, { ...fields, attenuation: parseFloat(e.target.value) || undefined }))}
-                placeholder="dB"
-                className={`w-20 ${inputCls}`}
-              />
-              <span className="text-xs text-blue-600 dark:text-blue-400">dB</span>
-              {isOverridden && computedAPF !== null && (
-                <button
-                  onClick={() => onUpdate(setPPEFields(heg, slot, { ...fields, attenuation: computedAPF }))}
-                  className="text-xs text-blue-500 hover:text-blue-800 dark:hover:text-blue-100"
-                >
-                  Reset naar {computedAPF} dB
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="flex-1 min-w-48">
-            <label className="mb-1 block text-xs font-medium text-blue-800 dark:text-blue-300">
-              Type / merk / model gehoorbeschermer
-            </label>
-            <input
-              type="text"
-              value={fields.notes ?? ''}
-              onChange={(e) => onUpdate(setPPEFields(heg, slot, { ...fields, notes: e.target.value || undefined }))}
-              placeholder="bijv. 3M Peltor X4A, SNR 33 dB"
-              className={`w-full ${inputCls}`}
-            />
-          </div>
+      {/* Computed APV result (HML / SNR / manual-preset methods) */}
+      {computedAPV !== null && (
+        <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs dark:border-emerald-700/40 dark:bg-emerald-900/10">
+          <span className="text-emerald-700 dark:text-emerald-300">
+            Berekende <Abbr id="APV">APV</Abbr>:
+          </span>
+          <span className="font-mono font-semibold text-emerald-800 dark:text-emerald-200">
+            {computedAPV} dB
+          </span>
         </div>
       )}
-      {fields.snrUnknown && (
-        <div>
-          <label className="mb-1 block text-xs font-medium text-blue-800 dark:text-blue-300">
-            Type / merk / model gehoorbeschermer
-          </label>
-          <input
-            type="text"
-            value={fields.notes ?? ''}
-            onChange={(e) => onUpdate(setPPEFields(heg, slot, { ...fields, notes: e.target.value || undefined }))}
-            placeholder="bijv. 3M Peltor X4A (datablad aangevraagd)"
-            className={`w-full ${inputCls}`}
-          />
-        </div>
-      )}
+
+      {/* Type / model */}
+      <div>
+        <label className="mb-1 block text-xs font-medium text-blue-800 dark:text-blue-300">
+          Type / merk / model gehoorbeschermer
+        </label>
+        <input
+          type="text"
+          value={fields.notes ?? ''}
+          onChange={(e) => setFields({ notes: e.target.value || undefined })}
+          placeholder="bijv. 3M Peltor X4A, SNR 33 dB"
+          className={`w-full ${inputCls}`}
+        />
+      </div>
     </div>
   );
 }
@@ -602,7 +841,7 @@ function HEGPPESection({
           </Button>
         ) : (
           <button
-            onClick={() => onUpdateHEG({ ppeMethod: 'snr' })}
+            onClick={() => onUpdateHEG({ ppeMethod: 'hml' })}
             className="inline-flex items-center gap-1.5 rounded border border-blue-200 px-2.5 py-1 text-xs font-medium text-blue-600 transition hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/20"
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -616,16 +855,16 @@ function HEGPPESection({
       {/* PPE form — only when configured */}
       {configured && (
         <div className="space-y-4 border-t border-zinc-200 bg-blue-50/40 px-4 pb-5 pt-4 dark:border-zinc-700 dark:bg-blue-900/10">
-          {/* PFRE disclaimer */}
+          {/* APV toelichting */}
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs dark:border-amber-700/40 dark:bg-amber-900/10">
             <p className="font-medium text-amber-800 dark:text-amber-300">
-              Praktijkdemping (<abbr title="Performance of Field Real-world use: werkelijke demping in de praktijk" className="cursor-help underline decoration-dotted decoration-amber-500 underline-offset-2">PFRE</abbr>)
+              Effectieve demping (<Abbr id="APV">APV</Abbr>) — bepaling conform EN 458
             </p>
             <p className="mt-0.5 text-amber-700 dark:text-amber-400">
-              De werkelijke demping in de praktijk is gemiddeld 50–60% van de nominale SNR-waarde (EN 458:2025 Annex B).
-              SNR÷2 wordt hier als standaard gebruikt — een conservatieve en in de praktijk realistische benadering.
-              Dit sluit aan bij de strekking van <abbr title="ISO 9612:2009: Acoustics — Determination of occupational noise exposure" className="cursor-help underline decoration-dotted decoration-amber-500 underline-offset-2">ISO 9612</abbr>{' '}
-              dat <abbr title="Persoonlijk beschermingsmiddel" className="cursor-help underline decoration-dotted decoration-amber-500 underline-offset-2">PBM</abbr> buiten de meetmethode houdt (§4.1).
+              Gebruik bij voorkeur de HML-check (H/M/L-waarden van datablad) of SNR-methode (SNR + spectraalcorrectie).
+              Als deze gegevens niet beschikbaar zijn, kan via <strong>Handmatig</strong> een APV worden ingeschat op basis van
+              de SNR-waarde met een aanname-correctie (conservatief, realistisch of optimistisch).
+              Zonder APV-waarde kan de grenswaarde-toetsing in stap 10 niet worden uitgevoerd.
             </p>
           </div>
 
@@ -653,21 +892,18 @@ function HEGPPESection({
 
             {heg.ppeDouble && (
               <div className="mt-4 space-y-4">
-                <InfoBox title="Dubbele gehoorbescherming — EN 458:2025 §6.2.4" variant="blue">
-                  <div className="space-y-1.5">
-                    <p>
-                      <strong>EN 458:2025 §6.2.4</strong> schrijft het gebruik van <strong>fabricantcombinaties</strong> voor.
-                      De norm geeft geen rekenformule; gemeten bonuswaarden liggen typisch tussen <strong>1 en 12 dB</strong>{' '}
-                      boven de demping van de betere beschermer.
-                    </p>
-                    <p className="text-amber-600 dark:text-amber-400">
-                      <strong>Afwijking:</strong> bij ontbrekende fabricantdata schat de app de gecombineerde{' '}
-                      <Abbr id="APF">APF</Abbr> als max(APF₁, APF₂) + 5 dB (gemiddelde van praktijkwaarden),
-                      begrensd op <strong>35 dB(A)</strong> (botgeleiding; informatieve grens,
-                      niet als vaste waarde in EN 458:2025).
-                    </p>
-                  </div>
-                </InfoBox>
+                <div className="space-y-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 text-xs dark:border-blue-700/40 dark:bg-blue-900/10">
+                  <p className="text-blue-800 dark:text-blue-300">
+                    Bij dubbele gehoorbescherming schrijft de norm het gebruik van <strong>fabricantcombinaties</strong> voor.
+                    Gemeten bonuswaarden liggen typisch tussen <strong>1 en 12 dB</strong>{' '}
+                    boven de demping van de betere beschermer.
+                  </p>
+                  <p className="text-amber-600 dark:text-amber-400">
+                    <strong>Schatting:</strong> bij ontbrekende fabricantdata schat de app de gecombineerde{' '}
+                    <Abbr id="APV">APV</Abbr> als max(APV₁, APV₂) + 5 dB (gemiddelde van praktijkwaarden),
+                    begrensd op <strong>35 dB(A)</strong> (informatieve botgeleidingsgrens).
+                  </p>
+                </div>
 
                 <div>
                   <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-400">
@@ -685,7 +921,7 @@ function HEGPPESection({
                   }`}>
                     <div className="flex items-center justify-between gap-2">
                       <p className={`font-semibold ${combined.capped ? 'text-amber-800 dark:text-amber-300' : 'text-emerald-800 dark:text-emerald-300'}`}>
-                        Gecombineerde <Abbr id="APF">APF</Abbr>:{' '}
+                        Gecombineerde <Abbr id="APV">APV</Abbr>:{' '}
                         <span className="font-mono">{combined.attenuation} dB</span>
                       </p>
                       <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -698,11 +934,11 @@ function HEGPPESection({
                     </div>
                     {combined.capped && (
                       <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-                        ⚠ Maximum van 35 dB(A) bereikt (informatieve botgeleidingsgrens — EN 458:2025 §6.2.4).
+                        ⚠ Maximum van 35 dB(A) bereikt (informatieve botgeleidingsgrens).
                       </p>
                     )}
                     <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                      Gecombineerde <Abbr id="APF">APF</Abbr> wordt gebruikt in{' '}
+                      Gecombineerde <Abbr id="APV">APV</Abbr> wordt gebruikt in{' '}
                       <button type="button" onClick={() => onGoToStep(8)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 9 (berekeningen)</button>{' '}
                       en{' '}
                       <button type="button" onClick={() => onGoToStep(9)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 10 (beoordeling)</button>.
@@ -725,10 +961,6 @@ export default function SoundStep4b_Equipment({ investigation, onUpdate, onGoToS
 
   const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
   const desc = contentOverrides?.[`${STEP_KEY}.desc`];
-  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
-  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
-  const ib1Title = contentOverrides?.[`${STEP_KEY}.infobox.1.title`] ?? FALLBACK_IB1_TITLE;
-  const ib1Content = contentOverrides?.[`${STEP_KEY}.infobox.1.content`];
 
   function saveEquipment(updated: SoundEquipment) {
     const exists = equipment.some((e) => e.id === updated.id);
@@ -776,34 +1008,6 @@ export default function SoundStep4b_Equipment({ investigation, onUpdate, onGoToS
           }
         </InlineEdit>
       </div>
-
-      {/* Infobox */}
-      <InfoBox title={
-        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
-          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
-          {ib0Title}
-        </InlineEdit>
-      }>
-        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
-          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
-          {ib0Content
-            ? <MarkdownContent>{ib0Content}</MarkdownContent>
-            : <div className="space-y-1.5">
-                <p>
-                  <strong>Art. 7.4a Arbobesluit</strong> — Arbeidsmiddelen die aan bijzondere gevaren onderhevig zijn,
-                  worden periodiek gekeurd door een deskundige persoon of instelling.
-                </p>
-                <p>
-                  <strong><Abbr id="MRL">Machinerichtlijn</Abbr> 2006/42/<abbr title="Europese Gemeenschap" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">EG</abbr></strong> —
-                  De fabrikant vermeldt het gegarandeerde geluidsvermogensniveau{' '}
-                  <abbr title="Gegarandeerd geluidsvermogensniveau (A-gewogen)" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">L<sub>WA</sub></abbr> en het{' '}
-                  <abbr title="Gewogen geluidsdrukniveau op de werkplek, fabrieksopgave" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">L<sub>pA</sub></abbr> op de werkplek in de handleiding en{' '}
-                  <abbr title="CE-conformiteitsverklaring" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">CE</abbr>-verklaring.
-                </p>
-              </div>
-          }
-        </InlineEdit>
-      </InfoBox>
 
       {/* Equipment list */}
       <div className="space-y-3">
@@ -903,39 +1107,15 @@ export default function SoundStep4b_Equipment({ investigation, onUpdate, onGoToS
             </h3>
             <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
               Leg de gehoorbescherming vast die werknemers gebruiken.
-              De demping (<Abbr id="APF">APF</Abbr>) wordt meegenomen in de grenswaarde-toetsing ({' '}
-              <button type="button" onClick={() => onGoToStep(9)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 10</button>{' '}
-              — art. 6.6 lid 2 Arbobesluit).
+              De demping (<Abbr id="APV">APV</Abbr>) wordt meegenomen in de grenswaarde-toetsing in{' '}
+              <button type="button" onClick={() => onGoToStep(9)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 10</button>.
             </p>
           </div>
 
-          <InfoBox title={
-            <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.1.title`}
-              initialValue={ib1Title} fallback={FALLBACK_IB1_TITLE}>
-              {ib1Title}
-            </InlineEdit>
-          }>
-            <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.1.content`}
-              initialValue={ib1Content ?? ''} fallback="" multiline markdown>
-              {ib1Content
-                ? <MarkdownContent>{ib1Content}</MarkdownContent>
-                : <div className="space-y-1.5">
-                    <p>
-                      <strong>Art. 6.6 lid 1b:</strong> Bij de onderste actiewaarde (80 dB(A)) zijn gehoorbeschermers beschikbaar op verzoek.
-                      Boven de bovenste actiewaarde (85 dB(A)) is het gebruik verplicht.
-                    </p>
-                    <p>
-                      <strong>Art. 6.9:</strong> Gehoorbescherming moet de blootstelling aan het oor (<Formula math="L_{EX,8h,oor}" />) terugbrengen tot onder de grenswaarde (87 dB(A)).
-                    </p>
-                    <p>
-                      <strong>SNR÷2 methode:</strong> De <abbr title="Assumed Protection Factor: nominale dempingswaarde conform EN 458" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">APF</abbr> wordt berekend als SNR÷2 —
-                      een conservatieve benadering die rekening houdt met de <abbr title="Performance of Field Real-world use: werkelijke demping in de praktijk" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">PFRE</abbr> (praktijkdemping ≈ 50–60% van nominale SNR, EN 458:2025 Annex B).
-                      Voor een formele selectierapportage conform EN 458:2025 (§A.5 SNR-methode, §A.4 HML of §A.2 octaafband) is een apart EN 458-rapport vereist.
-                    </p>
-                  </div>
-              }
-            </InlineEdit>
-          </InfoBox>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            De <Abbr id="APV">APV</Abbr> wordt bepaald via de EN 458-selectieprocedure (SNR-, HML-check- of octaafbandmethode)
+            en handmatig ingevoerd. De werkelijke demping hangt af van het geluidstype, de pasvorm en het gebruikspatroon.
+          </p>
 
           {investigation.hegs.map((heg) => (
             <HEGPPESection

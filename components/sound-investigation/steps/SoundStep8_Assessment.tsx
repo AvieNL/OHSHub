@@ -9,6 +9,7 @@ import { Alert, FormGrid, Input, Select, Textarea } from '@/components/ui';
 import InlineStepHeader from '@/components/InlineStepHeader';
 import InlineEdit from '@/components/InlineEdit';
 import MarkdownContent from '@/components/MarkdownContent';
+import SoundCompliancePanel from '@/components/sound-investigation/SoundCompliancePanel';
 
 interface Props {
   investigation: SoundInvestigation;
@@ -19,7 +20,7 @@ interface Props {
 
 const STEP_KEY = 'step.9';
 const NS = 'investigation.sound';
-const FALLBACK_TITLE = 'Stap 10 — Beoordeling actiewaarden (Arbobesluit art. 6.6–6.8)';
+const FALLBACK_TITLE = 'Stap 10 — Beoordeling actiewaarden';
 const FALLBACK_DESC = 'Toetsing van L_EX,8h,95% aan de actiewaarden en grenswaarde conform het Arbobesluit.';
 
 function fmt1(n: number): string {
@@ -64,50 +65,45 @@ const OBLIGATIONS: Record<SoundActionLevel, Obligation[]> = {
     { article: 'Goede praktijk', text: 'Geen wettelijke verplichtingen. Zorg dat de situatie geen actiewaarde bereikt bij proceswijzigingen en verwerk resultaten in de RI&E.' },
   ],
   'lav': [
-    { article: 'Art. 6.6 lid 1a', text: 'Maatregelenprogramma opstellen ter vermindering van de geluidblootstelling.' },
-    { article: 'Art. 6.6 lid 1b', text: 'Gehoorbeschermers ter beschikking stellen op verzoek van de werknemer.' },
-    { article: 'Arbowet art. 5',  text: 'Risicobeoordeling documenteren; meting herhalen bij wijzigingen.' },
-    { article: 'Art. 6.7',        text: 'Gehooronderzoek (audiometrie) aanbieden op verzoek van de werknemer.' },
-    { article: 'Art. 6.8',        text: 'Voorlichting en opleiding geven over de geluidrisico\'s en beschermende maatregelen.' },
-    { article: 'Art. 6.10',       text: 'Gehooronderzoek (audiometrie) aanbieden indien de risicobeoordeling daartoe aanleiding geeft.' },
-    { article: 'Art. 6.11',       text: 'Werknemers informeren over meetresultaten, maatregelen, actiewaarden en beschikbaarheid van gehooronderzoek.' },
+    { article: 'Art. 6.8 lid 1',  text: 'Maatregelenprogramma opstellen ter vermindering van de geluidblootstelling aan de bron.' },
+    { article: 'Art. 6.8 lid 7',  text: 'Individuele gehoorbeschermers ter beschikking stellen.' },
+    { article: 'Art. 6.7',        text: 'Lawaainiveaus beoordelen en meten; resultaten registreren; beoordeling herhalen bij ingrijpende wijzigingen.' },
+    { article: 'Art. 6.10 lid 3', text: 'Audiometrisch onderzoek aanbieden indien de beoordeling en meting een gezondheidsrisico aantonen.' },
+    { article: 'Art. 6.11',       text: 'Voorlichting en onderricht geven over risico\'s, maatregelen, actiewaarden en gebruik van gehoorbeschermers.' },
   ],
   'uav': [
-    { article: 'Art. 6.6 lid 1a', text: 'Maatregelenprogramma opstellen én daadwerkelijk uitvoeren.' },
-    { article: 'Art. 6.6 lid 1b', text: 'Gehoorbeschermers beschikbaar stellen; gebruik is verplicht.' },
-    { article: 'Art. 6.6 lid 1c', text: 'Geluidzone aanwijzen (signalering, afbakening, beperking van toegang voor derden).' },
-    { article: 'Arbowet art. 5',  text: 'Risicobeoordeling documenteren; meting herhalen bij wijzigingen.' },
-    { article: 'Art. 6.7',        text: 'Gehooronderzoek (audiometrie) aanbieden op verzoek van de werknemer.' },
-    { article: 'Art. 6.8',        text: 'Voorlichting en opleiding (verplicht).' },
-    { article: 'Art. 6.9',        text: 'Zorgen dat de gekozen gehoorbeschermers de blootstelling bij het oor terugbrengen tot onder de grenswaarde; instructie over gebruik en onderhoud.' },
-    { article: 'Art. 6.10',       text: 'Periodiek preventief gehooronderzoek (audiometrie) verplicht aanbieden via bedrijfsarts.' },
-    { article: 'Art. 6.11',       text: 'Werknemers informeren over meetresultaten, maatregelen, actiewaarden en beschikbaarheid van gehooronderzoek.' },
+    { article: 'Art. 6.8 lid 3',  text: 'Technische en/of organisatorische maatregelen opstellen én uitvoeren om blootstelling te minimaliseren.' },
+    { article: 'Art. 6.8 lid 4',  text: 'Werkplekken duidelijk aanwijzen met signalering en afbakening; toegang beperken indien van toepassing.' },
+    { article: 'Art. 6.8 lid 9',  text: 'Individuele gehoorbeschermers ter beschikking stellen; dragen is verplicht.' },
+    { article: 'Art. 6.7',        text: 'Lawaainiveaus beoordelen en meten; resultaten registreren; beoordeling herhalen bij ingrijpende wijzigingen.' },
+    { article: 'Art. 6.10 lid 2', text: 'Periodiek audiometrisch onderzoek aanbieden.' },
+    { article: 'Art. 6.11',       text: 'Voorlichting en onderricht geven (verplicht) over risico\'s, maatregelen, actiewaarden en gebruik van gehoorbeschermers.' },
   ],
   'above-elv': [
-    { article: 'Art. 6.6 lid 2', text: 'Onmiddellijk maatregelen nemen om blootstelling terug te brengen tot onder de grenswaarde.' },
-    { article: 'Art. 6.6 lid 2', text: 'Oorzaak bepalen en gedocumenteerde corrigerende maatregelen treffen.' },
-    { article: 'Art. 6.6 lid 2', text: 'Gebruik van gehoorbescherming is verplicht totdat grenswaarde niet langer wordt overschreden.' },
-    { article: 'Art. 6.6 lid 1', text: 'Alle verplichtingen van de onderste en bovenste actiewaarde zijn tevens van kracht.' },
-    { article: 'Art. 6.9',       text: 'Effectiviteit gehoorbescherming aantonen; instructie gebruik en onderhoud verplicht.' },
-    { article: 'Art. 6.10',      text: 'Periodiek preventief gehooronderzoek (audiometrie) verplicht aanbieden via bedrijfsarts.' },
-    { article: 'Art. 6.10a',     text: 'Indien audiometrie gehoorschade aantoont: risicobeoordeling herzien, werknemer persoonlijk informeren en blootstelling voortdurend bewaken.' },
-    { article: 'Art. 6.11',      text: 'Werknemers informeren over meetresultaten, maatregelen, actiewaarden en beschikbaarheid van gehooronderzoek.' },
+    { article: 'Art. 6.8 lid 11a', text: 'Onmiddellijk maatregelen nemen om blootstelling terug te brengen tot onder de grenswaarde.' },
+    { article: 'Art. 6.8 lid 11b', text: 'Oorzaak van de overmatige blootstelling vaststellen.' },
+    { article: 'Art. 6.8 lid 11c', text: 'Maatregelen aanpassen om herhaling te voorkomen.' },
+    { article: 'Art. 6.8 lid 1–9', text: 'Alle verplichtingen van de onderste en bovenste actiewaarde blijven van kracht.' },
+    { article: 'Art. 6.10 lid 2',  text: 'Periodiek audiometrisch onderzoek aanbieden.' },
+    { article: 'Art. 6.10a',       text: 'Indien audiometrie gehoorschade aantoont: beoordeling en meting herhalen, maatregelen herzien, en betrokken werknemers opnieuw audiometrisch onderzoek aanbieden.' },
+    { article: 'Art. 6.11',        text: 'Voorlichting en onderricht geven over risico\'s, maatregelen, actiewaarden en beschikbaarheid van gehooronderzoek.' },
   ],
 };
 
 const PEAK_OBLIGATIONS: Record<SoundActionLevel, Obligation[]> = {
   'below-lav': [{ article: 'Goede praktijk', text: 'Piekgeluid onder onderste actiewaarde (< 135 dB(C)).' }],
   'lav': [
-    { article: 'Art. 6.6 lid 1', text: 'Piekgeluid overschrijdt onderste actiewaarde (≥ 135 dB(C)). Maatregelenprogramma uitbreiden.' },
-    { article: 'Art. 6.6 lid 1b', text: 'Gehoorbeschermers beschikbaar stellen die ook piekgeluiden dempen.' },
+    { article: 'Art. 6.8 lid 1', text: 'Piekgeluid overschrijdt onderste actiewaarde (≥ 135 dB(C)). Maatregelenprogramma uitbreiden met impulsgeluid.' },
+    { article: 'Art. 6.8 lid 7', text: 'Individuele gehoorbeschermers ter beschikking stellen die ook piekgeluiden dempen.' },
   ],
   'uav': [
-    { article: 'Art. 6.6 lid 1', text: 'Piekgeluid overschrijdt bovenste actiewaarde (≥ 137 dB(C)). Maatregelenprogramma voor impulsgeluid uitvoeren.' },
-    { article: 'Art. 6.6 lid 1b–c', text: 'Gehoorbescherming beschikbaar stellen, gebruik aanbevelen; overweeg zonering.' },
+    { article: 'Art. 6.8 lid 3', text: 'Piekgeluid overschrijdt bovenste actiewaarde (≥ 137 dB(C)). Technische en/of organisatorische maatregelen voor impulsgeluid opstellen én uitvoeren.' },
+    { article: 'Art. 6.8 lid 9', text: 'Individuele gehoorbeschermers ter beschikking stellen; dragen is verplicht.' },
+    { article: 'Art. 6.8 lid 4', text: 'Werkplek aanwijzen met signalering en afbakening; overweeg toegangsbeperking.' },
   ],
   'above-elv': [
-    { article: 'Art. 6.6 lid 2', text: 'Piekgrenswaarde overschreden (≥ 140 dB(C)). Onmiddellijk maatregelen treffen.' },
-    { article: 'Art. 6.6 lid 2', text: 'Gehoorbescherming is verplicht.' },
+    { article: 'Art. 6.8 lid 11a', text: 'Piekgrenswaarde overschreden (≥ 140 dB(C)). Onmiddellijk maatregelen treffen om blootstelling terug te brengen tot onder de grenswaarde.' },
+    { article: 'Art. 6.8 lid 9',   text: 'Dragen van gehoorbescherming is verplicht.' },
   ],
 };
 
@@ -134,7 +130,7 @@ function ExposureBar({ lEx8h_95pct, lEx8h_oor }: { lEx8h_95pct: number; lEx8h_oo
 
   return (
     <div className="mt-3">
-      {/* Top labels: main value row 1, APF-corrected row 2 */}
+      {/* Top labels: main value row 1, APV-corrected row 2 */}
       <div className={`relative mb-1 text-[10px] ${oorPct !== null ? 'h-8' : 'h-4'}`}>
         <span
           className="absolute top-0 -translate-x-1/2 font-semibold text-zinc-700 dark:text-zinc-200"
@@ -162,7 +158,7 @@ function ExposureBar({ lEx8h_95pct, lEx8h_oor }: { lEx8h_95pct: number; lEx8h_oo
         {[lav, uav, elv].map((p, i) => (
           <div key={i} className="absolute inset-y-0 w-px bg-zinc-400/60 dark:bg-zinc-500" style={{ left: `${p}%` }} />
         ))}
-        {/* APF-corrected marker (drawn first so main marker renders on top) */}
+        {/* APV-corrected marker (drawn first so main marker renders on top) */}
         {oorPct !== null && (
           <div
             className={`absolute top-1/2 h-5 w-1.5 -translate-y-1/2 rounded-sm shadow ring-2 ring-white transition-all dark:ring-zinc-900 ${
@@ -239,7 +235,7 @@ function PeakExposureBar({ lCpeak, lCpeak_oor }: { lCpeak: number; lCpeak_oor?: 
         {[plav, puav, pgw].map((p, i) => (
           <div key={i} className="absolute inset-y-0 w-px bg-zinc-400/60 dark:bg-zinc-500" style={{ left: `${p}%` }} />
         ))}
-        {/* APF-corrected marker */}
+        {/* APV-corrected marker */}
         {oorPct !== null && (
           <div
             className={`absolute top-1/2 h-5 w-1.5 -translate-y-1/2 rounded-sm shadow ring-2 ring-white transition-all dark:ring-zinc-900 ${
@@ -277,7 +273,7 @@ function PPEReadOnlySummary({
   onGoToStep: (step: number) => void;
 }) {
   const hasPPE = heg.ppeMethod != null || heg.ppeSNRUnknown || (heg.ppeAttenuation ?? 0) > 0;
-  const combinedAPF = stat.lEx8h_95pct_oor != null
+  const combinedAPV = stat.lEx8h_95pct_oor != null
     ? stat.lEx8h_95pct - stat.lEx8h_95pct_oor
     : null;
   const methodLabel: Record<string, string> = {
@@ -287,10 +283,9 @@ function PPEReadOnlySummary({
     'double-octave': 'dubbel — octaafband',
   };
 
-  function DeviceRow({ label, apf, snr, snrUnknown }: {
+  function DeviceRow({ label, apf, snrUnknown }: {
     label: string;
     apf?: number;
-    snr?: number;
     snrUnknown?: boolean;
   }) {
     return (
@@ -300,10 +295,7 @@ function PPEReadOnlySummary({
           <span className="text-amber-600 dark:text-amber-400">SNR onbekend — datablad niet beschikbaar</span>
         ) : apf != null ? (
           <span className="font-mono text-blue-700 dark:text-blue-300">
-            <Abbr id="APF">APF</Abbr> = {apf.toFixed(1)} dB
-            {snr != null && (
-              <span className="ml-1 text-zinc-400 dark:text-zinc-500">(SNR {snr}÷2)</span>
-            )}
+            <Abbr id="APV">APV</Abbr> = {apf.toFixed(1)} dB
           </span>
         ) : (
           <span className="text-zinc-400 dark:text-zinc-500">bescherming nog niet berekend</span>
@@ -341,7 +333,6 @@ function PPEReadOnlySummary({
           <DeviceRow
             label={heg.ppeNotes || 'Gehoorbescherming 1'}
             apf={heg.ppeAttenuation ?? undefined}
-            snr={heg.ppeSNR ?? undefined}
             snrUnknown={heg.ppeSNRUnknown}
           />
 
@@ -350,17 +341,16 @@ function PPEReadOnlySummary({
             <DeviceRow
               label={heg.ppe2Notes || 'Gehoorbescherming 2'}
               apf={heg.ppe2Attenuation ?? undefined}
-              snr={heg.ppe2SNR ?? undefined}
               snrUnknown={heg.ppe2SNRUnknown}
             />
           )}
 
           {/* Combined result (only when double) */}
-          {heg.ppeDouble && combinedAPF != null && (
+          {heg.ppeDouble && combinedAPV != null && (
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 border-t border-blue-100 pt-1.5 dark:border-blue-800/40">
               <span className="font-medium text-zinc-700 dark:text-zinc-300">Gecombineerd:</span>
               <span className="font-mono text-blue-700 dark:text-blue-300">
-                <Abbr id="APF">APF</Abbr> = {combinedAPF.toFixed(1)} dB
+                <Abbr id="APV">APV</Abbr> = {combinedAPV.toFixed(1)} dB
               </span>
               <span className="text-zinc-400 dark:text-zinc-500">
                 ({methodLabel[stat.ppeCombinedMethod ?? 'single']})
@@ -375,17 +365,20 @@ function PPEReadOnlySummary({
 
           {/* L_EX,8h,oor verdict */}
           {stat.lEx8h_95pct_oor != null && (
-            <p className={`pt-0.5 font-semibold ${stat.elvPpeCompliant ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>
-              <Formula math="L_{EX,8h,oor}" /> = {stat.lEx8h_95pct_oor.toFixed(1)} dB(A)
-              {' '}— {stat.elvPpeCompliant ? '✓ onder grenswaarde' : '✗ grenswaarde overschreden'}
-            </p>
+            <>
+              <p className={`pt-0.5 font-semibold ${stat.elvPpeCompliant ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>
+                <Formula math="L_{EX,8h,oor}" /> = {stat.lEx8h_95pct_oor.toFixed(1)} dB(A)
+                {' '}— {stat.elvPpeCompliant ? '✓ onder grenswaarde' : '✗ grenswaarde overschreden'}
+              </p>
+              {stat.lEx8h_95pct_oor >= 80 && stat.lEx8h_95pct_oor < 87 && (
+                <Alert variant="warning" size="sm" className="mt-2">
+                  <strong>Resultaat dicht bij grenswaarde</strong> —{' '}
+                  <Formula math="L_{EX,8h,oor}" /> = {stat.lEx8h_95pct_oor.toFixed(1)} dB(A) ligt in de band 80–87 dB(A).
+                  Laat een arbeidshygiënist of andere kerndeskundige dit resultaat beoordelen en zo nodig nader meten.
+                </Alert>
+              )}
+            </>
           )}
-
-          {/* PFRE reminder */}
-          <p className="pt-0.5 text-zinc-400 dark:text-zinc-500">
-            <abbr title="Performance of Field Real-world use: werkelijke demping in de praktijk ≈ 50–60% van nominale SNR (EN 458:2025 Annex B)" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">PFRE</abbr>:{' '}
-            APF = SNR÷2 houdt rekening met praktijkdemping. Toetsing grenswaarde conform Arbobesluit art. 6.6 lid 2.
-          </p>
         </div>
       )}
     </div>
@@ -471,8 +464,8 @@ function AudiometrySection({
           <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
             Audiometrie — Arbobesluit{' '}
             {isUAVOrAbove
-              ? <><abbr title="Art. 6.10: Periodiek preventief gehooronderzoek verplicht bij UAV" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">art. 6.10</abbr> (verplicht periodiek)</>
-              : <><abbr title="Art. 6.7/6.10: Gehooronderzoek aanbieden bij LAV" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">art. 6.7 / 6.10</abbr> (aanbieden)</>}
+              ? <><abbr title="Art. 6.10 lid 2: Periodiek audiometrisch onderzoek aanbieden bij dagelijkse blootstelling ≥ 85 dB(A)" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">art. 6.10 lid 2</abbr> (verplicht periodiek)</>
+              : <><abbr title="Art. 6.10 lid 3: Audiometrisch onderzoek aanbieden indien beoordeling en meting een gezondheidsrisico aantonen (≥ 80 dB(A))" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">art. 6.10 lid 3</abbr> (aanbieden indien risico)</>}
           </p>
           <span className="shrink-0 rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400"
                 title="Art. 6.10 Arbobesluit koppelt de verplichting aan de blootstelling per werknemersgroep (HEG)">
@@ -481,9 +474,9 @@ function AudiometrySection({
         </div>
         {isUAVOrAbove && (
           <Alert variant="orange" size="sm">
-            <strong>Verplicht:</strong> Periodiek preventief gehooronderzoek aanbieden via bedrijfsarts
-            (Arbobesluit art. 6.10 lid 1). Bij vastgestelde gehoorschade: risicobeoordeling herzien en
-            werknemer persoonlijk informeren (art. 6.10a).
+            <strong>Verplicht:</strong> Periodiek audiometrisch onderzoek aanbieden
+            (Arbobesluit art. 6.10 lid 2). Bij vastgestelde gehoorschade: beoordeling en meting herhalen,
+            maatregelen herzien en betrokken werknemers opnieuw audiometrisch onderzoek aanbieden (art. 6.10a).
           </Alert>
         )}
 
@@ -509,8 +502,8 @@ function AudiometrySection({
           <>
             <Alert variant={isUAVOrAbove ? 'error' : 'warning'} size="sm">
               {isUAVOrAbove
-                ? <><strong>Actie vereist:</strong> Gehooronderzoek is nog niet uitgevoerd. Bij de bovenste actiewaarde is periodiek preventief gehooronderzoek verplicht (art. 6.10 lid 1).</>
-                : <><strong>Aanbevolen:</strong> Gehooronderzoek is nog niet uitgevoerd. Overweeg om gehooronderzoek aan te bieden (art. 6.10).</>}
+                ? <><strong>Actie vereist:</strong> Gehooronderzoek is nog niet uitgevoerd. Bij de bovenste actiewaarde is periodiek audiometrisch onderzoek verplicht (art. 6.10 lid 2).</>
+                : <><strong>Aanbevolen:</strong> Gehooronderzoek is nog niet uitgevoerd. Overweeg om audiometrisch onderzoek aan te bieden (art. 6.10 lid 3).</>}
               {' '}Voeg dit toe als maatregel in{' '}
               <button type="button" onClick={() => onGoToStep(10)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 11</button>.
             </Alert>
@@ -639,7 +632,7 @@ function HEGAssessment({
   // L_EX,8h,oor: pre-computed by sound-stats.ts (includes combined dual-PPE logic)
   const lEx8h_oor = stat.lEx8h_95pct_oor;
   // L_p,Cpeak,oor: SNR is a broadband value and does not describe spectral peak composition.
-  // Peak correction is not computed — always undefined when using SNR-only APF.
+  // Peak correction is not computed — always undefined when using SNR-only APV.
   const lCpeak_oor = undefined;
   // Always show peak note when PPE is configured (SNR cannot correct peak exposure).
   const showPeakFreqNote = hasPeak && attenuation > 0;
@@ -657,6 +650,13 @@ function HEGAssessment({
           <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{heg.name}</p>
         </div>
       </div>
+
+      {/* ── Normconformiteit ── */}
+      {stat.complianceChecks && stat.complianceChecks.length > 0 && (
+        <div className="border-b border-zinc-200 dark:border-zinc-700">
+          <SoundCompliancePanel checks={stat.complianceChecks} className="rounded-none border-0" />
+        </div>
+      )}
 
       <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
         {/* ── Dagblootstelling ── */}
@@ -691,7 +691,7 @@ function HEGAssessment({
           <div className="px-5 pt-3 pb-4">
             <ExposureBar lEx8h_95pct={stat.lEx8h_95pct} lEx8h_oor={lEx8h_oor} />
             <p className="mt-4 mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-              Wettelijke verplichtingen (Arbobesluit art. 6.6–6.8)
+              Wettelijke verplichtingen (Arbobesluit art. 6.7–6.11)
             </p>
             <table className="w-full text-xs">
               <tbody>
@@ -971,19 +971,19 @@ export default function SoundStep8_Assessment({ investigation, onUpdate, onGoToS
                 <td className="px-4 py-2 text-amber-700 dark:text-amber-400">Onderste actiewaarde (<Abbr id="LAV">LAV</Abbr>)</td>
                 <td className="px-4 py-2 text-right font-mono">≥ 80</td>
                 <td className="px-4 py-2 text-right font-mono">≥ 135</td>
-                <td className="px-4 py-2 text-zinc-500">Art. 6.6 lid 1 — zónder <Abbr id="PBM">PBM</Abbr></td>
+                <td className="px-4 py-2 text-zinc-500">Art. 6.8 lid 7 — zónder <Abbr id="PBM">PBM</Abbr></td>
               </tr>
               <tr className="bg-orange-50/50 dark:bg-orange-900/5">
                 <td className="px-4 py-2 text-orange-700 dark:text-orange-400">Bovenste actiewaarde (<Abbr id="UAV">UAV</Abbr>)</td>
                 <td className="px-4 py-2 text-right font-mono">≥ 85</td>
                 <td className="px-4 py-2 text-right font-mono">≥ 137</td>
-                <td className="px-4 py-2 text-zinc-500">Art. 6.6 lid 1 — zónder <Abbr id="PBM">PBM</Abbr></td>
+                <td className="px-4 py-2 text-zinc-500">Art. 6.8 lid 9 — zónder <Abbr id="PBM">PBM</Abbr></td>
               </tr>
               <tr className="bg-red-50/50 dark:bg-red-900/5">
                 <td className="px-4 py-2 text-red-700 dark:text-red-400">Grenswaarde (<Abbr id="GW">GW</Abbr>)</td>
                 <td className="px-4 py-2 text-right font-mono">≥ 87</td>
                 <td className="px-4 py-2 text-right font-mono">≥ 140</td>
-                <td className="px-4 py-2 text-zinc-500">Art. 6.6 lid 2 — <em>mét</em> <Abbr id="PBM">PBM</Abbr></td>
+                <td className="px-4 py-2 text-zinc-500">Art. 6.8 lid 10 — <em>mét</em> <Abbr id="PBM">PBM</Abbr></td>
               </tr>
             </tbody>
           </table>
@@ -992,24 +992,17 @@ export default function SoundStep8_Assessment({ investigation, onUpdate, onGoToS
           <strong>Belangrijk:</strong> <Abbr id="LAV">LAV</Abbr> en <Abbr id="UAV">UAV</Abbr> worden getoetst aan de
           blootstelling <em>zónder</em> gehoorbescherming. De grenswaarde (<Abbr id="GW">GW</Abbr> 87 dB(A)) wordt
           getoetst aan het geluidniveau dat het oor daadwerkelijk bereikt, dus ná aftrek van de demping door
-          de gehoorbeschermer (Arbobesluit art. 6.5 lid 3).
+          de gehoorbeschermer (Arbobesluit art. 6.8 lid 10).
         </p>
       </section>
 
-      {statistics.length === 0 ? (
-        <Alert variant="warning" size="md">
-          Voer eerst meetwaarden in bij{' '}
-          <button type="button" onClick={() => onGoToStep(7)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 8</button>{' '}
-          en bereken de blootstelling bij{' '}
-          <button type="button" onClick={() => onGoToStep(8)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 9</button>.
-        </Alert>
-      ) : (
-        <section className="space-y-4">
-          <h3 className="border-b border-zinc-100 pb-2 text-sm font-semibold uppercase tracking-wider text-zinc-400 dark:border-zinc-800 dark:text-zinc-500">
-            Beoordeling per <Abbr id="HEG">HEG</Abbr>
-          </h3>
+      <section className="space-y-4">
+        <h3 className="border-b border-zinc-100 pb-2 text-sm font-semibold uppercase tracking-wider text-zinc-400 dark:border-zinc-800 dark:text-zinc-500">
+          Beoordeling per <Abbr id="HEG">HEG</Abbr>
+        </h3>
 
-          {/* Overall verdict */}
+        {/* Overall verdict — only shown when ALL HEGs have results */}
+        {statistics.length > 0 && statistics.length === hegs.length && (
           <div className={`rounded-xl border px-5 py-4 ${worstColors.bg} ${worstColors.border}`}>
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -1026,33 +1019,57 @@ export default function SoundStep8_Assessment({ investigation, onUpdate, onGoToS
               </span>
             </div>
           </div>
+        )}
+        {statistics.length < hegs.length && (
+          <Alert variant="warning" size="md">
+            Eindoordeel kan niet worden vastgesteld — {hegs.length - statistics.length} van de {hegs.length} <Abbr id="HEG">HEG</Abbr>&apos;s {hegs.length - statistics.length === 1 ? 'heeft' : 'hebben'} onvoldoende meetresultaten.
+            Voer de ontbrekende metingen in via{' '}
+            <button type="button" onClick={() => onGoToStep(7)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 8</button>{' '}
+            en bereken de blootstelling via{' '}
+            <button type="button" onClick={() => onGoToStep(8)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 9</button>.
+          </Alert>
+        )}
 
-          {/* Per-HEG */}
-          <div className="space-y-4">
-            {statistics.map((stat, idx) => {
-              const heg = hegs.find((h) => h.id === stat.hegId);
-              if (!heg) return null;
+        {/* Per-HEG */}
+        <div className="space-y-4">
+          {hegs.map((heg, idx) => {
+            const stat = statistics.find((s) => s.hegId === heg.id);
+            if (stat) {
               return (
                 <HEGAssessment
-                  key={stat.hegId}
+                  key={heg.id}
                   stat={stat}
                   heg={heg}
                   onUpdateHEG={updateHEG}
                   onGoToStep={onGoToStep}
                   index={idx + 1}
-                  total={statistics.length}
+                  total={hegs.length}
                 />
               );
-            })}
-          </div>
-
-          {hegs.length > statistics.length && (
-            <Alert variant="warning" size="sm">
-              {hegs.length - statistics.length} <Abbr id="HEG">HEG</Abbr>{hegs.length - statistics.length !== 1 ? '\'s' : ''} heeft onvoldoende meetgegevens.
-            </Alert>
-          )}
-        </section>
-      )}
+            }
+            return (
+              <div key={heg.id} className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700">
+                <div className="border-b border-zinc-200 bg-zinc-50 px-5 py-3 dark:border-zinc-800 dark:bg-zinc-800/50">
+                  <div className="flex items-center gap-2">
+                    {hegs.length > 1 && (
+                      <span className="shrink-0 font-mono text-xs font-semibold text-zinc-400 dark:text-zinc-500">
+                        <Abbr id="HEG">HEG</Abbr> {idx + 1}/{hegs.length}
+                      </span>
+                    )}
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{heg.name}</p>
+                  </div>
+                </div>
+                <div className="px-5 py-4 text-sm text-zinc-500 dark:text-zinc-400">
+                  Geen meetresultaten beschikbaar. Voer metingen in via{' '}
+                  <button type="button" onClick={() => onGoToStep(7)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 8</button>{' '}
+                  en bereken de blootstelling via{' '}
+                  <button type="button" onClick={() => onGoToStep(8)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 9</button>.
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
     </div>
   );

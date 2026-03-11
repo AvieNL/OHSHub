@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     'Onderzoeksinstrument voor ioniserende en niet-ioniserende straling op de werkplek conform het Besluit basisveiligheidsnormen stralingsbescherming (Bbs) en Arbobesluit art. 4.45a–4.45k.',
 };
 
-const { legislation, norms, limitGroups, adminObligations } = THEME_LEGAL_INFO['radiation'];
+const { legislation, norms, limitGroups } = THEME_LEGAL_INFO['radiation'];
 const theme = themes.find((t) => t.slug === 'radiation')!;
 
 const FALLBACK_TITLE = 'Straling';
@@ -42,7 +42,6 @@ export default async function RadiationPage() {
       legislation={legislation}
       norms={norms}
       limitGroups={limitGroups}
-      adminObligations={adminObligations}
       steps={[
         { title: 'Vooronderzoek', desc: 'Inventarisatie van stralingsbronnen (toestellen, radioactieve stoffen, laser, UV-installaties, EMV-bronnen); klachteninventarisatie en beroepshistorie.' },
         { title: 'Opdracht & kaders', desc: 'Opdrachtgever, stralingsbeschermingsdeskundige (SBD/SBK), werkplek, wettelijk kader en vergunningsstatus (Bbs/Kernenergiewet).' },

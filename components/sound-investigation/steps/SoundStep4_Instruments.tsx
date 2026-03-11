@@ -6,8 +6,6 @@ import { newSoundId } from '@/lib/sound-investigation-storage';
 import { u2FromInstrumentType } from '@/lib/sound-stats';
 import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
-import { SectionRef } from '@/components/SectionRef';
-import { InfoBox } from '@/components/InfoBox';
 import { Alert, Button, Card, FieldLabel, FormGrid, Icon, Input } from '@/components/ui';
 import InlineStepHeader from '@/components/InlineStepHeader';
 import InlineEdit from '@/components/InlineEdit';
@@ -22,14 +20,13 @@ interface Props {
 
 const STEP_KEY = 'step.4';
 const NS = 'investigation.sound';
-const FALLBACK_TITLE = 'Stap 5 — Meetapparatuur (§5, §12 NEN-EN-ISO 9612:2025)';
-const FALLBACK_DESC = 'Registreer het gebruikte meetapparaat inclusief kalibratiegegevens. Dit is verplicht onderdeel van het meetrapport (§15.c).';
-const FALLBACK_IB0_TITLE = '§12.2 / §12.3 — Veldkalibratie & microfoonplaatsing';
+const FALLBACK_TITLE = 'Stap 5 — Meetapparatuur';
+const FALLBACK_DESC = 'Registreer het gebruikte meetapparaat inclusief kalibratiegegevens. Dit is verplicht onderdeel van het meetrapport.';
 
 const INSTRUMENT_TYPES: { value: InstrumentType; label: string; u2: number; norm: string }[] = [
-  { value: 'slm-class1',  label: 'Geluidniveaumeter klasse 1 (IEC 61672-1)',  u2: 0.7, norm: 'IEC 61672-1, klasse 1' },
-  { value: 'dosimeter',   label: 'Persoonlijke dosimeter (IEC 61252)',          u2: 1.5, norm: 'IEC 61252' },
-  { value: 'slm-class2',  label: 'Geluidniveaumeter klasse 2 (IEC 61672-1)',  u2: 1.5, norm: 'IEC 61672-1, klasse 2' },
+  { value: 'slm-class1', label: 'Geluidniveaumeter klasse 1 (IEC 61672-1)', u2: 0.7, norm: 'IEC 61672-1, klasse 1' },
+  { value: 'dosimeter',  label: 'Persoonlijke dosimeter (IEC 61252)',        u2: 1.5, norm: 'IEC 61252' },
+  { value: 'slm-class2', label: 'Geluidniveaumeter klasse 2 (IEC 61672-1)', u2: 1.5, norm: 'IEC 61672-1, klasse 2' },
 ];
 
 function InstrumentForm({
@@ -55,10 +52,9 @@ function InstrumentForm({
         Meetapparaat opgeven
       </h4>
 
+      {/* Instrument type */}
       <div>
-        <FieldLabel>
-          Type instrument (<SectionRef id="§5.1">§5.1</SectionRef>, <SectionRef id="Bijlage C">Tabel C.5</SectionRef>)
-        </FieldLabel>
+        <FieldLabel>Type instrument</FieldLabel>
         <div className="space-y-2">
           {INSTRUMENT_TYPES.map((it) => (
             <label key={it.value} className="flex cursor-pointer items-start gap-3">
@@ -71,17 +67,23 @@ function InstrumentForm({
               <div>
                 <p className="text-sm text-zinc-800 dark:text-zinc-200">{it.label}</p>
                 <p className="text-xs text-zinc-400">
-                  Norm: {it.norm} · <Formula math="u_2" /> = {it.u2} dB (Tabel C.5)
+                  <Formula math="u_2" /> = {it.u2} dB
                 </p>
               </div>
             </label>
           ))}
         </div>
         <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-          Standaardonzekerheid instrumentering <Formula math="u_2" /> = <strong>{u2} dB</strong> (Tabel C.5 <Abbr id="NEN9612">NEN-EN-ISO 9612</Abbr>:2025)
+          Standaardonzekerheid instrumentering <Formula math="u_2" /> = <strong>{u2} dB</strong>
         </p>
+        {form.type === 'slm-class2' && (
+          <Alert variant="warning" size="sm" className="mt-2">
+            Klasse 1 is aanbevolen. Klasse 2 is acceptabel maar minder geschikt bij lage temperaturen (&lt;0 °C) of bij geluid met dominante hoge frequenties (&gt;4 kHz).
+          </Alert>
+        )}
       </div>
 
+      {/* Instrument identification */}
       <FormGrid>
         <div>
           <FieldLabel>Fabrikant</FieldLabel>
@@ -104,9 +106,7 @@ function InstrumentForm({
           />
         </div>
         <div>
-          <FieldLabel>
-            Serienummer (<SectionRef id="§15.c.1">§15.c.1</SectionRef>)
-          </FieldLabel>
+          <FieldLabel>Serienummer</FieldLabel>
           <Input
             type="text"
             value={form.serialNumber ?? ''}
@@ -115,59 +115,117 @@ function InstrumentForm({
             className="w-full"
           />
         </div>
-        <div>
-          <FieldLabel>
-            Datum laatste labkalibratie (<SectionRef id="§15.c.3">§15.c.3</SectionRef>)
-          </FieldLabel>
-          <Input
-            type="date"
-            value={form.lastLabCalibration ?? ''}
-            onChange={(e) => upd({ lastLabCalibration: e.target.value })}
-            className="w-full"
-          />
-        </div>
-        <div>
-          <FieldLabel>Kalibratiecertificaatnummer</FieldLabel>
-          <Input
-            type="text"
-            value={form.calibrationRef ?? ''}
-            onChange={(e) => upd({ calibrationRef: e.target.value })}
-            placeholder="Cert. nr."
-            className="w-full"
-          />
-        </div>
       </FormGrid>
 
-      <div className="flex gap-4">
-        <label className="flex cursor-pointer items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={form.windscreen ?? false}
-            onChange={(e) => upd({ windscreen: e.target.checked })}
-            className="accent-orange-500"
-          />
-          <span className="text-zinc-700 dark:text-zinc-300">Windkap aanwezig (<SectionRef id="§13.3">§13.3</SectionRef>)</span>
-        </label>
-        <label className="flex cursor-pointer items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={form.extensionCable ?? false}
-            onChange={(e) => upd({ extensionCable: e.target.checked })}
-            className="accent-orange-500"
-          />
-          <span className="text-zinc-700 dark:text-zinc-300">Verlengkabel (<SectionRef id="§15.c.2">§15.c.2</SectionRef>)</span>
-        </label>
+      {/* Periodic verification */}
+      <div className="border-t border-zinc-200 pt-4 dark:border-zinc-700">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+          Periodieke verificatie (max. 2 jaar)
+        </p>
+        <FormGrid>
+          <div>
+            <FieldLabel>Datum laatste labkalibratie</FieldLabel>
+            <Input
+              type="date"
+              value={form.lastLabCalibration ?? ''}
+              onChange={(e) => upd({ lastLabCalibration: e.target.value })}
+              className="w-full"
+            />
+          </div>
+          <div>
+            <FieldLabel>Naam kalibratie­laboratorium</FieldLabel>
+            <Input
+              type="text"
+              value={form.calibrationLabName ?? ''}
+              onChange={(e) => upd({ calibrationLabName: e.target.value })}
+              placeholder="Bijv. NMi Van Swinden Laboratorium"
+              className="w-full"
+            />
+          </div>
+          <div>
+            <FieldLabel>Certificaatnummer</FieldLabel>
+            <Input
+              type="text"
+              value={form.calibrationRef ?? ''}
+              onChange={(e) => upd({ calibrationRef: e.target.value })}
+              placeholder="Cert. nr."
+              className="w-full"
+            />
+          </div>
+          <div>
+            <FieldLabel>Uitkomst verificatie</FieldLabel>
+            <Input
+              type="text"
+              value={form.calibrationOutcome ?? ''}
+              onChange={(e) => upd({ calibrationOutcome: e.target.value })}
+              placeholder="Bijv. Voldoet aan IEC 61672-1 klasse 1"
+              className="w-full"
+            />
+          </div>
+        </FormGrid>
       </div>
 
-      <div>
-        <FieldLabel>Opmerkingen</FieldLabel>
-        <Input
-          type="text"
-          value={form.notes ?? ''}
-          onChange={(e) => upd({ notes: e.target.value })}
-          placeholder="Bijv. microfoon type 4189, windkap UA 0237"
-          className="w-full"
-        />
+      {/* Calibrator */}
+      <div className="border-t border-zinc-200 pt-4 dark:border-zinc-700">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+          Kalibrator
+        </p>
+        <FormGrid>
+          <div>
+            <FieldLabel>Type / model kalibrator</FieldLabel>
+            <Input
+              type="text"
+              value={form.calibratorType ?? ''}
+              onChange={(e) => upd({ calibratorType: e.target.value })}
+              placeholder="Bijv. Brüel & Kjær 4231"
+              className="w-full"
+            />
+          </div>
+          <div>
+            <FieldLabel>Serienummer kalibrator</FieldLabel>
+            <Input
+              type="text"
+              value={form.calibratorSerialNumber ?? ''}
+              onChange={(e) => upd({ calibratorSerialNumber: e.target.value })}
+              placeholder="Serienummer"
+              className="w-full"
+            />
+          </div>
+        </FormGrid>
+      </div>
+
+      {/* Accessories & notes */}
+      <div className="border-t border-zinc-200 pt-4 dark:border-zinc-700">
+        <div className="flex gap-4">
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={form.windscreen ?? false}
+              onChange={(e) => upd({ windscreen: e.target.checked })}
+              className="accent-orange-500"
+            />
+            <span className="text-zinc-700 dark:text-zinc-300">Windkap aanwezig</span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={form.extensionCable ?? false}
+              onChange={(e) => upd({ extensionCable: e.target.checked })}
+              className="accent-orange-500"
+            />
+            <span className="text-zinc-700 dark:text-zinc-300">Verlengkabel</span>
+          </label>
+        </div>
+        <div className="mt-3">
+          <FieldLabel>Opmerkingen</FieldLabel>
+          <Input
+            type="text"
+            value={form.notes ?? ''}
+            onChange={(e) => upd({ notes: e.target.value })}
+            placeholder="Bijv. microfoon type 4189, windkap UA 0237"
+            className="w-full"
+          />
+        </div>
       </div>
 
       <div className="flex gap-2">
@@ -183,10 +241,12 @@ export default function SoundStep4_Instruments({ investigation, onUpdate, conten
   const [showNew, setShowNew] = useState(false);
   const { instruments } = investigation;
 
+  // Reference date for calibration validity check: use investigation creation date,
+  // not today — calibration must be valid on the day measurements are conducted.
+  const refDate = new Date(investigation.createdAt);
+
   const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
-  const desc = contentOverrides?.[`${STEP_KEY}.desc`];
-  const ib0Title = contentOverrides?.[`${STEP_KEY}.infobox.0.title`] ?? FALLBACK_IB0_TITLE;
-  const ib0Content = contentOverrides?.[`${STEP_KEY}.infobox.0.content`];
+  const desc  = contentOverrides?.[`${STEP_KEY}.desc`];
 
   function saveInstrument(updated: SoundInstrument) {
     const exists = instruments.some((i) => i.id === updated.id);
@@ -214,30 +274,11 @@ export default function SoundStep4_Instruments({ investigation, onUpdate, conten
               </p>
             : <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
                 Registreer het gebruikte meetapparaat inclusief kalibratiegegevens. Dit is verplicht
-                onderdeel van het meetrapport (<SectionRef id="§15.c">§15.c</SectionRef>).
+                onderdeel van het meetrapport.
               </p>
           }
         </InlineEdit>
       </div>
-
-      <InfoBox title={
-        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.title`}
-          initialValue={ib0Title} fallback={FALLBACK_IB0_TITLE}>
-          {ib0Title}
-        </InlineEdit>
-      }>
-        <InlineEdit namespace={NS} contentKey={`${STEP_KEY}.infobox.0.content`}
-          initialValue={ib0Content ?? ''} fallback="" multiline markdown>
-          {ib0Content
-            ? <MarkdownContent>{ib0Content}</MarkdownContent>
-            : <div className="space-y-2">
-                <p><SectionRef id="§12.2">§12.2 Veldkalibratie</SectionRef>: Voer voor én na elke meetserie een akoestische kalibratie uit.
-                  Als de afwijking voor een bepaalde frequentie meer dan 0,5 dB bedraagt, moeten de meetresultaten worden afgekeurd.</p>
-                <p><SectionRef id="§12.3">§12.3 Microfoonplaatsing</SectionRef>: Draagbaar instrument: microfoon op de schouder, 0,1 m van de gehooropening, ~0,04 m boven de schouder.</p>
-              </div>
-          }
-        </InlineEdit>
-      </InfoBox>
 
       {/* Instrument list */}
       <div className="space-y-3">
@@ -252,18 +293,17 @@ export default function SoundStep4_Instruments({ investigation, onUpdate, conten
             ) : (
               <Card>
                 {(() => {
-                  const today = new Date();
                   const calDate = inst.lastLabCalibration ? new Date(inst.lastLabCalibration) : null;
                   const calAgeMonths = calDate
-                    ? (today.getTime() - calDate.getTime()) / (1000 * 60 * 60 * 24 * 30.44)
+                    ? (refDate.getTime() - calDate.getTime()) / (1000 * 60 * 60 * 24 * 30.44)
                     : null;
-                  const calOutdated = calAgeMonths !== null && calAgeMonths > 12;
-                  const calMissing = !inst.lastLabCalibration;
+                  const calOutdated = calAgeMonths !== null && calAgeMonths > 24;
+                  const calMissing  = !inst.lastLabCalibration;
                   return (calOutdated || calMissing) ? (
                     <Alert variant="warning" className="mb-2">
                       {calMissing
-                        ? 'Geen labkalibratie geregistreerd — vereist voor rapportage (§15.c.3 NEN-EN-ISO 9612:2025)'
-                        : `Labkalibratie verouderd (${Math.round(calAgeMonths!)} maanden geleden) — herkeuring aanbevolen (jaarlijks, §12.1)`}
+                        ? 'Geen labkalibratie geregistreerd — vereist voor rapportage.'
+                        : `Labkalibratie meer dan 2 jaar oud op datum onderzoek (${Math.round(calAgeMonths!)} maanden) — herkeuring vereist.`}
                     </Alert>
                   ) : null;
                 })()}
@@ -277,13 +317,15 @@ export default function SoundStep4_Instruments({ investigation, onUpdate, conten
                       {inst.model && <span>{inst.model}</span>}
                       {inst.serialNumber && <span>S/N: {inst.serialNumber}</span>}
                       {inst.lastLabCalibration && <span>Kalibratie: {inst.lastLabCalibration}</span>}
+                      {inst.calibrationLabName && <span>{inst.calibrationLabName}</span>}
                       <span className="font-medium text-zinc-600 dark:text-zinc-400">
                         <Formula math="u_2" /> = {u2FromInstrumentType(inst.type)} dB
                       </span>
                     </div>
-                    <div className="mt-1 flex gap-3 text-xs text-zinc-400">
+                    <div className="mt-1 flex flex-wrap gap-3 text-xs text-zinc-400">
                       {inst.windscreen && <span>✓ Windkap</span>}
                       {inst.extensionCable && <span>✓ Verlengkabel</span>}
+                      {inst.calibratorType && <span>Kalibrator: {inst.calibratorType}</span>}
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -318,12 +360,12 @@ export default function SoundStep4_Instruments({ investigation, onUpdate, conten
         </Button>
       )}
 
-      {/* u3 reminder */}
+      {/* Fixed uncertainty reminder */}
       <Alert variant="neutral">
-        <p><strong>Vaste onzekerheden (Bijlage C):</strong></p>
+        <p><strong>Vaste onzekerheden:</strong></p>
         <ul className="mt-1 space-y-0.5">
-          <li><Formula math="u_3" /> = 1,0 dB — onzekerheid door microfoonplaatsing (§C.6)</li>
-          <li>Uitgebreide onzekerheid <Formula math="U" /> = 1,65 × <Formula math="u" /> (eenzijdig 95% betrouwbaarheidsinterval, k=1,65)</li>
+          <li><Formula math="u_3" /> = 1,0 dB — onzekerheid door microfoonplaatsing</li>
+          <li>Uitgebreide onzekerheid <Formula math="U" /> = 1,65 × <Formula math="u" /> (eenzijdig 95% betrouwbaarheidsinterval, k = 1,65)</li>
         </ul>
       </Alert>
     </div>

@@ -62,6 +62,7 @@ interface Props {
 
 export default function InvestigationShell({ investigation, onUpdate, onClose, stepContent }: Props) {
   const [inv, setInv] = useState<Investigation>(investigation);
+  const [maxStep, setMaxStep] = useState(investigation.currentStep);
   const [saving, setSaving] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -90,6 +91,7 @@ export default function InvestigationShell({ investigation, onUpdate, onClose, s
 
   // Navigation helpers
   function goToStep(step: number) {
+    setMaxStep((prev) => Math.max(prev, step));
     const updated = { ...inv, currentStep: step };
     scheduleUpdate(updated);
     setSidebarOpen(false);
@@ -218,11 +220,12 @@ export default function InvestigationShell({ investigation, onUpdate, onClose, s
           <nav className="sticky top-6 space-y-1">
             {STEPS.map((s, idx) => {
               const isActive = idx === inv.currentStep;
-              const isComplete = idx < inv.currentStep;
+              const isComplete = idx < maxStep;
               return (
                 <button
                   key={idx}
                   onClick={() => goToStep(idx)}
+                  title={isComplete && !isActive ? 'Bezocht' : undefined}
                   className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${
                     isActive
                       ? 'bg-orange-50 font-semibold text-orange-700 dark:bg-orange-900/20 dark:text-orange-400'

@@ -1,14 +1,19 @@
 import type { ThemeSlug } from '@/lib/themes';
 
-export interface ThemeNorm {
+export interface ThemeLegalItem {
   name: string;
-  desc: string;
+  desc?: string;
+  indent?: number; // 0 (or undefined) = geen inspringing, 1 = 1 niveau, 2 = 2 niveaus
 }
+
+// Backwards-compat alias — ThemeNorm en ThemeLegalItem zijn nu identiek
+export type ThemeNorm = ThemeLegalItem;
 
 export interface ThemeLimit {
   label: string;
   value: string;
   sublabel?: string;
+  targetValue?: string; // streefwaarde naast de richtwaarde (bijv. NPR 3438)
 }
 
 export interface ThemeLimitGroup {
@@ -22,10 +27,41 @@ export interface ThemeLegalData {
     limitBg: string;
     limitBorder: string;
   };
-  legislation: string[];
-  norms: ThemeNorm[];
+  legislation: ThemeLegalItem[];
+  norms: ThemeLegalItem[];
   limitGroups?: ThemeLimitGroup[];
-  adminObligations: string[];
+  comfortGroups?: ThemeLimitGroup[];
+}
+
+/**
+ * Parst opgeslagen JSON naar ThemeLegalItem[], inclusief backwards-compat
+ * voor het oude string[]-formaat (wetgeving was eerder een string-array).
+ */
+export function parseLegalItems(
+  raw: string | undefined,
+  fallback: ThemeLegalItem[],
+): ThemeLegalItem[] {
+  if (!raw) return fallback;
+  try {
+    const parsed = JSON.parse(raw) as unknown[];
+    return parsed.map((item) =>
+      typeof item === 'string' ? { name: item } : (item as ThemeLegalItem),
+    );
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Parst opgeslagen JSON naar type T, of geeft de fallback terug bij fout/leeg.
+ */
+export function parseLegalJson<T>(raw: string | undefined, fallback: T): T {
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
 }
 
 export const THEME_LEGAL_INFO: Record<ThemeSlug, ThemeLegalData> = {
@@ -36,10 +72,10 @@ export const THEME_LEGAL_INFO: Record<ThemeSlug, ThemeLegalData> = {
       limitBorder: 'border-blue-200 dark:border-blue-900',
     },
     legislation: [
-      'Arbobesluit art. 6.5–6.11 — blootstelling aan lawaai: actiewaarden (LAV/UAV), grenswaarde, maatregelenprogramma, persoonlijke bescherming en gezondheidstoezicht',
-      'Arbobesluit art. 2.14a (Arbowet art. 14) — verplichte inzet gecertificeerd deskundige bij overschrijding bovenste actiewaarde',
-      'Arbowet art. 3 lid 1 — zorgverplichting en risico-inventarisatie & evaluatie (RI&E)',
-      'Richtlijn 2003/10/EG — minimumgezondheids- en veiligheidsvoorschriften voor blootstelling van werknemers aan lawaai',
+      { name: 'Arbobesluit art. 6.5–6.11 — blootstelling aan lawaai: actiewaarden (LAV/UAV), grenswaarde, maatregelenprogramma, persoonlijke bescherming en gezondheidstoezicht' },
+      { name: 'Arbobesluit art. 2.14a (Arbowet art. 14) — verplichte inzet gecertificeerd deskundige bij overschrijding bovenste actiewaarde' },
+      { name: 'Arbowet art. 3 lid 1 — zorgverplichting en risico-inventarisatie & evaluatie (RI&E)' },
+      { name: 'Richtlijn 2003/10/EG — minimumgezondheids- en veiligheidsvoorschriften voor blootstelling van werknemers aan lawaai' },
     ],
     norms: [
       { name: 'NEN-EN-ISO 9612:2025', desc: 'Akoestiek: bepaling van de blootstelling aan lawaai op de arbeidsplaats — ingenieursmethode (derde editie)' },
@@ -66,12 +102,15 @@ export const THEME_LEGAL_INFO: Record<ThemeSlug, ThemeLegalData> = {
         ],
       },
     ],
-    adminObligations: [
-      'Blootstellingsregistratie bijhouden voor werknemers met blootstelling ≥ LAV (Arbobesluit art. 6.8)',
-      'Audiometrisch onderzoek aanbieden bij ≥ LAV; verplicht bij ≥ UAV (Arbobesluit art. 4.10a jo. art. 2.14a)',
-      'Programma van maatregelen opstellen en uitvoeren bij overschrijding UAV (Arbobesluit art. 6.7)',
-      'Voorlichting en instructie over risico\'s, maatregelen en PBM-gebruik (Arbowet art. 8)',
-      'Meetresultaten bewaren als onderbouwing van de RI&E; actualiseren bij relevante proceswijzigingen',
+    comfortGroups: [
+      {
+        title: 'Richtwaarden en streefwaarden achtergrondgeluid [[L_{Aeq}]] (NPR 3438)',
+        limits: [
+          { label: 'Zwaar concentratie- of denkwerk',    sublabel: 'bijv. telefonisch overleg, precisiewerk', value: '≤ 45 dB(A)', targetValue: '≤ 40 dB(A)' },
+          { label: 'Normaal bureauwerk',                 sublabel: 'bijv. tekstverwerking, intern overleg',   value: '≤ 55 dB(A)', targetValue: '≤ 50 dB(A)' },
+          { label: 'Lichte productie- of montagearbeid', sublabel: 'eenvoudige repeterende taken',           value: '≤ 70 dB(A)', targetValue: '≤ 65 dB(A)' },
+        ],
+      },
     ],
   },
 
@@ -82,11 +121,11 @@ export const THEME_LEGAL_INFO: Record<ThemeSlug, ThemeLegalData> = {
       limitBorder: 'border-emerald-200 dark:border-emerald-900',
     },
     legislation: [
-      'Richtlijn 2000/54/EG — bescherming van werknemers tegen risico\'s van blootstelling aan biologische agentia',
-      'Arbobesluit art. 4.85–4.114 — biologische agentia: risico-inventarisatie, risicoklassen, insluitingsmaatregelen, meldingsplicht',
-      'Regeling biologische agentia — lijst van biologische agentia met risicoklasse-indeling',
-      'Arbowet art. 3 lid 1 — zorgverplichting en risico-inventarisatie & evaluatie',
-      'Verordening (EG) nr. 1272/2008 (CLP) — voor biologische agentia die ook als gevaarlijke stof zijn geclassificeerd',
+      { name: 'Richtlijn 2000/54/EG — bescherming van werknemers tegen risico\'s van blootstelling aan biologische agentia' },
+      { name: 'Arbobesluit art. 4.85–4.114 — biologische agentia: risico-inventarisatie, risicoklassen, insluitingsmaatregelen, meldingsplicht' },
+      { name: 'Regeling biologische agentia — lijst van biologische agentia met risicoklasse-indeling' },
+      { name: 'Arbowet art. 3 lid 1 — zorgverplichting en risico-inventarisatie & evaluatie' },
+      { name: 'Verordening (EG) nr. 1272/2008 (CLP) — voor biologische agentia die ook als gevaarlijke stof zijn geclassificeerd' },
     ],
     norms: [
       { name: 'NEN-EN-12469:2000', desc: 'Biotechnologie — Prestatiecriteria voor microbiologische veiligheidskasten' },
@@ -106,13 +145,6 @@ export const THEME_LEGAL_INFO: Record<ThemeSlug, ThemeLegalData> = {
         ],
       },
     ],
-    adminObligations: [
-      'Register blootgestelde werknemers bijhouden: 10 jaar bewaren bij klasse 2; 40 jaar bij klasse 3/4 (Arbobesluit art. 4.99)',
-      'Arbeidsgezondheidskundig onderzoek aanbieden aan blootgestelde werknemers (Arbobesluit art. 4.100)',
-      'Eerste gebruik van klasse 2 agentia melden aan de Inspectie SZW (Arbobesluit art. 4.109 lid 1)',
-      'Vergunning of melding vereist voor opzettelijk gebruik van klasse 3/4 agentia (Arbobesluit art. 4.109 lid 2/3)',
-      'Vaccinatieprogramma aanbieden en vaccinatiestatus per werknemer registreren bij beschikbare vaccins (art. 4.101)',
-    ],
   },
 
   'hazardous-substances': {
@@ -122,12 +154,12 @@ export const THEME_LEGAL_INFO: Record<ThemeSlug, ThemeLegalData> = {
       limitBorder: 'border-orange-200 dark:border-orange-900',
     },
     legislation: [
-      'Arbobesluit art. 4.1–4.23 — gevaarlijke stoffen: arbeidshygiënische strategie, grenswaarden en meting van blootstelling',
-      'Arbobesluit art. 4.17–4.22 — carcinogene, mutagene en reproductietoxische stoffen (CMR): vervangingsplicht en registratieplicht',
-      'Arbobesluit art. 4.45 — explosieve atmosfeer (ATEX): zonering en beschermde uitrusting',
-      'Arbowet art. 3 lid 1 — zorgverplichting en risico-inventarisatie & evaluatie (RI&E)',
-      'Verordening (EG) nr. 1907/2006 (REACH) — registratie, evaluatie, autorisatie en beperkingen van chemische stoffen',
-      'Verordening (EG) nr. 1272/2008 (CLP/GHS) — indeling, etikettering en verpakking van stoffen en mengsels',
+      { name: 'Arbobesluit art. 4.1–4.23 — gevaarlijke stoffen: arbeidshygiënische strategie, grenswaarden en meting van blootstelling' },
+      { name: 'Arbobesluit art. 4.17–4.22 — carcinogene, mutagene en reproductietoxische stoffen (CMR): vervangingsplicht en registratieplicht' },
+      { name: 'Arbobesluit art. 4.45 — explosieve atmosfeer (ATEX): zonering en beschermde uitrusting' },
+      { name: 'Arbowet art. 3 lid 1 — zorgverplichting en risico-inventarisatie & evaluatie (RI&E)' },
+      { name: 'Verordening (EG) nr. 1907/2006 (REACH) — registratie, evaluatie, autorisatie en beperkingen van chemische stoffen' },
+      { name: 'Verordening (EG) nr. 1272/2008 (CLP/GHS) — indeling, etikettering en verpakking van stoffen en mengsels' },
     ],
     norms: [
       { name: 'NEN-EN 689:2018', desc: 'Blootstelling op de werkplek: meting van inademing van chemische stoffen en strategie voor toetsing aan wettelijke grenswaarden' },
@@ -147,13 +179,6 @@ export const THEME_LEGAL_INFO: Record<ThemeSlug, ThemeLegalData> = {
         ],
       },
     ],
-    adminObligations: [
-      'Register gevaarlijke stoffen bijhouden (actuele veiligheidsinformatiebladen, blootstellingsdata CMR-stoffen) (Arbobesluit art. 4.15)',
-      'Blootstellingsregister CMR-stoffen bewaren: minimaal 40 jaar na laatste blootstelling (Arbobesluit art. 4.16)',
-      'Biologisch effectmonitoringonderzoek uitvoeren bij CMR-stoffen indien toepasselijk (Arbobesluit art. 4.10a)',
-      'Explosieveiligheidsdocument (EVD) opstellen en actueel houden bij aanwezigheid van ATEX-zones (Arbobesluit art. 3.5d)',
-      'Informeren van toeleveranciers en afnemers via veiligheidsinformatieblad (SDS) conform REACH (Verordening 1907/2006)',
-    ],
   },
 
   lighting: {
@@ -163,10 +188,10 @@ export const THEME_LEGAL_INFO: Record<ThemeSlug, ThemeLegalData> = {
       limitBorder: 'border-amber-200 dark:border-amber-900',
     },
     legislation: [
-      'Arbobesluit art. 6.29–6.32 — verlichting van arbeidsplaatsen: daglicht, kunstlicht en noodverlichting',
-      'Bouwbesluit 2012 art. 6.35 — minimumeisen verlichtingssterkte voor verblijfsgebieden',
-      'Arbobesluit art. 3.1g — ergonomische inrichting werkplek (visueel comfort)',
-      'Richtlijn 89/654/EEG — minimumvoorschriften veiligheid en gezondheid op arbeidsplaatsen',
+      { name: 'Arbobesluit art. 6.29–6.32 — verlichting van arbeidsplaatsen: daglicht, kunstlicht en noodverlichting' },
+      { name: 'Bouwbesluit 2012 art. 6.35 — minimumeisen verlichtingssterkte voor verblijfsgebieden' },
+      { name: 'Arbobesluit art. 3.1g — ergonomische inrichting werkplek (visueel comfort)' },
+      { name: 'Richtlijn 89/654/EEG — minimumvoorschriften veiligheid en gezondheid op arbeidsplaatsen' },
     ],
     norms: [
       { name: 'NEN-EN-12464-1:2021', desc: 'Licht en verlichting: verlichting van werkplekken — Deel 1: Binnenwerkplekken' },
@@ -194,13 +219,6 @@ export const THEME_LEGAL_INFO: Record<ThemeSlug, ThemeLegalData> = {
         ],
       },
     ],
-    adminObligations: [
-      'Verlichtingsmetingen vastleggen als onderdeel van de RI&E; actualiseren bij verbouwing of herinrichting (Arbowet art. 5)',
-      'Noodverlichtingsinstallatie periodiek testen (maandelijks functioneel; jaarlijks volledige ontlading) en logboek bijhouden (NEN-EN 50172)',
-      'Kalibratiestatus luxmeter bijhouden conform leverancierseisen (aanbevolen jaarlijks); correctiefactoren documenteren',
-      'Klachtenregistratie visuele klachten (oogvermoeidheid, hoofdpijn) opnemen in PAGO/PMO-dossier',
-      'Periodieke herkeuring verlichtingsinstallatie documenteren (aanbevolen elke 3–5 jaar of na wijziging)',
-    ],
   },
 
   'physical-load': {
@@ -210,12 +228,12 @@ export const THEME_LEGAL_INFO: Record<ThemeSlug, ThemeLegalData> = {
       limitBorder: 'border-violet-200 dark:border-violet-900',
     },
     legislation: [
-      'Arbobesluit art. 5.1–5.6 — fysieke belasting: risicobeoordeling tillen, dragen, duwen, trekken en repeterende handelingen',
-      'Arbobesluit art. 5.2 — beoordeling en voorkoming van risico\'s door handmatig hanteren van lasten',
-      'Arbowet art. 3 lid 1 — zorgverplichting en risico-inventarisatie & evaluatie (RI&E)',
-      'Richtlijn 90/269/EEG — minimumveiligheids- en gezondheidsvoorschriften voor handmatig hanteren van lasten',
-      'Richtlijn 90/270/EEG — minimumveiligheids- en gezondheidsvoorschriften voor beeldschermwerk',
-      'Beleidsregel 5.2-2 Arbobesluit — nadere invulling van de norm voor handmatig tillen van lasten',
+      { name: 'Arbobesluit art. 5.1–5.6 — fysieke belasting: risicobeoordeling tillen, dragen, duwen, trekken en repeterende handelingen' },
+      { name: 'Arbobesluit art. 5.2 — beoordeling en voorkoming van risico\'s door handmatig hanteren van lasten' },
+      { name: 'Arbowet art. 3 lid 1 — zorgverplichting en risico-inventarisatie & evaluatie (RI&E)' },
+      { name: 'Richtlijn 90/269/EEG — minimumveiligheids- en gezondheidsvoorschriften voor handmatig hanteren van lasten' },
+      { name: 'Richtlijn 90/270/EEG — minimumveiligheids- en gezondheidsvoorschriften voor beeldschermwerk' },
+      { name: 'Beleidsregel 5.2-2 Arbobesluit — nadere invulling van de norm voor handmatig tillen van lasten' },
     ],
     norms: [
       { name: 'ISO 11228-1:2021', desc: 'Ergonomie: handmatig hanteren van lasten — Deel 1: Tillen, vasthouden en dragen (herziene NIOSH-methode)' },
@@ -241,13 +259,6 @@ export const THEME_LEGAL_INFO: Record<ThemeSlug, ThemeLegalData> = {
         ],
       },
     ],
-    adminObligations: [
-      'RI&E en plan van aanpak opstellen en bijhouden bij risico\'s door fysieke belasting (Arbobesluit art. 5.3)',
-      'Klachtenregistratie musculoskeletale aandoeningen (MSA/RSI) opnemen in PAGO/PMO-dossier',
-      'Beroepsziekten door fysieke belasting melden bij het Nederlands Centrum voor Beroepsziekten (NCvB) via bedrijfsarts',
-      'Periodiek arbeidsgezondheidskundig onderzoek (PAGO) aanbieden bij risicoblootstelling (Arbowet art. 18)',
-      'Ergonomische beoordeling documenteren bij aanschaf of wijziging van arbeidsmiddelen of werkplekken (Machinerichtlijn 2006/42/EG)',
-    ],
   },
 
   climate: {
@@ -257,11 +268,11 @@ export const THEME_LEGAL_INFO: Record<ThemeSlug, ThemeLegalData> = {
       limitBorder: 'border-teal-200 dark:border-teal-900',
     },
     legislation: [
-      'Arbobesluit art. 6.1–6.4 — thermisch klimaat: temperatuur, luchtsnelheid en ventilatie in werkruimten',
-      'Arbobesluit art. 3.2 — ventilatie: minimale hoeveelheid verse buitenlucht per werkende per uur',
-      'Arbowet art. 3 lid 1 — zorgverplichting en risico-inventarisatie & evaluatie (RI&E)',
-      'Richtlijn 89/654/EEG — minimumveiligheids- en gezondheidsvoorschriften voor de arbeidsplaatsen',
-      'Arbobesluit art. 6.32a — beschermende kleding bij extreme thermische omstandigheden',
+      { name: 'Arbobesluit art. 6.1–6.4 — thermisch klimaat: temperatuur, luchtsnelheid en ventilatie in werkruimten' },
+      { name: 'Arbobesluit art. 3.2 — ventilatie: minimale hoeveelheid verse buitenlucht per werkende per uur' },
+      { name: 'Arbowet art. 3 lid 1 — zorgverplichting en risico-inventarisatie & evaluatie (RI&E)' },
+      { name: 'Richtlijn 89/654/EEG — minimumveiligheids- en gezondheidsvoorschriften voor de arbeidsplaatsen' },
+      { name: 'Arbobesluit art. 6.32a — beschermende kleding bij extreme thermische omstandigheden' },
     ],
     norms: [
       { name: 'ISO 7730:2025', desc: 'Ergonomie van de thermische omgeving: analytische bepaling en interpretatie van thermisch comfort via PMV/PPD-methode' },
@@ -290,13 +301,6 @@ export const THEME_LEGAL_INFO: Record<ThemeSlug, ThemeLegalData> = {
         ],
       },
     ],
-    adminObligations: [
-      'Klimaatmetingen en beoordelingsresultaten vastleggen in de RI&E; actualiseren bij proceswijzigingen (Arbowet art. 5)',
-      'Hittewaarschuwingsprotocol opstellen en communiceren bij risico op hittestress (aanbevolen bij WBGT-overschrijding)',
-      'Beroepsziekten door hitte of koude (bijv. hitteberoerte, bevriezing) melden bij NCvB via bedrijfsarts',
-      'Periodiek preventief medisch onderzoek (PMO) aanbieden bij werknemers in extreme thermische omstandigheden (Arbowet art. 18)',
-      'Ventilatie- en klimaatinstallaties periodiek inspecteren, reinigen en testresultaten registreren',
-    ],
   },
 
   vibration: {
@@ -306,10 +310,10 @@ export const THEME_LEGAL_INFO: Record<ThemeSlug, ThemeLegalData> = {
       limitBorder: 'border-rose-200 dark:border-rose-900',
     },
     legislation: [
-      'Richtlijn 2002/44/EG — minimumvoorschriften inzake veiligheid en gezondheid met betrekking tot blootstelling van werknemers aan trillingen',
-      'Arbobesluit art. 6.11a–6.11g — dagelijkse trillingsblootstelling, grenswaarden en actiewaarden',
-      'Arbowet art. 3 lid 1 — zorgverplichting en risico-inventarisatie & evaluatie',
-      'Beleidsregel 6.11a–2 — inventarisatie en meting van trillingsblootstelling',
+      { name: 'Richtlijn 2002/44/EG — minimumvoorschriften inzake veiligheid en gezondheid met betrekking tot blootstelling van werknemers aan trillingen' },
+      { name: 'Arbobesluit art. 6.11a–6.11g — dagelijkse trillingsblootstelling, grenswaarden en actiewaarden' },
+      { name: 'Arbowet art. 3 lid 1 — zorgverplichting en risico-inventarisatie & evaluatie' },
+      { name: 'Beleidsregel 6.11a–2 — inventarisatie en meting van trillingsblootstelling' },
     ],
     norms: [
       { name: 'ISO 5349-1:2001', desc: 'Meting en beoordeling van blootstelling van mensen aan hand-armtrillingen — Deel 1: Algemene eisen' },
@@ -334,13 +338,6 @@ export const THEME_LEGAL_INFO: Record<ThemeSlug, ThemeLegalData> = {
         ],
       },
     ],
-    adminObligations: [
-      'Blootstellingsregister bijhouden voor werknemers met blootstelling ≥ EAV (Arbobesluit art. 6.11e)',
-      'Medisch onderzoek (HAVS-beoordeling) aanbieden bij blootstelling ≥ EAV (Arbobesluit art. 4.10a jo. art. 6.11f)',
-      'Plan van aanpak opstellen bij overschrijding EAV; werknemer onmiddellijk beschermen bij overschrijding ELV (art. 6.11c)',
-      'Trillingsblootstellingsdata bewaren als onderbouwing van de RI&E; actualiseren bij wijziging van gereedschappen of werkwijzen',
-      'HAVS of andere trillingsgebonden beroepsziekten melden bij NCvB via bedrijfsarts',
-    ],
   },
 
   radiation: {
@@ -350,13 +347,13 @@ export const THEME_LEGAL_INFO: Record<ThemeSlug, ThemeLegalData> = {
       limitBorder: 'border-purple-200 dark:border-purple-900',
     },
     legislation: [
-      'Richtlijn 2013/59/Euratom — basisveiligheidsnormen voor bescherming tegen gevaren van blootstelling aan ioniserende straling',
-      'Besluit basisveiligheidsnormen stralingsbescherming (Bbs), Stb. 2017/502 — implementatie van Richtlijn 2013/59/Euratom',
-      'Kernenergiewet — vergunning en toezicht op toepassingen van ioniserende straling',
-      'Richtlijn 2013/35/EU — minimumgezondheids- en veiligheidsvoorschriften voor elektromagnetische velden (EMV)',
-      'Richtlijn 2006/25/EG — minimumgezondheids- en veiligheidsvoorschriften voor kunstmatige optische straling',
-      'Arbobesluit art. 4.45a–4.45h — beoordeling en beheersing van blootstelling aan kunstmatige optische straling',
-      'Arbobesluit art. 4.45i–4.45k — beoordeling en beheersing van blootstelling aan elektromagnetische velden',
+      { name: 'Richtlijn 2013/59/Euratom — basisveiligheidsnormen voor bescherming tegen gevaren van blootstelling aan ioniserende straling' },
+      { name: 'Besluit basisveiligheidsnormen stralingsbescherming (Bbs), Stb. 2017/502 — implementatie van Richtlijn 2013/59/Euratom' },
+      { name: 'Kernenergiewet — vergunning en toezicht op toepassingen van ioniserende straling' },
+      { name: 'Richtlijn 2013/35/EU — minimumgezondheids- en veiligheidsvoorschriften voor elektromagnetische velden (EMV)' },
+      { name: 'Richtlijn 2006/25/EG — minimumgezondheids- en veiligheidsvoorschriften voor kunstmatige optische straling' },
+      { name: 'Arbobesluit art. 4.45a–4.45h — beoordeling en beheersing van blootstelling aan kunstmatige optische straling' },
+      { name: 'Arbobesluit art. 4.45i–4.45k — beoordeling en beheersing van blootstelling aan elektromagnetische velden' },
     ],
     norms: [
       { name: 'IEC 60825-1:2014', desc: 'Veiligheid van laserproducten — Deel 1: Classificatie van apparatuur en eisen' },
@@ -381,13 +378,6 @@ export const THEME_LEGAL_INFO: Record<ThemeSlug, ThemeLegalData> = {
           { label: 'ELV huid (180–400 nm)', value: '30 J/m² (8 h)' },
         ],
       },
-    ],
-    adminObligations: [
-      'Dosisregistratie bijhouden in het Nationaal Dosisregistratiesysteem (NDRIS) voor alle stralingswerkers (Bbs art. 4.10)',
-      'Individueel stralingsdossier per stralingswerker bewaren: 30 jaar na einde blootstelling, of tot leeftijd van 75 jaar (Bbs art. 4.10 lid 5)',
-      'Vergunning of melding conform Kernenergiewet en Bbs bijhouden en actueel houden; wijzigingen direct melden aan ANVS',
-      'Aanstelling en registratie van stralingsbeschermingsdeskundige (SBD) en stralingsbeschermingsbegeleider (SBB) (Bbs hoofdstuk 5)',
-      'Jaarlijkse dosisrapportage aan de Autoriteit Nucleaire Veiligheid en Stralingsbescherming (ANVS)',
     ],
   },
 };

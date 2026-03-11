@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { SectionRef } from '@/components/SectionRef';
 import { Formula } from '@/components/Formula';
 import type { SoundInvestigation } from '@/lib/sound-investigation-types';
 import InlineEdit from '@/components/InlineEdit';
@@ -21,16 +20,16 @@ import SoundStep10_Report from './steps/SoundStep10_Report';
 const STEPS: { number: number; title: React.ReactNode; short: string }[] = [
   { number: 1,  title: 'Voorverkenning',                                                     short: 'Voorverkenning' },
   { number: 2,  title: 'Opdracht & kaders',                                                  short: 'Kaders' },
-  { number: 3,  title: <>Werkanalyse (<SectionRef id="§7">§7</SectionRef>)</>,               short: 'Werkanalyse' },
-  { number: 4,  title: <>Meetstrategie (<SectionRef id="§8">§8</SectionRef>)</>,             short: 'Strategie' },
-  { number: 5,  title: <>Meetapparatuur (<SectionRef id="§12">§12</SectionRef>)</>,          short: 'Apparatuur' },
+  { number: 3,  title: 'Werkanalyse',                                                         short: 'Werkanalyse' },
+  { number: 4,  title: 'Meetstrategie',                                                       short: 'Strategie' },
+  { number: 5,  title: 'Meetapparatuur',                                                      short: 'Apparatuur' },
   { number: 6,  title: 'Arbeidsmiddelen (art. 7.18)',                                        short: 'Arbeidsmiddelen' },
   { number: 7,  title: 'Meetplan & taken',                                                   short: 'Meetplan' },
   { number: 8,  title: 'Meetresultaten',                                                     short: 'Metingen' },
   { number: 9,  title: <><Formula math="L_{EX,8h}" /> &amp; onzekerheid</>,                  short: 'Berekeningen' },
   { number: 10, title: 'Beoordeling actiewaarden',                                           short: 'Beoordeling' },
   { number: 11, title: 'Beheersmaatregelen',                                                 short: 'Maatregelen' },
-  { number: 12, title: <>Rapport (<SectionRef id="§15">§15</SectionRef>)</>,                 short: 'Rapport' },
+  { number: 12, title: 'Rapport',                                                             short: 'Rapport' },
 ];
 
 function SaveIndicator({ saving }: { saving: boolean }) {
@@ -60,6 +59,7 @@ interface Props {
 
 export default function SoundInvestigationShell({ investigation, onUpdate, onClose, stepContent }: Props) {
   const [inv, setInv] = useState<SoundInvestigation>(investigation);
+  const [maxStep, setMaxStep] = useState(investigation.currentStep);
   const [saving, setSaving] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -85,6 +85,7 @@ export default function SoundInvestigationShell({ investigation, onUpdate, onClo
   );
 
   function goToStep(step: number) {
+    setMaxStep((prev) => Math.max(prev, step));
     const updated = { ...inv, currentStep: step };
     scheduleUpdate(updated);
     setSidebarOpen(false);
@@ -204,11 +205,12 @@ export default function SoundInvestigationShell({ investigation, onUpdate, onClo
           <nav className="sticky top-16 space-y-1">
             {STEPS.map((s, idx) => {
               const isActive = idx === inv.currentStep;
-              const isComplete = idx < inv.currentStep;
+              const isComplete = idx < maxStep;
               return (
                 <button
                   key={idx}
                   onClick={() => goToStep(idx)}
+                  title={isComplete && !isActive ? 'Bezocht' : undefined}
                   className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${
                     isActive
                       ? 'bg-orange-50 font-semibold text-orange-700 dark:bg-orange-900/20 dark:text-orange-400'

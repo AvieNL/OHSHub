@@ -81,7 +81,7 @@ export default function InvestigationThemePage({
         multiline
         markdown
       >
-        <MarkdownContent className="mt-4 max-w-2xl text-sm text-zinc-600 dark:text-zinc-400">
+        <MarkdownContent className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">
           {pageDesc}
         </MarkdownContent>
       </InlineEdit>

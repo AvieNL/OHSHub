@@ -13,7 +13,7 @@ export async function GET(_req: Request, { params }: Params) {
   if (authError || !authUser.user) return NextResponse.json({ error: 'Gebruiker niet gevonden' }, { status: 404 });
 
   const [{ data: roleRow }, { data: profileRow }] = await Promise.all([
-    supabaseAdmin.from('user_roles').select('role, privacy_version_accepted, privacy_accepted_at, privacy_required_version').eq('user_id', id).single(),
+    supabaseAdmin.from('user_roles').select('role, privacy_version_accepted, privacy_accepted_at, privacy_required_version, disclaimer_version_accepted, disclaimer_accepted_at, disclaimer_required_version').eq('user_id', id).single(),
     supabaseAdmin.from('profiles').select('first_name, tussenvoegsel, last_name, company').eq('user_id', id).single(),
   ]);
 
@@ -26,6 +26,9 @@ export async function GET(_req: Request, { params }: Params) {
     privacy_version_accepted: roleRow?.privacy_version_accepted ?? null,
     privacy_accepted_at: roleRow?.privacy_accepted_at ?? null,
     privacy_required_version: roleRow?.privacy_required_version ?? null,
+    disclaimer_version_accepted: roleRow?.disclaimer_version_accepted ?? null,
+    disclaimer_accepted_at: roleRow?.disclaimer_accepted_at ?? null,
+    disclaimer_required_version: roleRow?.disclaimer_required_version ?? null,
     first_name: profileRow?.first_name ?? null,
     tussenvoegsel: profileRow?.tussenvoegsel ?? null,
     last_name: profileRow?.last_name ?? null,
@@ -67,6 +70,37 @@ export async function PATCH(request: Request, { params }: Params) {
     const { error } = await supabaseAdmin
       .from('user_roles')
       .update({ privacy_required_version: null })
+      .eq('user_id', id);
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'disclaimer-push') {
+    const { data: latestRow, error: verError } = await supabaseAdmin
+      .from('disclaimer_versions')
+      .select('version_number')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (verError || !latestRow) {
+      return NextResponse.json({ error: 'Geen disclaimerversie gevonden' }, { status: 404 });
+    }
+
+    const { error } = await supabaseAdmin
+      .from('user_roles')
+      .update({ disclaimer_required_version: latestRow.version_number })
+      .eq('user_id', id);
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true, version: latestRow.version_number });
+  }
+
+  if (action === 'disclaimer-clear') {
+    const { error } = await supabaseAdmin
+      .from('user_roles')
+      .update({ disclaimer_required_version: null })
       .eq('user_id', id);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });

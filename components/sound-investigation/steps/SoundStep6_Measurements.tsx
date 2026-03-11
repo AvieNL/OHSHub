@@ -13,7 +13,6 @@ import { newSoundId } from '@/lib/sound-investigation-storage';
 import { downloadMeasurementPlanPDF } from '@/lib/sound-pdf-html';
 import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
-import { SectionRef } from '@/components/SectionRef';
 import { InfoBox } from '@/components/InfoBox';
 import { Alert, Button, Card, Icon, Input, Select } from '@/components/ui';
 import InlineStepHeader from '@/components/InlineStepHeader';
@@ -31,7 +30,24 @@ const STEP_KEY = 'step.7';
 const NS = 'investigation.sound';
 const FALLBACK_TITLE = 'Stap 8 — Meetresultaten';
 const FALLBACK_DESC = 'Leg per HEG de meetreeksen vast (instrument + kalibratie) en voer de gemeten meetwaarden in. Voor taakgerichte meting per taak; voor functie- en volledigedagmeting per HEG.';
-const FALLBACK_IB0_TITLE = '§9.2 / §9.3 / §12.2 / §15.d — Meetprocedure & eisen (NEN-EN-ISO 9612)';
+const FALLBACK_IB0_TITLE = 'Meetprocedure & werkinstructies';
+
+// ─── Time / duration helpers ──────────────────────────────────────────────────
+
+/** "HH:MM" or "HH:MM:SS" → total seconds */
+function toSec(t: string): number {
+  const [h = 0, m = 0, s = 0] = t.split(':').map(Number);
+  return h * 3600 + m * 60 + s;
+}
+
+/** Decimal minutes → "HH:MM:SS" string */
+function durMinToHMS(dMin: number): string {
+  const total = Math.round(dMin * 60);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -158,7 +174,7 @@ function SeriesForm({
       {/* Instrument */}
       <div>
         <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
-          Meetinstrument (<SectionRef id="§12">§12</SectionRef>, Tabel C.5)
+          Meetinstrument
         </label>
         {instrumentOptions.length === 0 ? (
           <p className="text-xs text-amber-600 dark:text-amber-400">
@@ -183,7 +199,7 @@ function SeriesForm({
       {/* Calibration before */}
       <div>
         <p className="mb-1.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
-          Veldkalibratie vóór meetserie (<SectionRef id="§12.2">§12.2</SectionRef>)
+          Veldkalibratie vóór meetserie
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5">
@@ -269,7 +285,7 @@ function SeriesForm({
       {/* Calibration after */}
       <div>
         <p className="mb-1.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
-          Veldkalibratie ná meetserie (<SectionRef id="§12.2">§12.2</SectionRef>)
+          Veldkalibratie ná meetserie
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5">
@@ -296,7 +312,7 @@ function SeriesForm({
           </div>
           {drift !== null && (
             <span className={`text-xs font-semibold ${drift > 0.5 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-              Δ {drift.toFixed(2)} dB {drift > 0.5 ? '— metingen worden automatisch uitgesloten (§12.2)' : '✓'}
+              Δ {drift.toFixed(2)} dB {drift > 0.5 ? '— metingen worden automatisch uitgesloten' : '✓'}
             </span>
           )}
         </div>
@@ -405,7 +421,7 @@ function SeriesCard({
           {/* Drift warning */}
           {drift !== null && drift > 0.5 && (
             <Alert variant="error" size="sm" className="mt-2">
-              ✖ Kalibratiefout Δ {drift.toFixed(2)} dB &gt; 0,5 dB — alle metingen van deze reeks zijn automatisch uitgesloten (§12.2 <Abbr id="NEN9612">NEN-EN-ISO 9612</Abbr>:2025)
+              ✖ Kalibratiefout Δ {drift.toFixed(2)} dB &gt; 0,5 dB — alle metingen van deze reeks zijn automatisch uitgesloten
             </Alert>
           )}
 
@@ -572,6 +588,7 @@ function SeriesPanel({
 
 function TaskMeasurements({
   task,
+  workerCount,
   measurements,
   allMeasurements,
   allSeries,
@@ -580,6 +597,7 @@ function TaskMeasurements({
   onGoToStep,
 }: {
   task: SoundTask;
+  workerCount: number;
   measurements: SoundMeasurement[];
   allMeasurements: SoundMeasurement[];
   allSeries: MeasurementSeries[];
@@ -634,6 +652,22 @@ function TaskMeasurements({
   const validMeas = measurements.filter((m) => !m.excluded && m.lpa_eqT > 0);
 
   const hasSeriesCol = contextSeries.length > 0;
+  const hasWorkerCol = workerCount > 1;
+  // base cols: # | Lp,A,eqT | Lp,Cpeak | Datum/tijdstip | Uitsl. | Rep. | OB | Opmerking | delete = 9
+  const colCount = 9 + (hasWorkerCol ? 1 : 0) + (hasSeriesCol ? 1 : 0);
+
+  function handleTimeUpdate(meas: SoundMeasurement, field: 'startTime' | 'endTime', val: string) {
+    const updated: SoundMeasurement = { ...meas, [field]: val || undefined };
+    const s = field === 'startTime' ? val : meas.startTime;
+    const e = field === 'endTime'   ? val : meas.endTime;
+    if (s && e) {
+      const diff = toSec(e) - toSec(s);
+      updated.durationMin = diff > 0 ? diff / 60 : undefined;
+    } else {
+      updated.durationMin = undefined;
+    }
+    updateMeas(updated);
+  }
 
   function toMin(hours: number | undefined): string {
     return hours != null && isFinite(hours) ? String(Math.round(hours * 60)) : '';
@@ -653,7 +687,7 @@ function TaskMeasurements({
         {!rowMode ? (
           <div>
             <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              <Formula math="L_{p,A,eqT_m}" /> waarden in dB — komma- of spatiescheiding (<SectionRef id="§9.3.4">§9.3.4</SectionRef> Formule 3)
+              <Formula math="L_{p,A,eqT_m}" /> waarden in dB — komma- of spatiescheiding
             </label>
             <div className="flex gap-2">
               <Input
@@ -688,15 +722,19 @@ function TaskMeasurements({
                     <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">#</th>
                     <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500"><Formula math="L_{p,A,eqT}" /> (dB)</th>
                     <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500"><Formula math="L_{p,Cpeak}" /> (dB(C))</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Medewerker / datum</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Datum / tijdstip</th>
+                    {hasWorkerCol && (
+                      <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Medewerker</th>
+                    )}
                     {hasSeriesCol && (
                       <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Reeks</th>
                     )}
                     <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Uitsl.</th>
                     <th className="px-2 py-2 text-left text-xs font-medium text-zinc-500">
-                      <abbr title="Representatieve omstandigheden — §15.d.4 NEN-EN-ISO 9612:2025" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">Rep.</abbr>
+                      <abbr title="Representatieve omstandigheden — vink uit om afwijkingen te noteren" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">Rep.</abbr>
                     </th>
                     <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500"><Abbr id="OB">OB</Abbr></th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Opmerking</th>
                     <th className="px-3 py-2" />
                   </tr>
                 </thead>
@@ -729,15 +767,47 @@ function TaskMeasurements({
                             />
                           </td>
                           <td className="px-3 py-2">
-                            <Input
-                              type="text"
-                              value={m.workerLabel ?? ''}
-                              onChange={(e) => updateMeas({ ...m, workerLabel: e.target.value })}
-                              placeholder="Naam / datum"
-                              size="xs"
-                              className="w-full"
-                            />
+                            <div className="space-y-1">
+                              <input
+                                type="date"
+                                value={m.date ?? ''}
+                                onChange={(e) => updateMeas({ ...m, date: e.target.value || undefined })}
+                                className="w-full rounded border border-zinc-200 px-1.5 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                              />
+                              <div className="flex items-center gap-1">
+                                <input type="time" step="1" value={m.startTime ?? ''}
+                                  onChange={(e) => handleTimeUpdate(m, 'startTime', e.target.value)}
+                                  className="w-[92px] rounded border border-zinc-200 px-1 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" />
+                                <span className="text-[10px] text-zinc-400">–</span>
+                                <input type="time" step="1" value={m.endTime ?? ''}
+                                  onChange={(e) => handleTimeUpdate(m, 'endTime', e.target.value)}
+                                  className="w-[92px] rounded border border-zinc-200 px-1 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" />
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-zinc-400">Duur:</span>
+                                <input type="time" step="1"
+                                  value={m.durationMin != null ? durMinToHMS(m.durationMin) : ''}
+                                  placeholder="00:00:00"
+                                  onChange={(e) => {
+                                    const totalSec = e.target.value ? toSec(e.target.value) : 0;
+                                    updateMeas({ ...m, durationMin: totalSec > 0 ? totalSec / 60 : undefined });
+                                  }}
+                                  className="w-[92px] rounded border border-zinc-200 px-1 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" />
+                              </div>
+                            </div>
                           </td>
+                          {hasWorkerCol && (
+                            <td className="px-3 py-2">
+                              <Input
+                                type="text"
+                                value={m.workerLabel ?? ''}
+                                onChange={(e) => updateMeas({ ...m, workerLabel: e.target.value })}
+                                placeholder="Naam"
+                                size="xs"
+                                className="w-full"
+                              />
+                            </td>
+                          )}
                           {hasSeriesCol && (
                             <td className="px-3 py-2">
                               <Select
@@ -760,7 +830,7 @@ function TaskMeasurements({
                                 checked={m.excluded ?? false}
                                 onChange={() => updateMeas({ ...m, excluded: !m.excluded, exclusionReason: m.excluded ? undefined : m.exclusionReason })}
                                 className="accent-orange-500"
-                                title="Uitsluiten van analyse (§13)"
+                                title="Uitsluiten van analyse"
                               />
                               {m.excluded && (
                                 <input
@@ -782,7 +852,7 @@ function TaskMeasurements({
                                 representativeConditions: m.representativeConditions !== false ? false : undefined,
                               })}
                               className="accent-orange-500"
-                              title="Meting uitgevoerd onder representatieve omstandigheden (§15.d.4 NEN-EN-ISO 9612:2025)"
+                              title="Representatieve omstandigheden — vink uit om afwijkingen te noteren"
                             />
                             {m.representativeConditions === false && (
                               <div className="mx-auto mt-0.5 h-1.5 w-1.5 rounded-full bg-amber-400" />
@@ -801,61 +871,67 @@ function TaskMeasurements({
                               <Abbr id="OB">OB</Abbr>{hasOB ? ' ✓' : ''}
                             </button>
                           </td>
+                          <td className="px-3 py-2">
+                            <input
+                              type="text"
+                              value={m.notes ?? ''}
+                              onChange={(e) => updateMeas({ ...m, notes: e.target.value || undefined })}
+                              placeholder="Opmerking…"
+                              className="w-full min-w-[100px] rounded border border-zinc-200 px-2 py-1 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                            />
+                          </td>
                           <td className="px-2 py-2">
                             <button onClick={() => removeRow(m.id)} className="text-zinc-400 hover:text-red-500">
                               <Icon name="x" size="sm" />
                             </button>
                           </td>
                         </tr>
+                        {m.representativeConditions === false && (
+                          <tr className="bg-amber-50/50 dark:bg-amber-900/10">
+                            <td colSpan={colCount} className="px-3 py-1.5">
+                              <div className="flex items-center gap-2">
+                                <span className="whitespace-nowrap text-[10px] font-medium text-amber-600 dark:text-amber-400">⚠ Afwijkingen:</span>
+                                <input
+                                  type="text"
+                                  value={m.deviations ?? ''}
+                                  onChange={(e) => updateMeas({ ...m, deviations: e.target.value || undefined })}
+                                  placeholder="Beschrijf afwijkingen van normale werkomstandigheden…"
+                                  className="flex-1 rounded border border-amber-200 bg-white px-2 py-0.5 text-[10px] outline-none focus:border-orange-400 dark:border-amber-700 dark:bg-zinc-800 dark:text-zinc-200"
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        )}
                         {obOpen && (
                           <tr className="bg-blue-50/50 dark:bg-blue-900/10">
-                            <td colSpan={hasSeriesCol ? 9 : 8} className="px-3 py-2 space-y-3">
-                              {/* Octave bands */}
-                              <div>
-                                <p className="mb-1.5 text-[10px] font-medium text-blue-700 dark:text-blue-300">
-                                  Octaafbandniveaus L<sub>p,i</sub> (dB) — optioneel, voor EN 458:2016 methode 3
-                                </p>
-                                <div className="flex flex-wrap gap-2">
-                                  {OCTAVE_BANDS.map((freq, bi) => (
-                                    <div key={freq} className="flex flex-col items-center gap-0.5">
-                                      <span className="text-[9px] text-zinc-400">{freq >= 1000 ? `${freq/1000}k` : freq}</span>
-                                      <input
-                                        type="number" step="0.1" min={30} max={140}
-                                        value={m.octaveBands?.[bi] ?? ''}
-                                        onChange={(e) => {
-                                          const bands = Array.from({ length: 8 }, (_, j) => m.octaveBands?.[j] ?? 0);
-                                          bands[bi] = parseFloat(e.target.value) || 0;
-                                          updateMeas({ ...m, octaveBands: bands.every((v) => v === 0) ? undefined : bands });
-                                        }}
-                                        placeholder="—"
-                                        className="w-14 rounded border border-blue-200 bg-white px-1.5 py-1 text-center text-xs outline-none focus:border-orange-400 dark:border-blue-700 dark:bg-zinc-800 dark:text-zinc-100"
-                                      />
-                                    </div>
-                                  ))}
-                                  <button
-                                    onClick={() => updateMeas({ ...m, octaveBands: undefined })}
-                                    className="self-end text-[10px] text-zinc-400 hover:text-red-500"
-                                  >
-                                    Wissen
-                                  </button>
-                                </div>
+                            <td colSpan={colCount} className="px-3 py-2">
+                              <p className="mb-1.5 text-[10px] font-medium text-blue-700 dark:text-blue-300">
+                                Octaafbandniveaus L<sub>p,i</sub> (dB) — optioneel, voor gehoorbescherming methode 3
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {OCTAVE_BANDS.map((freq, bi) => (
+                                  <div key={freq} className="flex flex-col items-center gap-0.5">
+                                    <span className="text-[9px] text-zinc-400">{freq >= 1000 ? `${freq/1000}k` : freq}</span>
+                                    <input
+                                      type="number" step="0.1" min={30} max={140}
+                                      value={m.octaveBands?.[bi] ?? ''}
+                                      onChange={(e) => {
+                                        const bands = Array.from({ length: 8 }, (_, j) => m.octaveBands?.[j] ?? 0);
+                                        bands[bi] = parseFloat(e.target.value) || 0;
+                                        updateMeas({ ...m, octaveBands: bands.every((v) => v === 0) ? undefined : bands });
+                                      }}
+                                      placeholder="—"
+                                      className="w-14 rounded border border-blue-200 bg-white px-1.5 py-1 text-center text-xs outline-none focus:border-orange-400 dark:border-blue-700 dark:bg-zinc-800 dark:text-zinc-100"
+                                    />
+                                  </div>
+                                ))}
+                                <button
+                                  onClick={() => updateMeas({ ...m, octaveBands: undefined })}
+                                  className="self-end text-[10px] text-zinc-400 hover:text-red-500"
+                                >
+                                  Wissen
+                                </button>
                               </div>
-
-                              {/* Not-representative deviations */}
-                              {m.representativeConditions === false && (
-                                <div className="border-t border-amber-100 pt-2 dark:border-amber-800">
-                                  <label className="mb-0.5 block text-[10px] font-medium text-amber-600 dark:text-amber-400">
-                                    ⚠ Afwijkingen van representatieve omstandigheden — <SectionRef id="§15.d.5">§15.d.5</SectionRef>
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={m.deviations ?? ''}
-                                    onChange={(e) => updateMeas({ ...m, deviations: e.target.value || undefined })}
-                                    placeholder="Beschrijf de afwijkingen van normale werkomstandigheden…"
-                                    className="w-full rounded border border-amber-200 bg-white px-2 py-0.5 text-[10px] outline-none focus:border-orange-400 dark:border-amber-700 dark:bg-zinc-800 dark:text-zinc-200"
-                                  />
-                                </div>
-                              )}
                             </td>
                           </tr>
                         )}
@@ -892,7 +968,7 @@ function TaskMeasurements({
             <button type="button" onClick={() => onGoToStep(8)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 9</button>.
             {validMeas.length < 5 && (
               <span className="ml-1 text-amber-600 dark:text-amber-400">
-                (<SectionRef id="§9.3.2">§9.3.2</SectionRef>: ≥ 5 aanbevolen bij meerdere medewerkers)
+                (≥ 5 verplicht indien meerdere medewerkers bemeten worden)
               </span>
             )}
           </p>
@@ -913,7 +989,6 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
   const { hegs, tasks, measurements, instruments } = investigation;
   const measurementSeries = investigation.measurementSeries ?? [];
   const [openHEG, setOpenHEG] = useState<string | null>(hegs[0]?.id ?? null);
-  const [durOpen, setDurOpen] = useState(false);
 
   const title = contentOverrides?.[`${STEP_KEY}.title`] ?? FALLBACK_TITLE;
   const desc = contentOverrides?.[`${STEP_KEY}.desc`];
@@ -989,27 +1064,38 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
           {ib0Content
             ? <MarkdownContent>{ib0Content}</MarkdownContent>
             : <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+                {/* Kalibratie & aantallen */}
+                <div>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    Kalibratie & aantallen
+                  </p>
+                  <ul className="space-y-0.5 text-xs">
+                    <li>→ <strong>Vóór en ná</strong> elke meetserie een veldkalibratie uitvoeren</li>
+                    <li>→ Kalibratiefout &gt; 0,5 dB → serie <strong>automatisch uitgesloten</strong></li>
+                    <li>→ Per taak: ≥ <strong>3 metingen</strong> verplicht; ≥ <strong>5 verplicht</strong> indien meerdere medewerkers worden bemeten</li>
+                  </ul>
+                </div>
+
                 {/* Meetduur */}
                 <div>
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                    Meetduur <SectionRef id="§9.3.2">§9.3.2</SectionRef>
+                    Meetduur
                   </p>
                   <ul className="space-y-0.5 text-xs">
                     <li>→ Minimaal <strong>5 minuten</strong> per meting</li>
                     <li>→ Taak korter dan 5 min? Meet de <strong>volledige taak</strong></li>
-                    <li>→ <strong>Stabiliteitcriterium:</strong> meting mag eerder stoppen als{' '}
+                    <li>→ Stabiel geluid: meting mag stoppen als{' '}
                       <abbr title="Equivalent geluidniveau A-gewogen over meetduur" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">
                         L<sub>p,A,eq</sub>
                       </abbr>{' '}
-                      gedurende <strong>30 s niet meer dan 0,2 dB</strong> varieert (alleen bij stationaire bronnen)</li>
-                    <li>→ Start <strong>ná aanlooptijd</strong> — wacht tot bron stabiel draait</li>
+                      gedurende 30 s niet meer dan 0,2 dB varieert</li>
                   </ul>
                 </div>
 
                 {/* Meetpositie */}
                 <div>
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                    Meetpositie <SectionRef id="§9.2">§9.2</SectionRef>
+                    Meetpositie
                   </p>
                   <ul className="space-y-0.5 text-xs">
                     <li>→ Microfoon op <strong>oorhoogte medewerker</strong>, op ± 0,1–0,2 m van het oor</li>
@@ -1022,24 +1108,12 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
                 {/* Omstandigheden */}
                 <div>
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                    Omstandigheden <SectionRef id="§9.3.1">§9.3.1</SectionRef> / <SectionRef id="§15.d.4">§15.d.4</SectionRef>
+                    Omstandigheden
                   </p>
                   <ul className="space-y-0.5 text-xs">
                     <li>→ Meten tijdens <strong>representatieve, normale werkzaamheden</strong></li>
                     <li>→ Alle geluidbronnen actief die normaal aanwezig zijn</li>
-                    <li>→ Afwijkingen vastleggen per meting via de <strong>OB-knop</strong> <SectionRef id="§15.d.5">§15.d.5</SectionRef></li>
-                  </ul>
-                </div>
-
-                {/* Kalibratie & aantallen */}
-                <div>
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                    Kalibratie & aantallen <SectionRef id="§12.2">§12.2</SectionRef> / <SectionRef id="§9.3">§9.3</SectionRef>
-                  </p>
-                  <ul className="space-y-0.5 text-xs">
-                    <li>→ <strong>Vóór en ná</strong> elke meetserie een veldkalibratie uitvoeren</li>
-                    <li>→ Kalibratiefout &gt; 0,5 dB → serie <strong>automatisch uitgesloten</strong></li>
-                    <li>→ Per taak: ≥ <strong>3 metingen</strong> verplicht; ≥ <strong>5 aanbevolen</strong> bij meerdere medewerkers</li>
+                    <li>→ Niet-representatief? Vink <strong>Rep.</strong> uit — er verschijnt een tekstveld voor de afwijking</li>
                   </ul>
                 </div>
               </div>
@@ -1047,117 +1121,6 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
         </InlineEdit>
       </InfoBox>
 
-      {/* ── Meetduur-vereisten per HEG / taak ──────────────────────────────── */}
-      <div className="rounded-lg border border-zinc-200 dark:border-zinc-700">
-        <button
-          type="button"
-          onClick={() => setDurOpen((o) => !o)}
-          className="flex w-full items-center justify-between px-4 py-2.5 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-        >
-          <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-            Meetduur-vereisten per HEG — <SectionRef id="§9.3.2">§9.3.2</SectionRef> / <SectionRef id="§10.4">§10.4</SectionRef> / <SectionRef id="§11.4">§11.4</SectionRef> NEN-EN-ISO 9612
-          </span>
-          <Icon name="chevron-down" size="md" className={`shrink-0 text-zinc-400 transition-transform ${durOpen ? 'rotate-180' : ''}`} />
-        </button>
-        {durOpen && <table className="w-full text-xs border-t border-zinc-100 dark:border-zinc-800">
-          <thead>
-            <tr className="bg-zinc-50 dark:bg-zinc-800/50">
-              <th className="px-3 py-2 text-left font-medium text-zinc-500"><Abbr id="HEG">HEG</Abbr> / Taak</th>
-              <th className="px-3 py-2 text-right font-medium text-zinc-500">Duur</th>
-              <th className="px-3 py-2 text-right font-medium text-zinc-500">Min. duur / meting</th>
-              <th className="px-3 py-2 text-right font-medium text-zinc-500">Min. n</th>
-              <th className="px-3 py-2 text-right font-medium text-zinc-500">Min. totaal</th>
-              <th className="px-3 py-2 text-right font-medium text-zinc-500">Huidig n</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {hegs.map((heg) => {
-              const hegTasks    = tasks.filter((t) => t.hegId === heg.id);
-              const hegMeas     = measurements.filter((m) => m.hegId === heg.id && !m.excluded);
-              const fmtM = (m: number) => m < 60 ? `${Math.round(m)} min` : `${Math.floor(m/60)} h${Math.round(m%60) > 0 ? ` ${Math.round(m%60)} min` : ''}`;
-
-              if (heg.strategy === 'task-based') {
-                const totalMin = hegTasks.reduce((s, t) => { const tm = t.durationHours * 60; return s + 3 * (tm >= 5 ? 5 : tm); }, 0);
-                return (
-                  <>
-                    {/* HEG header row */}
-                    <tr key={heg.id} className="bg-zinc-50/60 dark:bg-zinc-800/20">
-                      <td colSpan={4} className="px-3 py-1.5 font-semibold text-zinc-700 dark:text-zinc-200">
-                        {heg.name} <span className="ml-1 font-normal text-zinc-400">(taakgericht)</span>
-                      </td>
-                      <td className="px-3 py-1.5 text-right font-mono font-semibold text-zinc-700 dark:text-zinc-200">
-                        ≥&nbsp;{fmtM(totalMin)}
-                      </td>
-                      <td className="px-3 py-1.5 text-right font-mono text-zinc-400">
-                        {hegMeas.length}
-                      </td>
-                    </tr>
-                    {/* Per-task rows */}
-                    {hegTasks.map((task) => {
-                      const tmMin      = task.durationHours * 60;
-                      const minPerMeas = tmMin >= 5 ? 5 : tmMin;
-                      const taskMeas   = hegMeas.filter((m) => m.taskId === task.id);
-                      const ok         = taskMeas.length >= 3;
-                      return (
-                        <tr key={task.id}>
-                          <td className="px-3 py-1.5 pl-7 text-zinc-600 dark:text-zinc-300">
-                            {task.name || <span className="italic text-zinc-400">(naamloos)</span>}
-                          </td>
-                          <td className="px-3 py-1.5 text-right font-mono text-zinc-400">{fmtM(tmMin)}</td>
-                          <td className="px-3 py-1.5 text-right font-mono text-zinc-600 dark:text-zinc-300">
-                            ≥&nbsp;{fmtM(minPerMeas)}{tmMin < 5 && <span className="text-zinc-400">*</span>}
-                          </td>
-                          <td className="px-3 py-1.5 text-right font-mono text-zinc-500">≥&nbsp;3</td>
-                          <td className="px-3 py-1.5 text-right font-mono font-semibold text-zinc-700 dark:text-zinc-200">
-                            ≥&nbsp;{fmtM(3 * minPerMeas)}
-                          </td>
-                          <td className={`px-3 py-1.5 text-right font-mono font-semibold ${ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-500'}`}>
-                            {taskMeas.length}{ok ? ' ✓' : ''}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {hegTasks.length === 0 && (
-                      <tr key={`${heg.id}-empty`}>
-                        <td colSpan={6} className="px-3 py-1.5 pl-7 italic text-zinc-400">
-                          Geen taken — definieer taken in{' '}
-                          <button type="button" onClick={() => onGoToStep(6)} className="cursor-pointer underline decoration-dotted underline-offset-2 hover:no-underline">stap 7</button>
-                        </td>
-                      </tr>
-                    )}
-                  </>
-                );
-              } else {
-                const teMin   = heg.effectiveDayHours * 60;
-                const ok      = hegMeas.length >= 3;
-                const sRef    = heg.strategy === 'job-based' ? '§10.4' : '§11.4';
-                const sLabel  = heg.strategy === 'job-based' ? 'functiegericht' : 'volledige dag';
-                return (
-                  <tr key={heg.id}>
-                    <td className="px-3 py-1.5 font-semibold text-zinc-700 dark:text-zinc-200">
-                      {heg.name} <span className="ml-1 font-normal text-zinc-400">({sLabel}, <SectionRef id={sRef}>{sRef}</SectionRef>)</span>
-                    </td>
-                    <td className="px-3 py-1.5 text-right font-mono text-zinc-400">{fmtM(teMin)}</td>
-                    <td className="px-3 py-1.5 text-right font-mono text-zinc-600 dark:text-zinc-300">≥&nbsp;{fmtM(teMin)}</td>
-                    <td className="px-3 py-1.5 text-right font-mono text-zinc-500">≥&nbsp;3</td>
-                    <td className="px-3 py-1.5 text-right font-mono font-semibold text-zinc-700 dark:text-zinc-200">
-                      ≥&nbsp;{fmtM(3 * teMin)}
-                    </td>
-                    <td className={`px-3 py-1.5 text-right font-mono font-semibold ${ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-500'}`}>
-                      {hegMeas.length}{ok ? ' ✓' : ''}
-                    </td>
-                  </tr>
-                );
-              }
-            })}
-          </tbody>
-        </table>}
-        {durOpen && hegs.some((h) => h.strategy === 'task-based' && tasks.some((t) => t.hegId === h.id && t.durationHours * 60 < 5)) && (
-          <p className="border-t border-zinc-100 px-4 py-1.5 text-xs text-zinc-400 dark:border-zinc-800">
-            * Taakduur &lt; 5 min: meet de volledige taak (§9.3.2).
-          </p>
-        )}
-      </div>
 
       <div className="space-y-4">
         {hegs.map((heg) => {
@@ -1220,6 +1183,7 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
                             {/* Measurement table */}
                             <TaskMeasurements
                               task={task}
+                              workerCount={heg.workerCount}
                               measurements={measurements.filter((m) => m.taskId === task.id)}
                               allMeasurements={measurements}
                               allSeries={measurementSeries}
@@ -1262,6 +1226,9 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
                           const hegFlatMeas = measurements.filter((m) => m.hegId === heg.id && !m.taskId);
                           const contextSeries = measurementSeries.filter((s) => s.hegId === heg.id && !s.taskId);
                           const hasSeriesCol = contextSeries.length > 0;
+                          const hasWorkerCol = heg.workerCount > 1;
+                          // base cols: # | Lp,A,eqT | Lp,Cpeak | Datum/tijdstip | Uitsl. | Rep. | Opmerking | delete = 8
+                          const flatColCount = 8 + (hasWorkerCol ? 1 : 0) + (hasSeriesCol ? 1 : 0);
                           return (
                             <div className="space-y-2">
                               <div className="overflow-x-auto overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700">
@@ -1271,12 +1238,14 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
                                       <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">#</th>
                                       <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500"><Formula math="L_{p,A,eqT}" /> (dB)</th>
                                       <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500"><Formula math="L_{p,Cpeak}" /></th>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Medewerker / datum</th>
+                                      <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Datum / tijdstip</th>
+                                      {hasWorkerCol && <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Medewerker</th>}
                                       {hasSeriesCol && <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Reeks</th>}
                                       <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Uitsl.</th>
                                       <th className="px-2 py-2 text-left text-xs font-medium text-zinc-500">
                                         <abbr title="Representatieve omstandigheden" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">Rep.</abbr>
                                       </th>
+                                      <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Opmerking</th>
                                       <th className="px-3 py-2" />
                                     </tr>
                                   </thead>
@@ -1284,95 +1253,176 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
                                     {hegFlatMeas.map((m, i) => {
                                       const mSeries = measurementSeries.find((s) => s.id === m.seriesId);
                                       return (
-                                        <tr key={m.id} className={m.excluded ? 'opacity-50' : ''}>
-                                          <td className="px-3 py-2 text-xs text-zinc-400">{i + 1}</td>
-                                          <td className="px-3 py-2">
-                                            <Input
-                                              type="number" step="0.1"
-                                              value={m.lpa_eqT || ''}
-                                              onChange={(e) => {
-                                                const newList = measurements.map((x) => x.id === m.id ? { ...x, lpa_eqT: parseFloat(e.target.value) || 0 } : x);
-                                                handleMeasUpdate(newList);
-                                              }}
-                                              size="xs"
-                                              className="w-20"
-                                            />
-                                          </td>
-                                          <td className="px-3 py-2">
-                                            <Input
-                                              type="number" step="0.1"
-                                              value={m.lpCpeak ?? ''}
-                                              onChange={(e) => {
-                                                const newList = measurements.map((x) => x.id === m.id ? { ...x, lpCpeak: parseFloat(e.target.value) || undefined } : x);
-                                                handleMeasUpdate(newList);
-                                              }}
-                                              placeholder="—"
-                                              size="xs"
-                                              className="w-20"
-                                            />
-                                          </td>
-                                          <td className="px-3 py-2">
-                                            <Input
-                                              type="text"
-                                              value={m.workerLabel ?? ''}
-                                              onChange={(e) => {
-                                                const newList = measurements.map((x) => x.id === m.id ? { ...x, workerLabel: e.target.value } : x);
-                                                handleMeasUpdate(newList);
-                                              }}
-                                              placeholder="Naam / datum"
-                                              size="xs"
-                                              className="w-full"
-                                            />
-                                          </td>
-                                          {hasSeriesCol && (
+                                        <Fragment key={m.id}>
+                                          <tr className={m.excluded ? 'opacity-50' : ''}>
+                                            <td className="px-3 py-2 text-xs text-zinc-400">{i + 1}</td>
                                             <td className="px-3 py-2">
-                                              <Select
-                                                value={m.seriesId ?? ''}
+                                              <Input
+                                                type="number" step="0.1"
+                                                value={m.lpa_eqT || ''}
                                                 onChange={(e) => {
-                                                  const newList = measurements.map((x) => x.id === m.id ? { ...x, seriesId: e.target.value || undefined } : x);
+                                                  const newList = measurements.map((x) => x.id === m.id ? { ...x, lpa_eqT: parseFloat(e.target.value) || 0 } : x);
                                                   handleMeasUpdate(newList);
                                                 }}
                                                 size="xs"
-                                                className={mSeries ? seriesBadgeColor(mSeries, measurementSeries) + ' border-transparent' : ''}
-                                              >
-                                                <option value="">—</option>
-                                                {contextSeries.map((s) => (
-                                                  <option key={s.id} value={s.id}>{seriesLabel(s, measurementSeries)}</option>
-                                                ))}
-                                              </Select>
+                                                className="w-20"
+                                              />
                                             </td>
+                                            <td className="px-3 py-2">
+                                              <Input
+                                                type="number" step="0.1"
+                                                value={m.lpCpeak ?? ''}
+                                                onChange={(e) => {
+                                                  const newList = measurements.map((x) => x.id === m.id ? { ...x, lpCpeak: parseFloat(e.target.value) || undefined } : x);
+                                                  handleMeasUpdate(newList);
+                                                }}
+                                                placeholder="—"
+                                                size="xs"
+                                                className="w-20"
+                                              />
+                                            </td>
+                                            <td className="px-3 py-2">
+                                              <div className="space-y-1">
+                                                <input type="date" value={m.date ?? ''}
+                                                  onChange={(e) => {
+                                                    const newList = measurements.map((x) => x.id === m.id ? { ...x, date: e.target.value || undefined } : x);
+                                                    handleMeasUpdate(newList);
+                                                  }}
+                                                  className="w-full rounded border border-zinc-200 px-1.5 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                                                />
+                                                <div className="flex items-center gap-1">
+                                                  <input type="time" step="1" value={m.startTime ?? ''}
+                                                    onChange={(e) => {
+                                                      const val = e.target.value;
+                                                      const diff = (val && m.endTime) ? toSec(m.endTime) - toSec(val) : null;
+                                                      const dur = diff != null && diff > 0 ? diff / 60 : undefined;
+                                                      const newList = measurements.map((x) => x.id === m.id ? { ...x, startTime: val || undefined, durationMin: dur } : x);
+                                                      handleMeasUpdate(newList);
+                                                    }}
+                                                    className="w-[92px] rounded border border-zinc-200 px-1 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" />
+                                                  <span className="text-[10px] text-zinc-400">–</span>
+                                                  <input type="time" step="1" value={m.endTime ?? ''}
+                                                    onChange={(e) => {
+                                                      const val = e.target.value;
+                                                      const diff = (m.startTime && val) ? toSec(val) - toSec(m.startTime) : null;
+                                                      const dur = diff != null && diff > 0 ? diff / 60 : undefined;
+                                                      const newList = measurements.map((x) => x.id === m.id ? { ...x, endTime: val || undefined, durationMin: dur } : x);
+                                                      handleMeasUpdate(newList);
+                                                    }}
+                                                    className="w-[92px] rounded border border-zinc-200 px-1 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" />
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                  <span className="text-[10px] text-zinc-400">Duur:</span>
+                                                  <input type="time" step="1"
+                                                    value={m.durationMin != null ? durMinToHMS(m.durationMin) : ''}
+                                                    placeholder="00:00:00"
+                                                    onChange={(e) => {
+                                                      const totalSec = e.target.value ? toSec(e.target.value) : 0;
+                                                      const newList = measurements.map((x) => x.id === m.id ? { ...x, durationMin: totalSec > 0 ? totalSec / 60 : undefined } : x);
+                                                      handleMeasUpdate(newList);
+                                                    }}
+                                                    className="w-[92px] rounded border border-zinc-200 px-1 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" />
+                                                </div>
+                                              </div>
+                                            </td>
+                                            {hasWorkerCol && (
+                                              <td className="px-3 py-2">
+                                                <Input
+                                                  type="text"
+                                                  value={m.workerLabel ?? ''}
+                                                  onChange={(e) => {
+                                                    const newList = measurements.map((x) => x.id === m.id ? { ...x, workerLabel: e.target.value } : x);
+                                                    handleMeasUpdate(newList);
+                                                  }}
+                                                  placeholder="Naam"
+                                                  size="xs"
+                                                  className="w-full"
+                                                />
+                                              </td>
+                                            )}
+                                            {hasSeriesCol && (
+                                              <td className="px-3 py-2">
+                                                <Select
+                                                  value={m.seriesId ?? ''}
+                                                  onChange={(e) => {
+                                                    const newList = measurements.map((x) => x.id === m.id ? { ...x, seriesId: e.target.value || undefined } : x);
+                                                    handleMeasUpdate(newList);
+                                                  }}
+                                                  size="xs"
+                                                  className={mSeries ? seriesBadgeColor(mSeries, measurementSeries) + ' border-transparent' : ''}
+                                                >
+                                                  <option value="">—</option>
+                                                  {contextSeries.map((s) => (
+                                                    <option key={s.id} value={s.id}>{seriesLabel(s, measurementSeries)}</option>
+                                                  ))}
+                                                </Select>
+                                              </td>
+                                            )}
+                                            <td className="px-3 py-2">
+                                              <input
+                                                type="checkbox"
+                                                checked={m.excluded ?? false}
+                                                onChange={() => {
+                                                  const newList = measurements.map((x) => x.id === m.id ? { ...x, excluded: !x.excluded } : x);
+                                                  handleMeasUpdate(newList);
+                                                }}
+                                                className="accent-orange-500"
+                                                title="Uitsluiten van analyse"
+                                              />
+                                            </td>
+                                            <td className="px-2 py-2 text-center">
+                                              <input
+                                                type="checkbox"
+                                                checked={m.representativeConditions !== false}
+                                                onChange={() => {
+                                                  const newList = measurements.map((x) => x.id === m.id ? { ...x, representativeConditions: x.representativeConditions !== false ? false : undefined } : x);
+                                                  handleMeasUpdate(newList);
+                                                }}
+                                                className="accent-orange-500"
+                                                title="Representatieve omstandigheden — vink uit om afwijkingen te noteren"
+                                              />
+                                            </td>
+                                            <td className="px-3 py-2">
+                                              <input
+                                                type="text"
+                                                value={m.notes ?? ''}
+                                                onChange={(e) => {
+                                                  const newList = measurements.map((x) => x.id === m.id ? { ...x, notes: e.target.value || undefined } : x);
+                                                  handleMeasUpdate(newList);
+                                                }}
+                                                placeholder="Opmerking…"
+                                                className="w-full min-w-[100px] rounded border border-zinc-200 px-2 py-1 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                                              />
+                                            </td>
+                                            <td className="px-2 py-2">
+                                              <button
+                                                onClick={() => handleMeasUpdate(measurements.filter((x) => x.id !== m.id))}
+                                                className="text-zinc-400 hover:text-red-500"
+                                              >
+                                                <Icon name="x" size="sm" />
+                                              </button>
+                                            </td>
+                                          </tr>
+                                          {m.representativeConditions === false && (
+                                            <tr className="bg-amber-50/50 dark:bg-amber-900/10">
+                                              <td colSpan={flatColCount} className="px-3 py-1.5">
+                                                <div className="flex items-center gap-2">
+                                                  <span className="whitespace-nowrap text-[10px] font-medium text-amber-600 dark:text-amber-400">⚠ Afwijkingen:</span>
+                                                  <input
+                                                    type="text"
+                                                    value={m.deviations ?? ''}
+                                                    onChange={(e) => {
+                                                      const newList = measurements.map((x) => x.id === m.id ? { ...x, deviations: e.target.value || undefined } : x);
+                                                      handleMeasUpdate(newList);
+                                                    }}
+                                                    placeholder="Beschrijf afwijkingen van normale werkomstandigheden…"
+                                                    className="flex-1 rounded border border-amber-200 bg-white px-2 py-0.5 text-[10px] outline-none focus:border-orange-400 dark:border-amber-700 dark:bg-zinc-800 dark:text-zinc-200"
+                                                  />
+                                                </div>
+                                              </td>
+                                            </tr>
                                           )}
-                                          <td className="px-3 py-2">
-                                            <input
-                                              type="checkbox"
-                                              checked={m.excluded ?? false}
-                                              onChange={() => {
-                                                const newList = measurements.map((x) => x.id === m.id ? { ...x, excluded: !x.excluded } : x);
-                                                handleMeasUpdate(newList);
-                                              }}
-                                              className="accent-orange-500"
-                                            />
-                                          </td>
-                                          <td className="px-2 py-2 text-center">
-                                            <input
-                                              type="checkbox"
-                                              checked={m.representativeConditions !== false}
-                                              onChange={() => {
-                                                const newList = measurements.map((x) => x.id === m.id ? { ...x, representativeConditions: x.representativeConditions !== false ? false : undefined } : x);
-                                                handleMeasUpdate(newList);
-                                              }}
-                                              className="accent-orange-500"
-                                            />
-                                          </td>
-                                          <td className="px-2 py-2">
-                                            <button
-                                              onClick={() => handleMeasUpdate(measurements.filter((x) => x.id !== m.id))}
-                                              className="text-zinc-400 hover:text-red-500"
-                                            >
-                                              <Icon name="x" size="sm" />
-                                            </button>
-                                          </td>
-                                        </tr>
+                                        </Fragment>
                                       );
                                     })}
                                   </tbody>
