@@ -753,8 +753,7 @@ function TaskMeasurements({
                           </td>
                           <td className="px-3 py-2">
                             <input type="time" step="1"
-                              value={m.durationMin != null ? durMinToHMS(m.durationMin) : ''}
-                              placeholder="00:00:00"
+                              value={durMinToHMS(m.durationMin ?? 0)}
                               onChange={(e) => {
                                 const totalSec = e.target.value ? toSec(e.target.value) : 0;
                                 updateMeas({ ...m, durationMin: totalSec > 0 ? totalSec / 60 : undefined });
@@ -1242,8 +1241,7 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
                                             </td>
                                             <td className="px-3 py-2">
                                               <input type="time" step="1"
-                                                value={m.durationMin != null ? durMinToHMS(m.durationMin) : ''}
-                                                placeholder="00:00:00"
+                                                value={durMinToHMS(m.durationMin ?? 0)}
                                                 onChange={(e) => {
                                                   const totalSec = e.target.value ? toSec(e.target.value) : 0;
                                                   const newList = measurements.map((x) => x.id === m.id ? { ...x, durationMin: totalSec > 0 ? totalSec / 60 : undefined } : x);
