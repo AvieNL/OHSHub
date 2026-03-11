@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Fragment } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import type {
   SoundInvestigation,
   SoundMeasurement,
@@ -47,6 +47,53 @@ function durMinToHMS(dMin: number): string {
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+// ─── OctaveBandInput ──────────────────────────────────────────────────────────
+
+/** Controlled decimal input that keeps a local string so partial values like "88." aren't lost mid-type. */
+function OctaveBandInput({
+  value,
+  onChange,
+  className,
+}: {
+  value: number | undefined;
+  onChange: (v: number | undefined) => void;
+  className?: string;
+}) {
+  const [text, setText] = useState(value != null ? String(value) : '');
+
+  useEffect(() => {
+    // Sync when the measurement switches (different row selected)
+    setText(value != null ? String(value) : '');
+  }, [value]);
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={text}
+      onChange={(e) => {
+        const raw = e.target.value;
+        setText(raw);
+        const parsed = parseFloat(raw.replace(',', '.'));
+        if (!isNaN(parsed) && parsed > 0) onChange(parsed);
+        else if (raw === '') onChange(undefined);
+      }}
+      onBlur={() => {
+        const parsed = parseFloat(text.replace(',', '.'));
+        if (!isNaN(parsed) && parsed > 0) {
+          setText(String(parsed));
+          onChange(parsed);
+        } else {
+          setText('');
+          onChange(undefined);
+        }
+      }}
+      placeholder="—"
+      className={className}
+    />
+  );
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -876,15 +923,13 @@ function TaskMeasurements({
                                 {OCTAVE_BANDS.map((freq, bi) => (
                                   <div key={freq} className="flex flex-col items-center gap-0.5">
                                     <span className="text-[9px] text-zinc-400">{freq >= 1000 ? `${freq/1000}k` : freq}</span>
-                                    <input
-                                      type="number" step="0.1" min={30} max={140}
-                                      value={m.octaveBands?.[bi] ?? ''}
-                                      onChange={(e) => {
-                                        const bands = Array.from({ length: 8 }, (_, j) => m.octaveBands?.[j] ?? 0);
-                                        bands[bi] = parseFloat(e.target.value) || 0;
-                                        updateMeas({ ...m, octaveBands: bands.every((v) => v === 0) ? undefined : bands });
+                                    <OctaveBandInput
+                                      value={m.octaveBands?.[bi] || undefined}
+                                      onChange={(v) => {
+                                        const bands = Array.from({ length: OCTAVE_BANDS.length }, (_, j) => m.octaveBands?.[j] ?? 0);
+                                        bands[bi] = v ?? 0;
+                                        updateMeas({ ...m, octaveBands: bands.every((x) => x === 0) ? undefined : bands });
                                       }}
-                                      placeholder="—"
                                       className="w-14 rounded border border-blue-200 bg-white px-1.5 py-1 text-center text-xs outline-none focus:border-orange-400 dark:border-blue-700 dark:bg-zinc-800 dark:text-zinc-100"
                                     />
                                   </div>
