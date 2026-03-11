@@ -16,11 +16,13 @@
 
 import type { SoundHEG } from './sound-investigation-types';
 
-/** Octave band centre frequencies (Hz) */
-export const OCTAVE_BANDS = [63, 125, 250, 500, 1000, 2000, 4000, 8000] as const;
+/** Octave band centre frequencies (Hz) — IEC 61672-1 nominal bands, 16 Hz–16 kHz */
+export const OCTAVE_BANDS = [16, 31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000] as const;
 
-/** A-weighting corrections per octave band (dB), ISO 226 */
-export const A_WEIGHTS = [-26.2, -16.1, -8.6, -3.2, 0.0, 1.2, 1.0, -1.1] as const;
+export const N_BANDS = OCTAVE_BANDS.length; // 11
+
+/** A-weighting corrections per octave band (dB) — IEC 61672-1:2013 Table B.1 */
+export const A_WEIGHTS = [-56.7, -39.4, -26.2, -16.1, -8.6, -3.2, 0.0, 1.2, 1.0, -1.1, -6.6] as const;
 
 export interface OctaveBandResult {
   /** Assumed Protection Value = m − s (84th percentile, dB) */
@@ -49,9 +51,9 @@ export interface OctaveAPFResult {
 export function averageOctaveBands(
   measurements: Array<{ octaveBands?: number[]; excluded?: boolean }>,
 ): number[] | null {
-  const valid = measurements.filter((m) => !m.excluded && m.octaveBands?.length === 8);
+  const valid = measurements.filter((m) => !m.excluded && m.octaveBands?.length === N_BANDS);
   if (valid.length === 0) return null;
-  return Array.from({ length: 8 }, (_, i) => {
+  return Array.from({ length: N_BANDS }, (_, i) => {
     const sum = valid.reduce((acc, m) => acc + Math.pow(10, m.octaveBands![i] / 10), 0);
     return parseFloat((10 * Math.log10(sum / valid.length)).toFixed(1));
   });
@@ -66,7 +68,7 @@ export function buildMergedBands(
   ppeOctaveBands: Array<{ lp?: number; m?: number; s?: number }> | undefined,
   avgLp: number[] | null,
 ): Array<{ lp?: number; m?: number; s?: number }> {
-  return Array.from({ length: 8 }, (_, i) => ({
+  return Array.from({ length: N_BANDS }, (_, i) => ({
     lp: avgLp?.[i] ?? ppeOctaveBands?.[i]?.lp,
     m:  ppeOctaveBands?.[i]?.m,
     s:  ppeOctaveBands?.[i]?.s,
@@ -85,7 +87,7 @@ export function calcOctaveAPF(
   let count          = 0;
   const bandResults: (OctaveBandResult | null)[] = [];
 
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < N_BANDS; i++) {
     const b = bands[i];
     if (!b || b.lp == null || b.m == null || b.s == null) {
       bandResults.push(null);
@@ -156,7 +158,7 @@ export function computeCombinedAttenuation(
     if (res1 && res2) {
       // Per-band minimum of both protected A-weighted levels, then energy-sum
       let sumProtectedComb = 0;
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < N_BANDS; i++) {
         const b1 = res1.bandResults[i];
         const b2 = res2.bandResults[i];
         if (b1 && b2) {

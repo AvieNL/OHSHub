@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: 'Versiehistorie en informatie over OHSHub.',
 };
 
-const HARDCODED_VERSION = '0.30.10';
+const HARDCODED_VERSION = '0.31.0';
 
 const CHANGELOG: {
   version: string;
@@ -20,6 +20,21 @@ const CHANGELOG: {
   modules: string[];
   changes: string[];
 }[] = [
+  {
+    version: '0.31.0',
+    date: '2026-03-11',
+    type: 'minor',
+    title: 'Geluid: 11-bands octaafband (16 Hz–16 kHz) + kalibratiefix + duur-only invoer',
+    modules: ['Geluid'],
+    changes: [
+      'Octaafbanden uitgebreid van 8 naar 11 bands: 16 / 31,5 / 63 / 125 / 250 / 500 / 1k / 2k / 4k / 8k / 16k Hz.',
+      'A-gewichten bijgewerkt conform IEC 61672-1:2013 voor alle 11 bands.',
+      'PPE-stap (stap 6): octaafbandmethode (EN 458 §A.2) toegevoegd met m/s-invoer per band en APV-preview.',
+      'Meetstap (stap 8): octaafbandinvoer toont alle 11 bands.',
+      'Bug opgelost: kalibratie/meetserie verdween na opslaan door stale-closure race condition in SeriesPanel.',
+      'Meetstap (stap 8): datum/tijdstip-velden verwijderd; alleen duur nog invoerbaar.',
+    ],
+  },
   {
     version: '0.30.10',
     date: '2026-03-07',

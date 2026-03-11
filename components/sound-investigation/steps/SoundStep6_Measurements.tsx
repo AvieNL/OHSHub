@@ -451,8 +451,7 @@ function SeriesPanel({
   allSeries,
   measurements,
   instrumentOptions,
-  onUpdateSeries,
-  onUpdateMeasurements,
+  onSave,
   onGoToStep,
 }: {
   hegId: string;
@@ -460,8 +459,8 @@ function SeriesPanel({
   allSeries: MeasurementSeries[];
   measurements: SoundMeasurement[];
   instrumentOptions: { id: string; label: string }[];
-  onUpdateSeries: (series: MeasurementSeries[]) => void;
-  onUpdateMeasurements: (measurements: SoundMeasurement[]) => void;
+  /** Single combined callback to avoid stale-closure race between series and measurements updates. */
+  onSave: (series: MeasurementSeries[], measurements: SoundMeasurement[]) => void;
   onGoToStep: (step: number) => void;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -500,20 +499,19 @@ function SeriesPanel({
     const newList = exists
       ? allSeries.map((s) => (s.id === updated.id ? updated : s))
       : [...allSeries, updated];
-    onUpdateSeries(newList);
-    // Apply auto-exclusion to measurements
-    const newMeas = applyAutoExclusions(updated, measurements);
-    if (newMeas !== measurements) {
-      onUpdateMeasurements(newMeas);
-    }
+    // Single combined update — prevents stale-closure race where a second
+    // onUpdate call would overwrite measurementSeries with the old value.
+    onSave(newList, applyAutoExclusions(updated, measurements));
     setEditingId(null);
     setShowNew(false);
   }
 
   function removeSeries(id: string) {
-    onUpdateSeries(allSeries.filter((s) => s.id !== id));
-    // Detach measurements from this series (keep them, just unlink)
-    onUpdateMeasurements(measurements.map((m) => m.seriesId === id ? { ...m, seriesId: undefined } : m));
+    onSave(
+      allSeries.filter((s) => s.id !== id),
+      // Detach measurements from this series (keep them, just unlink)
+      measurements.map((m) => m.seriesId === id ? { ...m, seriesId: undefined } : m),
+    );
   }
 
   const newSeriesTemplate = (): MeasurementSeries => ({
@@ -653,21 +651,8 @@ function TaskMeasurements({
 
   const hasSeriesCol = contextSeries.length > 0;
   const hasWorkerCol = workerCount > 1;
-  // base cols: # | Lp,A,eqT | Lp,Cpeak | Datum/tijdstip | Uitsl. | Rep. | OB | Opmerking | delete = 9
+  // base cols: # | Lp,A,eqT | Lp,Cpeak | Duur | Uitsl. | Rep. | OB | Opmerking | delete = 9
   const colCount = 9 + (hasWorkerCol ? 1 : 0) + (hasSeriesCol ? 1 : 0);
-
-  function handleTimeUpdate(meas: SoundMeasurement, field: 'startTime' | 'endTime', val: string) {
-    const updated: SoundMeasurement = { ...meas, [field]: val || undefined };
-    const s = field === 'startTime' ? val : meas.startTime;
-    const e = field === 'endTime'   ? val : meas.endTime;
-    if (s && e) {
-      const diff = toSec(e) - toSec(s);
-      updated.durationMin = diff > 0 ? diff / 60 : undefined;
-    } else {
-      updated.durationMin = undefined;
-    }
-    updateMeas(updated);
-  }
 
   function toMin(hours: number | undefined): string {
     return hours != null && isFinite(hours) ? String(Math.round(hours * 60)) : '';
@@ -722,7 +707,7 @@ function TaskMeasurements({
                     <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">#</th>
                     <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500"><Formula math="L_{p,A,eqT}" /> (dB)</th>
                     <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500"><Formula math="L_{p,Cpeak}" /> (dB(C))</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Datum / tijdstip</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Duur (HH:MM:SS)</th>
                     {hasWorkerCol && (
                       <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Medewerker</th>
                     )}
@@ -767,34 +752,14 @@ function TaskMeasurements({
                             />
                           </td>
                           <td className="px-3 py-2">
-                            <div className="space-y-1">
-                              <input
-                                type="date"
-                                value={m.date ?? ''}
-                                onChange={(e) => updateMeas({ ...m, date: e.target.value || undefined })}
-                                className="w-full rounded border border-zinc-200 px-1.5 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
-                              />
-                              <div className="flex items-center gap-1">
-                                <input type="time" step="1" value={m.startTime ?? ''}
-                                  onChange={(e) => handleTimeUpdate(m, 'startTime', e.target.value)}
-                                  className="w-[92px] rounded border border-zinc-200 px-1 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" />
-                                <span className="text-[10px] text-zinc-400">–</span>
-                                <input type="time" step="1" value={m.endTime ?? ''}
-                                  onChange={(e) => handleTimeUpdate(m, 'endTime', e.target.value)}
-                                  className="w-[92px] rounded border border-zinc-200 px-1 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" />
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <span className="text-[10px] text-zinc-400">Duur:</span>
-                                <input type="time" step="1"
-                                  value={m.durationMin != null ? durMinToHMS(m.durationMin) : ''}
-                                  placeholder="00:00:00"
-                                  onChange={(e) => {
-                                    const totalSec = e.target.value ? toSec(e.target.value) : 0;
-                                    updateMeas({ ...m, durationMin: totalSec > 0 ? totalSec / 60 : undefined });
-                                  }}
-                                  className="w-[92px] rounded border border-zinc-200 px-1 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" />
-                              </div>
-                            </div>
+                            <input type="time" step="1"
+                              value={m.durationMin != null ? durMinToHMS(m.durationMin) : ''}
+                              placeholder="00:00:00"
+                              onChange={(e) => {
+                                const totalSec = e.target.value ? toSec(e.target.value) : 0;
+                                updateMeas({ ...m, durationMin: totalSec > 0 ? totalSec / 60 : undefined });
+                              }}
+                              className="w-[92px] rounded border border-zinc-200 px-1 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" />
                           </td>
                           {hasWorkerCol && (
                             <td className="px-3 py-2">
@@ -1004,10 +969,6 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
     onUpdate({ measurements: updated });
   }
 
-  function handleSeriesUpdate(updated: MeasurementSeries[]) {
-    onUpdate({ measurementSeries: updated });
-  }
-
   function handleSeriesAndMeasUpdate(series: MeasurementSeries[], meas: SoundMeasurement[]) {
     onUpdate({ measurementSeries: series, measurements: meas });
   }
@@ -1175,8 +1136,7 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
                                 allSeries={measurementSeries}
                                 measurements={measurements}
                                 instrumentOptions={instrumentOptions}
-                                onUpdateSeries={handleSeriesUpdate}
-                                onUpdateMeasurements={(meas) => handleSeriesAndMeasUpdate(measurementSeries, meas)}
+                                onSave={handleSeriesAndMeasUpdate}
                                 onGoToStep={onGoToStep}
                               />
                             </div>
@@ -1208,8 +1168,7 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
                           allSeries={measurementSeries}
                           measurements={measurements}
                           instrumentOptions={instrumentOptions}
-                          onUpdateSeries={handleSeriesUpdate}
-                          onUpdateMeasurements={(meas) => handleSeriesAndMeasUpdate(measurementSeries, meas)}
+                          onSave={handleSeriesAndMeasUpdate}
                           onGoToStep={onGoToStep}
                         />
                       </div>
@@ -1227,7 +1186,7 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
                           const contextSeries = measurementSeries.filter((s) => s.hegId === heg.id && !s.taskId);
                           const hasSeriesCol = contextSeries.length > 0;
                           const hasWorkerCol = heg.workerCount > 1;
-                          // base cols: # | Lp,A,eqT | Lp,Cpeak | Datum/tijdstip | Uitsl. | Rep. | Opmerking | delete = 8
+                          // base cols: # | Lp,A,eqT | Lp,Cpeak | Duur | Uitsl. | Rep. | Opmerking | delete = 8
                           const flatColCount = 8 + (hasWorkerCol ? 1 : 0) + (hasSeriesCol ? 1 : 0);
                           return (
                             <div className="space-y-2">
@@ -1238,7 +1197,7 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
                                       <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">#</th>
                                       <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500"><Formula math="L_{p,A,eqT}" /> (dB)</th>
                                       <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500"><Formula math="L_{p,Cpeak}" /></th>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Datum / tijdstip</th>
+                                      <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Duur (HH:MM:SS)</th>
                                       {hasWorkerCol && <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Medewerker</th>}
                                       {hasSeriesCol && <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Reeks</th>}
                                       <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500">Uitsl.</th>
@@ -1282,48 +1241,15 @@ export default function SoundStep6_Measurements({ investigation, onUpdate, onGoT
                                               />
                                             </td>
                                             <td className="px-3 py-2">
-                                              <div className="space-y-1">
-                                                <input type="date" value={m.date ?? ''}
-                                                  onChange={(e) => {
-                                                    const newList = measurements.map((x) => x.id === m.id ? { ...x, date: e.target.value || undefined } : x);
-                                                    handleMeasUpdate(newList);
-                                                  }}
-                                                  className="w-full rounded border border-zinc-200 px-1.5 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
-                                                />
-                                                <div className="flex items-center gap-1">
-                                                  <input type="time" step="1" value={m.startTime ?? ''}
-                                                    onChange={(e) => {
-                                                      const val = e.target.value;
-                                                      const diff = (val && m.endTime) ? toSec(m.endTime) - toSec(val) : null;
-                                                      const dur = diff != null && diff > 0 ? diff / 60 : undefined;
-                                                      const newList = measurements.map((x) => x.id === m.id ? { ...x, startTime: val || undefined, durationMin: dur } : x);
-                                                      handleMeasUpdate(newList);
-                                                    }}
-                                                    className="w-[92px] rounded border border-zinc-200 px-1 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" />
-                                                  <span className="text-[10px] text-zinc-400">–</span>
-                                                  <input type="time" step="1" value={m.endTime ?? ''}
-                                                    onChange={(e) => {
-                                                      const val = e.target.value;
-                                                      const diff = (m.startTime && val) ? toSec(val) - toSec(m.startTime) : null;
-                                                      const dur = diff != null && diff > 0 ? diff / 60 : undefined;
-                                                      const newList = measurements.map((x) => x.id === m.id ? { ...x, endTime: val || undefined, durationMin: dur } : x);
-                                                      handleMeasUpdate(newList);
-                                                    }}
-                                                    className="w-[92px] rounded border border-zinc-200 px-1 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" />
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                  <span className="text-[10px] text-zinc-400">Duur:</span>
-                                                  <input type="time" step="1"
-                                                    value={m.durationMin != null ? durMinToHMS(m.durationMin) : ''}
-                                                    placeholder="00:00:00"
-                                                    onChange={(e) => {
-                                                      const totalSec = e.target.value ? toSec(e.target.value) : 0;
-                                                      const newList = measurements.map((x) => x.id === m.id ? { ...x, durationMin: totalSec > 0 ? totalSec / 60 : undefined } : x);
-                                                      handleMeasUpdate(newList);
-                                                    }}
-                                                    className="w-[92px] rounded border border-zinc-200 px-1 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" />
-                                                </div>
-                                              </div>
+                                              <input type="time" step="1"
+                                                value={m.durationMin != null ? durMinToHMS(m.durationMin) : ''}
+                                                placeholder="00:00:00"
+                                                onChange={(e) => {
+                                                  const totalSec = e.target.value ? toSec(e.target.value) : 0;
+                                                  const newList = measurements.map((x) => x.id === m.id ? { ...x, durationMin: totalSec > 0 ? totalSec / 60 : undefined } : x);
+                                                  handleMeasUpdate(newList);
+                                                }}
+                                                className="w-[92px] rounded border border-zinc-200 px-1 py-0.5 text-xs outline-none focus:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" />
                                             </td>
                                             {hasWorkerCol && (
                                               <td className="px-3 py-2">

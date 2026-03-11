@@ -8,7 +8,7 @@ import type {
   EquipmentCategory,
 } from '@/lib/sound-investigation-types';
 import { newSoundId } from '@/lib/sound-investigation-storage';
-import { computeCombinedAttenuation } from '@/lib/sound-ppe';
+import { OCTAVE_BANDS, N_BANDS, calcOctaveAPF, buildMergedBands, computeCombinedAttenuation } from '@/lib/sound-ppe';
 import { Abbr } from '@/components/Abbr';
 import { Formula } from '@/components/Formula';
 import { Alert, Button, Card, FieldLabel, FormGrid, Icon, Input } from '@/components/ui';
@@ -358,36 +358,40 @@ type PPESlot = 1 | 2;
 /** Extract PPE fields for slot 1 or 2 from a HEG */
 function getPPEFields(heg: SoundHEG, slot: PPESlot) {
   if (slot === 1) {
-    // Infer method from stored data when not explicitly set (backward compat)
+    const hasOctave = (heg.ppeOctaveBands ?? []).some((b) => b.m != null || b.s != null);
     const method = heg.ppeMethod ??
-      (heg.ppeM != null || heg.ppeL != null ? 'hml' as const :
+      (hasOctave ? 'octave' as const :
+       heg.ppeM != null || heg.ppeL != null ? 'hml' as const :
        heg.ppeSNR != null ? 'snr' as const : 'manual' as const);
     return {
       method,
-      snr:         heg.ppeSNR,
-      /** Spectral correction Lp,C − Lp,A (dB) — used for SNR method APV calculation */
-      lpC:         heg.ppeLpC,
-      hmlH:        heg.ppeH,
-      hmlM:        heg.ppeM,
-      hmlL:        heg.ppeL,
+      snr:          heg.ppeSNR,
+      lpC:          heg.ppeLpC,
+      hmlH:         heg.ppeH,
+      hmlM:         heg.ppeM,
+      hmlL:         heg.ppeL,
       spectralChar: heg.ppeSpectralChar,
-      attenuation: heg.ppeAttenuation,
-      notes:       heg.ppeNotes,
+      attenuation:  heg.ppeAttenuation,
+      octaveBands:  heg.ppeOctaveBands ?? Array.from({ length: N_BANDS }, (): { lp?: number; m?: number; s?: number } => ({})),
+      notes:        heg.ppeNotes,
     };
   }
+  const hasOctave2 = (heg.ppe2OctaveBands ?? []).some((b) => b.m != null || b.s != null);
   const method2 = heg.ppe2Method ??
-    (heg.ppe2M != null || heg.ppe2L != null ? 'hml' as const :
+    (hasOctave2 ? 'octave' as const :
+     heg.ppe2M != null || heg.ppe2L != null ? 'hml' as const :
      heg.ppe2SNR != null ? 'snr' as const : 'manual' as const);
   return {
-    method:      method2,
-    snr:         heg.ppe2SNR,
-    lpC:         heg.ppe2LpC,
-    hmlH:        heg.ppe2H,
-    hmlM:        heg.ppe2M,
-    hmlL:        heg.ppe2L,
+    method:       method2,
+    snr:          heg.ppe2SNR,
+    lpC:          heg.ppe2LpC,
+    hmlH:         heg.ppe2H,
+    hmlM:         heg.ppe2M,
+    hmlL:         heg.ppe2L,
     spectralChar: heg.ppe2SpectralChar,
-    attenuation: heg.ppe2Attenuation,
-    notes:       heg.ppe2Notes,
+    attenuation:  heg.ppe2Attenuation,
+    octaveBands:  heg.ppe2OctaveBands ?? Array.from({ length: N_BANDS }, (): { lp?: number; m?: number; s?: number } => ({})),
+    notes:        heg.ppe2Notes,
   };
 }
 
@@ -401,8 +405,9 @@ function setPPEFields(heg: SoundHEG, slot: PPESlot, partial: Partial<ReturnType<
       ppeM:            partial.hmlM,
       ppeL:            partial.hmlL,
       ppeSpectralChar: partial.spectralChar,
-      ppeSNRUnknown:   false, // always clear when updated via new UI
+      ppeSNRUnknown:   false,
       ppeAttenuation:  partial.attenuation,
+      ppeOctaveBands:  partial.octaveBands,
       ppeNotes:        partial.notes,
     };
   }
@@ -416,12 +421,14 @@ function setPPEFields(heg: SoundHEG, slot: PPESlot, partial: Partial<ReturnType<
     ppe2SpectralChar: partial.spectralChar,
     ppe2SNRUnknown:   false,
     ppe2Attenuation:  partial.attenuation,
+    ppe2OctaveBands:  partial.octaveBands,
     ppe2Notes:        partial.notes,
   };
 }
 
 const PPE_METHODS = [
-  { value: 'hml'    as const, label: 'HML-check',  desc: 'H/M/L-waarden van datablad' },
+  { value: 'octave' as const, label: 'Octaafband',  desc: 'm/s per band — meest nauwkeurig' },
+  { value: 'hml'    as const, label: 'HML-check',   desc: 'H/M/L-waarden van datablad' },
   { value: 'snr'    as const, label: 'SNR-methode', desc: 'SNR + spectraalcorrectie' },
   { value: 'manual' as const, label: 'Handmatig',   desc: 'APV direct invoeren' },
 ];
@@ -440,8 +447,13 @@ function PPEDeviceForm({
 
   const inputCls = 'rounded-lg border border-blue-200 bg-white px-2 py-1.5 text-sm outline-none focus:border-orange-500 dark:border-blue-700 dark:bg-zinc-800 dark:text-zinc-100';
 
-  /** Compute APV from current method + inputs. Returns null when data is incomplete. */
+  /** Compute APV from current method + inputs. Returns null when data is incomplete or needs avgLp (octave). */
   function computeAPV(f: ReturnType<typeof getPPEFields>): number | null {
+    if (f.method === 'octave') {
+      // APV requires avgLp from measurements — computed later in assessment step
+      const res = calcOctaveAPF(buildMergedBands(f.octaveBands, null));
+      return res ? res.apf : null;
+    }
     if (f.method === 'hml') {
       const val = f.spectralChar === 'high' ? f.hmlH : f.spectralChar === 'low' ? f.hmlL : f.hmlM;
       return val != null ? val : null;
@@ -464,6 +476,13 @@ function PPEDeviceForm({
     onUpdate(setPPEFields(heg, slot, merged));
   }
 
+  function setOctaveBand(bandIndex: number, key: 'm' | 's', value: number | undefined) {
+    const updated = fields.octaveBands.map((b, i) =>
+      i === bandIndex ? { ...b, [key]: value } : b,
+    );
+    setFields({ octaveBands: updated });
+  }
+
   function switchMethod(newMethod: typeof method) {
     onUpdate(setPPEFields(heg, slot, {
       method: newMethod,
@@ -471,6 +490,9 @@ function PPEDeviceForm({
       hmlH: undefined, hmlM: undefined, hmlL: undefined,
       spectralChar: undefined,
       attenuation: undefined,
+      octaveBands: newMethod === 'octave'
+        ? Array.from({ length: N_BANDS }, (): { lp?: number; m?: number; s?: number } => ({}))
+        : undefined,
       notes: fields.notes,
     }));
   }
@@ -482,7 +504,7 @@ function PPEDeviceForm({
       {/* Method selector */}
       <div>
         <p className="mb-2 text-xs font-medium text-blue-800 dark:text-blue-300">Selectiemethode (EN 458)</p>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {PPE_METHODS.map((pm) => (
             <button
               key={pm.value}
@@ -502,6 +524,73 @@ function PPEDeviceForm({
           ))}
         </div>
       </div>
+
+      {/* ── Octaafbandmethode (A.2) ── */}
+      {method === 'octave' && (
+        <div className="space-y-3">
+          <p className="text-xs text-blue-700 dark:text-blue-300">
+            Voer de demping <strong>m</strong> (gemiddelde) en standaarddeviatie <strong>s</strong> per octaafband in
+            vanuit het datablad van de gehoorbeschermer (EN ISO 4869-1). De <abbr title="Assumed Protection Value = m − s (84e percentiel)" className="cursor-help underline decoration-dotted decoration-zinc-400 underline-offset-2">APV</abbr> wordt berekend in stap 10 op basis van de gemeten octaafbandniveaus.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-blue-200 dark:border-blue-800">
+                  <th className="py-1.5 pr-3 text-left font-medium text-blue-800 dark:text-blue-300">Band (Hz)</th>
+                  {OCTAVE_BANDS.map((f) => (
+                    <th key={f} className="min-w-[56px] px-1 py-1.5 text-center font-medium text-blue-800 dark:text-blue-300">
+                      {f >= 1000 ? `${f / 1000}k` : f}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-blue-100 dark:divide-blue-900/40">
+                {(['m', 's'] as const).map((key) => (
+                  <tr key={key}>
+                    <td className="py-1.5 pr-3 font-semibold text-blue-700 dark:text-blue-300">
+                      {key === 'm' ? 'm (gem., dB)' : 's (std.dev., dB)'}
+                    </td>
+                    {OCTAVE_BANDS.map((_, bi) => (
+                      <td key={bi} className="px-1 py-1">
+                        <input
+                          type="number"
+                          min={0}
+                          max={60}
+                          step={0.1}
+                          value={fields.octaveBands[bi]?.[key] ?? ''}
+                          onChange={(e) =>
+                            setOctaveBand(bi, key, parseFloat(e.target.value) || undefined)
+                          }
+                          placeholder="—"
+                          className="w-14 rounded border border-blue-200 bg-white px-1 py-1 text-center text-xs outline-none focus:border-orange-400 dark:border-blue-700 dark:bg-zinc-800 dark:text-zinc-100"
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+                <tr className="bg-blue-50/50 dark:bg-blue-900/10">
+                  <td className="py-1 pr-3 text-blue-600 dark:text-blue-400">APV = m−s (dB)</td>
+                  {OCTAVE_BANDS.map((_, bi) => {
+                    const m = fields.octaveBands[bi]?.m;
+                    const s = fields.octaveBands[bi]?.s;
+                    return (
+                      <td key={bi} className="px-1 py-1 text-center font-mono text-blue-700 dark:text-blue-300">
+                        {m != null && s != null ? (m - s).toFixed(1) : '—'}
+                      </td>
+                    );
+                  })}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          {computedAPV !== null && (
+            <p className="text-xs text-emerald-700 dark:text-emerald-400">
+              Schatting APF (zonder meetgemiddelden): <strong>{computedAPV} dB</strong>
+              <span className="ml-1 text-zinc-400">— definitieve waarde volgt in stap 10</span>
+            </p>
+          )}
+        </div>
+      )}
 
       {/* ── HML-check (A.4) ── */}
       {method === 'hml' && (
